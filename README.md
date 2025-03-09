@@ -1,6 +1,6 @@
 # CurvatureEngine
 ## Overview
-This project is a high-performance computational framework for solving geodesic equations and curvature tensors in General Relativity. It includes tools for computing Christoffel symbols, Ricci tensors, Riemann curvature tensors, and the evolution of spacetime using the ADM/BSSN formalism. The code supports multiple metrics, including Kerr, Schwarzschild and Minkowski, and provides efficient numerical solvers (not really at the moment, I need to have a fully working solver to start optimizations process).
+This project is a high-performance computational framework for solving geodesic equations and curvature tensors in General Relativity. It includes tools for computing Christoffel symbols, Ricci tensors, Riemann curvature tensors, and the evolution of spacetime using the ADM/BSSN formalism. The code supports multiple metrics, including Schwarzschild and Minkowski, and provides efficient numerical solvers.
 
 ## Features
 - **Geodesic Integrator:** Computes null and timelike geodesics in curved spacetimes.
@@ -11,13 +11,12 @@ This project is a high-performance computational framework for solving geodesic 
 - **Parallelized Computation:** Optimized for multi-threading and SIMD vectorization to accelerate computations (Parallel computing is not ready atm so monothread atm...).
 - **High-Precision Numerical Methods:** Uses high-order finite difference schemes for derivatives and tensor calculations.
 
-
 ## Compilation
 This project is optimized for **Clang++** with advanced compiler flags for performance:
 ```sh
 make
 ```
-**You need AVX2 or AVX512 CPU extensions to use it and OpenMP for parallel**
+
 
 ## Usage
 Run the simulation with:
