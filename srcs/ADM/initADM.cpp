@@ -106,8 +106,8 @@ double effective_potential(double x, double y, double a) {
 
 
 void Grid::initializeKerrData(Grid &grid_obj) {
-    double a = 0.9;   
-    double L = 3.0;
+    double a = 0.999;   
+    double L = 2.0;
     double x_min = -L, x_max = L;
     double y_min = -L, y_max = L;
     double z_min = -L, z_max = L;
@@ -115,7 +115,7 @@ void Grid::initializeKerrData(Grid &grid_obj) {
     double dy = (y_max - y_min) / (NY - 1);
     double dz = (z_max - z_min) / (NZ - 1);
     Matrix matrix;
-
+	std::vector<std::array<double, 3>> horizonPoints;
     globalGrid.resize(NX);
     for (int i = 0; i < NX; i++) {
         globalGrid[i].resize(NY);
@@ -196,11 +196,19 @@ void Grid::initializeKerrData(Grid &grid_obj) {
                 cell.vz = 0.0;
 
                 double r_horizon = M + sqrt(M * M - a * a);
-                if (r < r_horizon / 4) {
+				double epsilon = 1e-2;
+
+				double diff = fabs(r - r_horizon);
+                if (diff < epsilon) {
+                    horizonPoints.push_back({x, y, z});
+                }
+                if (r < r_horizon) {
                     cell.vx = cell.vy = cell.vz = 0.0;
                     cell.rho = 0.0;
                     cell.p = 0.0;
                 }
+
+
 
                 cell.beta[0] = 2 * H * lx;
                 cell.beta[1] = 2 * H * ly;
@@ -272,6 +280,15 @@ void Grid::initializeKerrData(Grid &grid_obj) {
         double H_test = M / test_r;
         double alpha_test = 1.0 / sqrt(1.0 + 2 * H_test);
         printf("Plan équatorial r = %f : H = %e, alpha = %e\n", test_r, H_test, alpha_test);
+    }
+	{
+        std::ofstream ofs("horizon.csv");
+        ofs << "x,y,z\n";
+        for (auto &pt : horizonPoints) {
+            ofs << pt[0] << "," << pt[1] << "," << pt[2] << "\n";
+        }
+        ofs.close();
+        std::printf("Fichier horizon.csv écrit : %zu points proches de l’horizon.\n", horizonPoints.size());
     }
 }
 

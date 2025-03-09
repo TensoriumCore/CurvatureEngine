@@ -51,24 +51,20 @@ void Grid::initialize_grid() {
 void Grid::compute_constraints(Grid &grid_obj, int i, int j, int k, double &hamiltonian, double momentum[3]) {
     double Ricci[3][3];
     compute_ricci_3D(grid_obj, i, j, k, Ricci);
-    
-    double gammaLocal[3][3], gammaInv[3][3];
     Cell2D &cell = globalGrid[i][j][k];
-
+    double gammaLocal[3][3], gammaInv[3][3];
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
             gammaLocal[a][b] = cell.gamma[a][b];
         }
     }
     invert_3x3(gammaLocal, gammaInv);
-
     double R = 0.0;
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
             R += gammaInv[a][b] * Ricci[a][b];
         }
     }
-
     double Ktrace = 0.0;
     double KK = 0.0;
     for (int a = 0; a < 3; a++) {
@@ -79,23 +75,121 @@ void Grid::compute_constraints(Grid &grid_obj, int i, int j, int k, double &hami
             }
         }
     }
-    
     hamiltonian = R + Ktrace * Ktrace - KK;
     hamiltonianGrid[i][j][k] = hamiltonian;
-	/* if (hamiltonian > 5.0) { */
-	/* 	printf("hamiltonian = %f, at i = %d, j = %d, k = %d\n", hamiltonian, i, j, k); */
-	/* } */
+    double Kup[3][3];
+    for (int a = 0; a < 3; a++) {
+        for (int b = 0; b < 3; b++) {
+            double s = 0.0;
+            for (int c = 0; c < 3; c++) {
+                s += gammaInv[a][c] * cell.K[c][b];
+            }
+            Kup[a][b] = s;
+        }
+    }
     for (int i_comp = 0; i_comp < 3; i_comp++) {
+        double dCoord = (i_comp == 0 ? DX : (i_comp == 1 ? DY : DZ));
         momentum[i_comp] = 0.0;
-        for (int j_comp = 0; j_comp < 3; j_comp++) {
-            double dKdx = (globalGrid[i+1][j][k].K[i_comp][j_comp] - globalGrid[i-1][j][k].K[i_comp][j_comp]) / (2.0 * DX);
-            double dKdy = (globalGrid[i][j+1][k].K[i_comp][j_comp] - globalGrid[i][j-1][k].K[i_comp][j_comp]) / (2.0 * DY);
-            double dKdz = (globalGrid[i][j][k+1].K[i_comp][j_comp] - globalGrid[i][j][k-1].K[i_comp][j_comp]) / (2.0 * DZ);
-            momentum[i_comp] += (dKdx + dKdy + dKdz);
-			/* if (momentum[i_comp] > 5.0) { */
-			/* 	printf("momentum[%d] = %f, at i = %d, j = %d, k = %d\n", i_comp, momentum[i_comp], i, j, k); */
-			/*          */
-			/* } */
-		}
+        {
+            int ip = i, im = i, jp = j, jm = j, kp = k, km = k;
+            if (i_comp == 0) { ip = i + 1; im = i - 1; }
+            if (i_comp == 1) { jp = j + 1; jm = j - 1; }
+            if (i_comp == 2) { kp = k + 1; km = k - 1; }
+            if (ip >= 1 && ip < NX && im >= 0 && jm >= 0 && jp < NY && km >= 0 && kp < NZ) {
+                double KupPlus[3][3], KupMinus[3][3];
+                {
+                    Cell2D &cP = globalGrid[ip][jp][kp];
+                    double gP[3][3], gInvP[3][3];
+                    for (int aa = 0; aa < 3; aa++) {
+                        for (int bb = 0; bb < 3; bb++) {
+                            gP[aa][bb] = cP.gamma[aa][bb];
+                        }
+                    }
+                    invert_3x3(gP, gInvP);
+                    for (int aa = 0; aa < 3; aa++) {
+                        for (int bb = 0; bb < 3; bb++) {
+                            double tmp = 0.0;
+                            for (int cc = 0; cc < 3; cc++) {
+                                tmp += gInvP[aa][cc] * cP.K[cc][bb];
+                            }
+                            KupPlus[aa][bb] = tmp;
+                        }
+                    }
+                }
+                {
+                    Cell2D &cM = globalGrid[im][jm][km];
+                    double gM[3][3], gInvM[3][3];
+                    for (int aa = 0; aa < 3; aa++) {
+                        for (int bb = 0; bb < 3; bb++) {
+                            gM[aa][bb] = cM.gamma[aa][bb];
+                        }
+                    }
+                    invert_3x3(gM, gInvM);
+                    for (int aa = 0; aa < 3; aa++) {
+                        for (int bb = 0; bb < 3; bb++) {
+                            double tmp = 0.0;
+                            for (int cc = 0; cc < 3; cc++) {
+                                tmp += gInvM[aa][cc] * cM.K[cc][bb];
+                            }
+                            KupMinus[aa][bb] = tmp;
+                        }
+                    }
+                }
+                double partialUp = (KupPlus[i_comp][i_comp] - KupMinus[i_comp][i_comp]) / (2.0 * dCoord);
+                momentum[i_comp] += partialUp;
+            }
+        }
+        {
+            double sum1 = 0.0;
+            double sum2 = 0.0;
+            for (int j_ = 0; j_ < 3; j_++) {
+                for (int m = 0; m < 3; m++) {
+                    sum1 += cell.Christoffel[j_][j_][m] * Kup[m][i_comp];
+                    sum2 += cell.Christoffel[m][j_][i_comp] * Kup[j_][m];
+                }
+            }
+            momentum[i_comp] += (sum1 - sum2);
+        }
+        {
+            int ip = i, im = i, jp = j, jm = j, kp = k, km = k;
+            if (i_comp == 0) { ip = i + 1; im = i - 1; }
+            if (i_comp == 1) { jp = j + 1; jm = j - 1; }
+            if (i_comp == 2) { kp = k + 1; km = k - 1; }
+            if (ip >= 1 && ip < NX && im >= 0 && jm >= 0 && jp < NY && km >= 0 && kp < NZ) {
+                double KtraceP = 0.0, KtraceM = 0.0;
+                {
+                    Cell2D &cP = globalGrid[ip][jp][kp];
+                    double gP[3][3], gInvP[3][3];
+                    for (int aa = 0; aa < 3; aa++) {
+                        for (int bb = 0; bb < 3; bb++) {
+                            gP[aa][bb] = cP.gamma[aa][bb];
+                        }
+                    }
+                    invert_3x3(gP, gInvP);
+                    for (int aa = 0; aa < 3; aa++) {
+                        for (int bb = 0; bb < 3; bb++) {
+                            KtraceP += gInvP[aa][bb] * cP.K[aa][bb];
+                        }
+                    }
+                }
+                {
+                    Cell2D &cM = globalGrid[im][jm][km];
+                    double gM[3][3], gInvM[3][3];
+                    for (int aa = 0; aa < 3; aa++) {
+                        for (int bb = 0; bb < 3; bb++) {
+                            gM[aa][bb] = cM.gamma[aa][bb];
+                        }
+                    }
+                    invert_3x3(gM, gInvM);
+                    for (int aa = 0; aa < 3; aa++) {
+                        for (int bb = 0; bb < 3; bb++) {
+                            KtraceM += gInvM[aa][bb] * cM.K[aa][bb];
+                        }
+                    }
+                }
+                double dKtrace = (KtraceP - KtraceM) / (2.0 * dCoord);
+                momentum[i_comp] -= dKtrace;
+            }
+        }
     }
 }
