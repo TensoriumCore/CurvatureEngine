@@ -1,5 +1,12 @@
 #include <Geodesics.h>
 
+/* here is the implementation of the fluid update functions 
+ * in the Grid class
+ *
+ * This is a simple implematations of a perfect fluid
+ * with a constant speed of sound
+ * */
+
 void Grid::compute_fluid_derivatives(int i, int j, int k) {
     Cell2D &cell = globalGrid[i][j][k];
 

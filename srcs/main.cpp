@@ -47,6 +47,8 @@ int main(int argc, char **argv)
 	} else if (strncmp(argv[1], "-C", 2) == 0) {
 		if (argc < 3) {
 			printf("Usage: -C <Spin value a>\n");
+			printf("ADM solver Kerr-Schild coordinates\n");
+			printf("Metric: schwarzschild, kerr or Minkowski\n");
 			return 0;
 		}
 		grid_setup();

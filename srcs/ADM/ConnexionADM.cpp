@@ -1,7 +1,14 @@
 #include "GridTensor.h"
 #include <Geodesics.h>
 
-
+/** 
+ * This function compute Partial derivative of Tilde Gamma at each point of the grid
+ * This is needed for BSSN implementations in the K_ij tensor and the 
+ * Christoffel symbols
+ * @param i , j , k the index of the cell
+ * @param tildeGamma the output array of the tildeGamma tensor
+ * @return void
+ * */
 void GridTensor::compute_dt_tildeGamma(int i, int j, int k, double dt_tildeGamma[3]) {
 	Grid grid_obj;
 	Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
@@ -47,7 +54,11 @@ void GridTensor::compute_dt_tildeGamma(int i, int j, int k, double dt_tildeGamma
         double div_Atilde = 0.0;
         double tildeGamma_Atilde = 0.0;
         double beta_term = 0.0;
-
+		/*
+		 * The divergence of the Atilde tensor is computed using the formula:
+		 * \partial_t Atilde^i = \partial_j K^{ij}
+		 * where K^{ij} is the extrinsic curvature tensor
+		 */
         for (int j_comp = 0; j_comp < 3; j_comp++) {
             div_Atilde += (grid_obj.getCell(iP, jP, kP).K[i_comp][j_comp] -
                            grid_obj.getCell(iM, jM, kM).K[i_comp][j_comp]) / (2.0 * DX);
@@ -63,10 +74,22 @@ void GridTensor::compute_dt_tildeGamma(int i, int j, int k, double dt_tildeGamma
             beta_term += beta[j_comp] * (grid_obj.getCell(iP, jP, kP).beta[i_comp] -
                                           grid_obj.getCell(iM, jM, kM).beta[i_comp]) / (2.0 * DX);
         }
-
+		/*
+		 * The tildeGamma tensor is computed using the formula:
+		 * \partial_t \tilde{\Gamma}^i = -2 \alpha \partial_j K^{ij} + 2 \alpha \tilde{\Gamma}^i_{jk} K^{jk} + \beta^j \partial_j \tilde{\Gamma}^i
+		 * using the gauge source function \beta^j = \partial_t \beta^j and the lapse function \alpha = \partial_t \alpha
+		 */
         dt_tildeGamma[i_comp] = -2.0 * alpha * div_Atilde + 2.0 * alpha * tildeGamma_Atilde + beta_term;
     }
 }
+
+
+/**
+ * This function is a simmple implementation of the TildeGamma tensor
+ * @param i , j , k the index of the cell
+ * @param tildeGamma the output array of the tildeGamma tensor
+ * @return void
+ * */
 
 void GridTensor::compute_tildeGamma(int i, int j, int k, double tildeGamma[3]) {
     double gammaInv[3][3];
@@ -85,6 +108,13 @@ void GridTensor::compute_tildeGamma(int i, int j, int k, double tildeGamma[3]) {
 
     std::fill_n(tildeGamma, 3, 0.0);
 
+	/*
+	 * This use the christoffel symbols to compute the tildeGamma tensor
+	 * \tilde{\Gamma}^i = \gamma^{jk} \Gamma^i_{jk}
+	 * where \Gamma^i_{jk} is the christoffel symbol
+	 * Then we contract the tensor conexion using the invert of the metric gamma_ij --> \gamma^{ij}
+	 * */
+
     for (int i_comp = 0; i_comp < 3; i_comp++) { 
         for (int j_comp = 0; j_comp < 3; j_comp++) {
             for (int k_comp = 0; k_comp < 3; k_comp++) {
@@ -93,6 +123,12 @@ void GridTensor::compute_tildeGamma(int i, int j, int k, double tildeGamma[3]) {
         }
     }
 }
+
+/** this function compute the Christoffel symbols at each point of the 3D grid
+ * @param i , j , k the index of the cell
+ * @param christof the output array of the christoffel tensor
+ * @return void
+ * */
 
 void GridTensor::compute_christoffel_3D(Grid &grid_obj, int i, int j, int k, double christof[3][3][3]) {
 	Matrix matrix_obj;
@@ -107,6 +143,14 @@ void GridTensor::compute_christoffel_3D(Grid &grid_obj, int i, int j, int k, dou
 			}
 		}
 	}
+	
+	/*
+	 * First we compute the partial derivative of the metric tensor
+	 * Then we use the partial derivative of the metric tensor to compute the Christoffel symbols
+	 * The Christoffel symbols are computed using the formula:
+	 * \Gamma^i_{jk} = 1/2 g^{il} ( \partial_j g_{lk} + \partial_k g_{jl} - \partial_l g_{jk} )
+	 * where g_{ij} is the metric tensor and g^{ij} is the inverse of the metric tensor
+	 * */
 
 	double dgamma[3][3][3];
 	for(int a=0;a<3;a++){
@@ -116,6 +160,14 @@ void GridTensor::compute_christoffel_3D(Grid &grid_obj, int i, int j, int k, dou
 			dgamma[2][a][b] = partialZ_gamma(grid_obj, i, j, k, a, b);
 		}
 	}
+
+	/*
+	 * The Christoffel symbols are computed using the formula:
+	 * \Gamma^i_{jk} = 1/2 g^{il} ( \partial_j g_{lk} + \partial_k g_{jl} - \partial_l g_{jk} )
+	 * where g_{ij} is the metric tensor and g^{ij} is the inverse of the metric tensor
+	 * This use the standard formula to compute the Christoffel symbols in ADM 3+1 formalism
+	 * */
+
 	for(int kk=0; kk<3; kk++){
 		for(int aa=0; aa<3; aa++){
 			for(int bb=0; bb<3; bb++){

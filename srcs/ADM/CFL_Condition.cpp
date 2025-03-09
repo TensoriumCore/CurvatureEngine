@@ -1,6 +1,12 @@
 #include <Geodesics.h>
 #include <algorithm>
 
+/**
+ * Compute the maximum speed in the grid
+ * @return the maximum speed in the grid
+ * need to be improved
+ */
+
 double Grid::computeMaxSpeed() {
     double maxSpeed = 0.0;
     for (int i = 1; i < NX - 1; i++) {

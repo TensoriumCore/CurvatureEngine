@@ -1,5 +1,29 @@
 #include <Geodesics.h>
 
+/*
+ * Theses functions are used to compute the partial derivative of the metric tensor
+ * and the Christoffel symbols, beta and alpha gauges conditions
+ * All of these use a 2nd, fourth or sixth order finite difference scheme
+ *
+ * The functions are used in the computation of the ADM/BSSN equations
+ *
+ * derivatives are computed using the following formulas:
+ * \partial_x f = (f_{i+1} - f_{i-1}) / (2 * dx)
+ * \partial_y f = (f_{j+1} - f_{j-1}) / (2 * dy)
+ * \partial_z f = (f_{k+1} - f_{k-1}) / (2 * dz)
+ * \partial_{xx} f = (f_{i+1} - 2 * f_i + f_{i-1}) / dx^2
+ * \partial_{yy} f = (f_{j+1} - 2 * f_j + f_{j-1}) / dy^2
+ * \partial_{zz} f = (f_{k+1} - 2 * f_k + f_{k-1}) / dz^2
+ * \partial_{xy} f = (f_{i+1,j+1} - f_{i+1,j-1} - f_{i-1,j+1} + f_{i-1,j-1}) / (4 * dx * dy)
+ * \partial_{xz} f = (f_{i+1,k+1} - f_{i+1,k-1} - f_{i-1,k+1} + f_{i-1,k-1}) / (4 * dx * dz)
+ * \partial_{yz} f = (f_{j+1,k+1} - f_{j+1,k-1} - f_{j-1,k+1} + f_{j-1,k-1}) / (4 * dy * dz)
+ * \partial_{xxy} f = (f_{i+2} - 2 * f_{i+1} + 2 * f_{i-1} - f_{i-2}) / (12 * dx)
+ * \partial_{yyz} f = (f_{j+2} - 2 * f_{j+1} + 2 * f_{j-1} - f_{j-2}) / (12 * dy)
+ * \partial_{zzx} f = (f_{k+2} - 2 * f_{k+1} + 2 * f_{k-1} - f_{k-2}) / (12 * dz)
+ * \partial_{xxyy} f = (f_{i+1,j+1} - 2 * f_{i+1,j} + f_{i+1,j-1} - f_{i-1,j+1} + 2 * f_{i-1,j} - f_{i-1,j-1}) / (4 * dx * dy)
+ * \partial_{yyzz} f = (f_{j+1,k+1} - 2 * f_{j+1,k} + f_{j+1,k-1} - f_{j-1,k+1} + 2 * f_{j-1,k} - f_{j-1,k-1}) / (4 * dy * dz)
+ * \partial_{zzxx} f = (f_{k+1,i+1} - 2 * f_{k+1,i} + f_{k+1,i-1} - f_{k-1,i+1} + 2 * f_{k-1,i} - f_{k-1,i-1}) / (4 * dz * dx)
+* */
 
 double partialX_alpha(Grid &grid_obj, int i, int j, int k) {
     if (i < 2 || i > NX - 3) {
