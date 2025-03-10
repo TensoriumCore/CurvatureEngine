@@ -107,7 +107,7 @@ double effective_potential(double x, double y, double a) {
 
 void Grid::initializeKerrData(Grid &grid_obj) {
     double a = 0.999;   
-    double L = 2.0;
+    double L = 6.0;
     double x_min = -L, x_max = L;
     double y_min = -L, y_max = L;
     double z_min = -L, z_max = L;
@@ -141,19 +141,15 @@ void Grid::initializeKerrData(Grid &grid_obj) {
 				double H  = (r < 1e-12) ? 0.0 
 					: (M * r*r*r) / (r4 + a*a*z*z);
 
-				// l^x, l^y, l^z  (avec l^t = 1)
 				double denom = (r2 + a*a);
 				double lx = (r*x + a*y) / denom;
 				double ly = (r*y - a*x) / denom;
 				double lz = (r > 1e-12) ? (z / r) : 0.0;
 
-				// gamma_{ij} = delta_ij + 2H (l_i l_j)
-				// On relève/abaisse indices via delta_ij (i.e. l_i = l^i en coords plates).
 				double lxlx = lx * lx;
 				double lyly = ly * ly;
 				double lzlz = lz * lz;
 
-				// On construit la 3D-métrique
 				cell.gamma[0][0] = 1.0 + 2.0*H*lxlx; 
 				cell.gamma[0][1] = 2.0*H*lx*ly;      
 				cell.gamma[0][2] = 2.0*H*lx*lz;
@@ -172,7 +168,6 @@ void Grid::initializeKerrData(Grid &grid_obj) {
 				cell.beta[1] = 2.0 * H * ly;
 				cell.beta[2] = 2.0 * H * lz;
 
-				// Lapse : alpha = 1 / sqrt(1 + 2H)
 				cell.alpha = 1.0 / sqrt(1.0 + 2.0 * H);
 
                 for (int a_idx = 0; a_idx < 3; a_idx++) {
