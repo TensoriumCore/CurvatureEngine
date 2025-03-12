@@ -121,6 +121,7 @@ void GridTensor::compute_partial_christoffel(Grid &grid_obj, int i, int j, int k
                 } else {
                     localPartialGamma[kk][aa][bb] = 0.0;
                 }
+				/* print_matrix_2D("Partialgamma", localPartialGamma[0]); */
             }
         }
     }
@@ -152,7 +153,8 @@ void Grid::compute_ricci_3D(Grid &grid_obj, int i, int j, int k, double Ricci[3]
             
             for (int m = 0; m < 3; m++) {
                 term1 += partialGamma[m][m][a][b];  
-                term2 += partialGamma[a][m][m][b];  
+                term2 += partialGamma[a][m][m][b];
+				/* printf("term1: %f, term2: %f\n", term1, term2); */
             }
 			#pragma omp simd collapse(2)
             for (int k = 0; k < 3; k++) {
@@ -165,20 +167,8 @@ void Grid::compute_ricci_3D(Grid &grid_obj, int i, int j, int k, double Ricci[3]
             Ricci[a][b] = term1 - term2 - term3 + term4;
         }
     }
-/*     Cell2D &cell = globalGrid[i][j][k]; */
-/* #pragma omp for simd collapse(2) */
-/* 	for (int a = 0; a < 3; a++) { */
-/* 		for (int b = 0; b < 3; b++) { */
-/* 			cell.T[a][b] = (cell.rho + cell.p) * cell.vx * cell.vy + cell.p * cell.gamma[a][b]; */
-/* 			 */
-/* 		} */
-/* 	} */
-/*  */
-/* 	for (int a = 0; a < 3; a++) { */
-/* 		for (int b = 0; b < 3; b++) { */
-/* 			Ricci[a][b] += 8 * M_PI * T[a][b]; */
-/* 		} */
-/* 	} */
-/* 	print_matrix_2D("T", cell.T); */
+	if (i == NX/2 && j == NY/2 && k == NZ/2) {
+		print_matrix_2D("Gamma", Gamma[0]);
+	}
 	/* print_matrix_2D("Ricci", Ricci); */
 }

@@ -29,7 +29,7 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 						compute_time_derivatives(grid_obj, i, j, k);
 						double d_alpha_dt, d_beta_dt[3];
 						compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
-						update_fluid_velocity(i, j, k, dt);
+						/* update_fluid_velocity(i, j, k, dt); */
 						compute_constraints(grid_obj, i, j, k, hamiltonian, momentum);
 						storeStage(globalGrid[i][j][k], 0, d_alpha_dt, d_beta_dt);
 					}
@@ -50,7 +50,7 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 						compute_time_derivatives(grid_obj, i, j, k);
 						double d_alpha_dt, d_beta_dt[3];
 						compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
-						update_fluid_velocity(i, j, k, dt);
+						/* update_fluid_velocity(i, j, k, dt); */
 						storeStage(globalGrid[i][j][k], 1, d_alpha_dt, d_beta_dt);
 					}
 				}
@@ -70,7 +70,7 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 						compute_time_derivatives(grid_obj, i, j, k);
 						double d_alpha_dt, d_beta_dt[3];
 						compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
-						update_fluid_velocity(i, j, k, dt);
+						/* update_fluid_velocity(i, j, k, dt); */
 						compute_constraints(grid_obj, i, j, k, hamiltonian, momentum);
 						storeStage(globalGrid[i][j][k], 2, d_alpha_dt, d_beta_dt);
 					}
@@ -91,7 +91,7 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 						compute_time_derivatives(grid_obj, i, j, k);
 						double d_alpha_dt, d_beta_dt[3];
 						compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
-						update_fluid_velocity(i, j, k, dt);
+						/* update_fluid_velocity(i, j, k, dt); */
 						compute_constraints(grid_obj, i, j, k, hamiltonian, momentum);
 						storeStage(globalGrid[i][j][k], 3, d_alpha_dt, d_beta_dt);
 					}
@@ -114,8 +114,8 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 					export_gauge_slice(grid_obj, NY / 2);
 					export_gamma_slice(grid_obj, NY / 2);
 					gridTensor.export_christoffel_slice(grid_obj, NY / 2);
-					export_fluid_slice(NY / 2);
-					export_energy_momentum_tensor_slice(NY / 2);
+					/* export_fluid_slice(NY / 2); */
+					/* export_energy_momentum_tensor_slice(NY / 2); */
 					export_K_3D(grid_obj);
 				}
 			}

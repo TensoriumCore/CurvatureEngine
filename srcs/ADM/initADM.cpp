@@ -92,18 +92,6 @@ void Grid::initializeData_Minkowski()
 }
 
 
-double effective_potential(double x, double y, double a) {
-    double r = sqrt(x*x + y*y);
-    double cos_theta = y / (r + 1e-10);
-    double sin2_theta = 1.0 - cos_theta * cos_theta;
-    
-    double delta = r*r - 2*r + a*a;
-    double Sigma = r*r + a*a * cos_theta * cos_theta;
-    double omega = 2.0 * r * a / (Sigma * delta);
-    
-    return 1.0 - sqrt(1.0 - 2.0 / r + a*a / (r*r));
-}
-
 
 void Grid::initializeKerrData(Grid &grid_obj) {
     double a = 0.999;   
@@ -124,7 +112,7 @@ void Grid::initializeKerrData(Grid &grid_obj) {
         }
     }
 
-#pragma omp parallel for collapse(3)
+#pragma omp parallel for collapse(3) schedule(dynamic)
     for (int i = 0; i < NX; i++) {
         for (int j = 0; j < NY; j++) {
             for (int k = 0; k < NZ; k++) {
@@ -170,26 +158,26 @@ void Grid::initializeKerrData(Grid &grid_obj) {
 
 				cell.alpha = 1.0 / sqrt(1.0 + 2.0 * H);
 
-                for (int a_idx = 0; a_idx < 3; a_idx++) {
-                    for (int b_idx = 0; b_idx < 3; b_idx++) {
-                        cell.K[a_idx][b_idx] = 0.0;
-                    }
-                }
+				for (int a_idx = 0; a_idx < 3; a_idx++) {
+					for (int b_idx = 0; b_idx < 3; b_idx++) {
+						cell.K[a_idx][b_idx] = 0.0;
+					}
+				}
 
-                double r_cart = sqrt(x * x + y * y + z * z);
-                cell.rho = exp(-r_cart * r_cart / 2.0);
-                cell.p = 0.3 * cell.rho + 0.5 * cell.rho * cell.rho;
-
-                double vr = 2.4;  
-                if (r_cart > 1e-6) {
-                    cell.vx = -vr * y / r_cart;
-                    cell.vy = vr * x / r_cart;
-					cell.vz = vr * z / r_cart * (1.0 - 1.0 / r_cart);
-                } else {
-                    cell.vx = cell.vy = 0.0;
-                }
-                cell.vz = 0.0;
-
+				/*                 double r_cart = sqrt(x * x + y * y + z * z); */
+				/*                 cell.rho = exp(-r_cart * r_cart / 2.0); */
+				/*                 cell.p = 0.3 * cell.rho + 0.5 * cell.rho * cell.rho; */
+				/*  */
+				/*                 double vr = 2.4;   */
+				/*                 if (r_cart > 1e-6) { */
+				/*                     cell.vx = -vr * y / r_cart; */
+				/*                     cell.vy = vr * x / r_cart; */
+				/* cell.vz = vr * z / r_cart * (1.0 - 1.0 / r_cart); */
+				/*                 } else { */
+				/*                     cell.vx = cell.vy = 0.0; */
+				/*                 } */
+				/*                 cell.vz = 0.0; */
+				/*  */
                 double r_horizon = M + sqrt(M * M - a * a);
 				double epsilon = 1e-2;
 
@@ -208,10 +196,20 @@ void Grid::initializeKerrData(Grid &grid_obj) {
                 cell.beta[0] = 2 * H * lx;
                 cell.beta[1] = 2 * H * ly;
                 cell.beta[2] = 2 * H * lz;
-                if (j == NY / 2 && k == NZ / 2) {
+				double norm_beta = sqrt(cell.beta[0] * cell.beta[0] + cell.beta[1] * cell.beta[1] + cell.beta[2] * cell.beta[2]);
+				if (norm_beta > 1.0) {
+					double scale = 1.0 / norm_beta;
+					cell.beta[0] *= scale;
+					cell.beta[1] *= scale;
+					cell.beta[2] *= scale;
+				}
+				if (j == NY / 2 && k == NZ / 2) {
                     printf("gamma[0][0] à (i=%d, j=%d, k=%d) = %e\n", i, j, k, cell.gamma[0][0]);
                 }
-            }
+				if (i == NX / 2 && j == NY / 2 && k == NZ / 2) {
+					printf("H = %e at r = %e (x=%e, y=%e, z=%e)\n", H, r, x, y, z);
+				}
+			}
 		}
 	}
 	GridTensor gridtensor;
@@ -270,11 +268,13 @@ void Grid::initializeKerrData(Grid &grid_obj) {
 		}
 		printf("\n");
 	}
+
+	printf("alpha_1_1_1 = %e\n", globalGrid[1][1][1].alpha);
     double test_radii[] = {0.5, 1.0, 2.0, 5.0, 10.0};
     for (double test_r : test_radii) {
         double H_test = M / test_r;
         double alpha_test = 1.0 / sqrt(1.0 + 2 * H_test);
-        printf("Plan équatorial r = %f : H = %e, alpha = %e\n", test_r, H_test, alpha_test);
+        printf("Eq plane r = %f : H = %e, alpha = %e\n", test_r, H_test, alpha_test);
     }
 	{
         std::ofstream ofs("horizon.csv");
@@ -283,7 +283,6 @@ void Grid::initializeKerrData(Grid &grid_obj) {
             ofs << pt[0] << "," << pt[1] << "," << pt[2] << "\n";
         }
         ofs.close();
-        std::printf("Fichier horizon.csv écrit : %zu points proches de l’horizon.\n", horizonPoints.size());
     }
 }
 

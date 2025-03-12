@@ -130,6 +130,17 @@ void GridTensor::compute_tildeGamma(int i, int j, int k, double tildeGamma[3]) {
  * @return void
  * */
 
+void print_matrix_2D(const char *name, double matrix[3][3]) {
+	printf("%s\n", name);
+	for (int i = 0; i < 3; i++) {
+		printf("[");
+		for (int j = 0; j < 3; j++) {
+			printf("%f ", matrix[i][j]);
+		}
+		printf("]\n");
+	}
+}
+
 void GridTensor::compute_christoffel_3D(Grid &grid_obj, int i, int j, int k, double christof[3][3][3]) {
 	Matrix matrix_obj;
 	double g[3][3];
@@ -144,6 +155,22 @@ void GridTensor::compute_christoffel_3D(Grid &grid_obj, int i, int j, int k, dou
 		}
 	}
 	
+	/* if (i == NX/2 && j == NY/2 && k == NZ/2) { */
+	/* 	print_matrix_2D("gamma", g); */
+	/* 	print_matrix_2D("gamma_inv", invg); */
+	/* } */
+	/* printf("Vérification de g_ij * g^jk :\n"); */
+	/* for (int i = 0; i < 3; i++) { */
+	/* 	for (int k = 0; k < 3; k++) { */
+	/* 		double sum = 0.0; */
+	/* 		for (int j = 0; j < 3; j++) { */
+	/* 			sum += grid_obj.getCell(i, j, k).gamma[i][j] * grid_obj.getCell(i, j, k).gamma_inv[j][k]; */
+	/* 		} */
+	/* 		printf("%f ", sum); */
+	/* 	} */
+	/* 	printf("\n"); */
+	/* } */
+
 	/*
 	 * First we compute the partial derivative of the metric tensor
 	 * Then we use the partial derivative of the metric tensor to compute the Christoffel symbols
@@ -158,8 +185,20 @@ void GridTensor::compute_christoffel_3D(Grid &grid_obj, int i, int j, int k, dou
 			dgamma[0][a][b] = partialX_gamma(grid_obj, i, j, k, a, b);
 			dgamma[1][a][b] = partialY_gamma(grid_obj, i, j, k, a, b);
 			dgamma[2][a][b] = partialZ_gamma(grid_obj, i, j, k, a, b);
+			printf("dx_g[%d][%d] = %e, dy_g[%d][%d] = %e, dz_g[%d][%d] = %e\n", 
+					a, b, partialX_gamma(grid_obj, i, j, k, a, b),
+					a, b, partialY_gamma(grid_obj, i, j, k, a, b),
+					a, b, partialZ_gamma(grid_obj, i, j, k, a, b));
+			printf("Test cohérence : ∂xg[%d][%d] - ∂yg[%d][%d] = %e\n", 
+					a, b, a, b, 
+					partialX_gamma(grid_obj, i, j, k, a, b) - partialY_gamma(grid_obj, i, j, k, a, b));
+
+			double avg_dx = (partialX_gamma(grid_obj, i, j, k, a, b) + partialX_gamma(grid_obj, i+1, j, k, a, b) + partialX_gamma(grid_obj, i-1, j, k, a, b)) / 3.0;
+			double avg_dy = (partialY_gamma(grid_obj, i, j, k, a, b) + partialY_gamma(grid_obj, i, j+1, k, a, b) + partialY_gamma(grid_obj, i, j-1, k, a, b)) / 3.0;
+			printf("Moyenne dx_g[%d][%d] = %e, Moyenne dy_g[%d][%d] = %e\n", a, b, avg_dx, a, b, avg_dy);
 		}
 	}
+
 
 	/*
 	 * The Christoffel symbols are computed using the formula:
@@ -182,6 +221,51 @@ void GridTensor::compute_christoffel_3D(Grid &grid_obj, int i, int j, int k, dou
 			}
 		}
 	}
-
+	/* if (i == NX/2 && j == NY/2 && k == NZ/2) { */
+	/* 	printf("Dérivées de gamma :\n"); */
+	/* 	print_matrix_2D("dgamma/dx", dgamma[0]); */
+	/* 	print_matrix_2D("dgamma/dy", dgamma[1]); */
+	/* 	print_matrix_2D("dgamma/dz", dgamma[2]); */
+	/* } */
+	/* printf("Vérification de la symétrie des dérivées de g_{ij} :\n"); */
+	/* for (int i = 0; i < 3; i++) { */
+	/* 	for (int j = 0; j < 3; j++) { */
+	/* 		printf("∂_x g[%d][%d] - ∂_y g[%d][%d] = %e\n", i, j, i, j,  */
+	/* 				partialX_gamma(grid_obj, NX/2, NY/2, NZ/2, i, j) -  */
+	/* 				partialY_gamma(grid_obj, NX/2, NY/2, NZ/2, i, j)); */
+	/* 	} */
+	/* } */
+	/* if (i == NX/2 && j == NY/2 && k == NZ/2) { */
+	/* 	printf("Christoffel Symboles :\n"); */
+	/* 	for (int a = 0; a < 3; a++) { */
+	/* 		for (int b = 0; b < 3; b++) { */
+	/* 			for (int c = 0; c < 3; c++) { */
+	/* 				printf("Γ[%d][%d][%d] = %e\n", a, b, c, grid_obj.getCell(i, j, k).Christoffel[a][b][c]); */
+	/* 			} */
+	/* 		} */
+	/* 	} */
+	/* } */
+	/* double sum = 0.0; */
+	/* int count = 0; */
+	/* for (int a = 0; a < 3; a++) { */
+	/* 	for (int b = 0; b < 3; b++) { */
+	/* 		for (int c = 0; c < 3; c++) { */
+	/* 			sum += fabs(grid_obj.getCell(i, j, k).Christoffel[a][b][c]); */
+	/* 			count++; */
+	/* 		} */
+	/* 	} */
+	/* } */
+	/* printf("Moyenne absolue des Christoffel: %e\n", sum / count); */
+	/*  */
+	/* double max_diff = 0.0; */
+	/* for (int a = 0; a < 3; a++) { */
+	/* 	for (int b = 0; b < 3; b++) { */
+	/* 		double diff_x = fabs(partialX_gamma(grid_obj, NX/2, NY/2, NZ/2, a, b)); */
+	/* 		double diff_y = fabs(partialY_gamma(grid_obj, NX/2, NY/2, NZ/2, a, b)); */
+	/* 		double diff_z = fabs(partialZ_gamma(grid_obj, NX/2, NY/2, NZ/2, a, b)); */
+	/* 		max_diff = fmax(max_diff, diff_x + diff_y + diff_z); */
+	/* 	} */
+	/* } */
+	/* printf("Max des dérivées de g_{ij}: %e\n", max_diff); */
 }
 

@@ -6,9 +6,9 @@
 #define DX 0.1
 #define DY 0.1
 #define DZ 0.1
-#define NX 64
-#define NY 64
-#define NZ 64
+#define NX 128
+#define NY 128
+#define NZ 128
 #define GHOST 2  
 #define NX_TOTAL (NX + 2*GHOST) 
 #define NY_TOTAL (NY + 2*GHOST)
@@ -64,6 +64,7 @@ class Grid {
 			double T[3][3];
 		};
 
+		double compute_ricci_scalar(Grid &grid, int i, int j, int k);
 		void export_fluid_slice(int j_slice);
 		void initializeKerrData();
 		void export_energy_momentum_tensor_slice(int slice_y);
@@ -91,7 +92,7 @@ class Grid {
 				const Vector3& X,       
 				const Tensor3D& Gamma3, 
 				Matrix3x3& R3);
-
+		double KUpAt(Grid &grid, int ip, int jp, int kp, int j_up, int i_low);
 		void copyInitialState(Cell2D &cell);
 		void updateIntermediateState(Cell2D &cell, double dtCoeff, int stageIndex);
 		void storeStage(Cell2D &cell, int stage, double d_alpha_dt, double d_beta_dt[3]) ;
@@ -108,7 +109,12 @@ class Grid {
 		void initializeData_Minkowski();
 		void initializeKerrData(Grid &grid_obj);
 		void compute_ricci_3D(Grid &grid_obj, int i, int j, int k, double Ricci[3][3]);
+		double partialX_KUp(Grid &grid, int i, int j, int k, int j_up, int i_low);
+		double partialY_KUp(Grid &grid, int i, int j, int k, int j_up, int i_low);
+		double partialZ_KUp(Grid &grid, int i, int j, int k, int j_up, int i_low);
 
+		double computeTraceK(Grid &grid, int i, int j, int k);
+		double christoffelTerm(Grid &grid, int i, int j, int k, int i_comp);
 		void compute_gauge_derivatives(int i, int j, int k, double &d_alpha_dt, double d_beta_dt[3]);
 		
 		Cell2D& getCell(int i, int j, int k) {

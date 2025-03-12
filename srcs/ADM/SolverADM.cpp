@@ -46,7 +46,6 @@ void Grid::compute_time_derivatives(Grid &grid_obj, int i, int j, int k)
 		double sumG = 0.0;
 		for(int m=0; m<3; m++){
 			sumG += Gamma[m][a][b] * partial_m_alpha(i,j,k,m);
-			/* printf("Gamma[%d][%d][%d] = %f\n", m, a, b, Gamma[m][a][b]); */
 		}
 		return secondPart - sumG;
 	};
@@ -156,6 +155,17 @@ void Grid::compute_time_derivatives(Grid &grid_obj, int i, int j, int k)
             cell.dKt[a][b] = dtK[a][b];
         }
     }
+
+	double norm_dtK = 0.0;
+	for (int a = 0; a < 3; a++) {
+		for (int b = 0; b < 3; b++) {
+			norm_dtK += dtK[a][b] * dtK[a][b];
+		}
+	}
+	norm_dtK = sqrt(norm_dtK / 9.0); 
+
+
+	/* printf(" norm(dtK) = %e\n", norm_dtK); */
 }
 
 
