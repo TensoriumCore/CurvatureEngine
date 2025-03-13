@@ -25,7 +25,7 @@ Run the simulation with:
 ./CurvatureEngine <options>
 ```
 Data will be stored in CSV and VTK (for extrinsic curvature tensor components and Geodesics)format for further analysis.
-
+The plots are managed in the scripts (all python and for k_to_vtk you need paraview and pvpython)
 ## Future Work
 - Extend support to Kerr-Newman/dS/adS and other exotic spacetimes.
 - Unit tests and debug mode.
