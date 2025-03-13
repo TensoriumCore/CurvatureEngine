@@ -24,7 +24,7 @@ Run the simulation with:
 ```sh
 ./CurvatureEngine <options>
 ```
-Data will be stored in CSV format for further analysis.
+Data will be stored in CSV and VTK (for extrinsic curvature tensor components and Geodesics)format for further analysis.
 
 ## Future Work
 - Extend support to Kerr-Newman/dS/adS and other exotic spacetimes.
