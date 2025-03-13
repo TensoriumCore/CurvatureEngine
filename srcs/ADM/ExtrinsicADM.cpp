@@ -31,15 +31,12 @@ void GridTensor::compute_extrinsic_curvature(Grid &grid_obj, int i, int j, int k
 	/* 		printf("partialBeta[%d][%d] = %e\n", ii, jj, partialBeta[ii][jj]); */
 	/* 	} */
 	/* } */
-    double Christo[3][3][3];
-    compute_christoffel_3D(grid_obj, i, j, k, Christo);
-
-
+    compute_christoffel_3D(grid_obj, i, j, k, cell.Christoffel);
 	double sumGammaBeta[3][3] = {0.0};
     for (int ii = 0; ii < 3; ii++) {
         for (int jj = 0; jj < 3; jj++) {
             for (int m = 0; m < 3; m++) {
-                sumGammaBeta[ii][jj] += Christo[m][ii][jj] * cell.beta[m];
+                sumGammaBeta[ii][jj] += cell.Christoffel[ii][jj][m] * cell.beta[m];
             }
         }
     }
@@ -50,9 +47,6 @@ void GridTensor::compute_extrinsic_curvature(Grid &grid_obj, int i, int j, int k
             double derivPart = partialBeta[ii][jj] + partialBeta[jj][ii];
             double gammaTerm = 2.0 * sumGammaBeta[ii][jj];
             cell.K[ii][jj] = (1.0 / (2.0 * alphaLoc)) * (derivPart - gammaTerm);
-			if (i == NX/2 && j == NY/2 && k == NZ/2) {
-					printf("K[%d][%d] = %e\n", ii, jj, cell.K[ii][jj]);
-				}
         }
     }
 }

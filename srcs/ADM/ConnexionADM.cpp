@@ -155,22 +155,6 @@ void GridTensor::compute_christoffel_3D(Grid &grid_obj, int i, int j, int k, dou
 		}
 	}
 	
-	/* if (i == NX/2 && j == NY/2 && k == NZ/2) { */
-	/* 	print_matrix_2D("gamma", g); */
-	/* 	print_matrix_2D("gamma_inv", invg); */
-	/* } */
-	/* printf("Vérification de g_ij * g^jk :\n"); */
-	/* for (int i = 0; i < 3; i++) { */
-	/* 	for (int k = 0; k < 3; k++) { */
-	/* 		double sum = 0.0; */
-	/* 		for (int j = 0; j < 3; j++) { */
-	/* 			sum += grid_obj.getCell(i, j, k).gamma[i][j] * grid_obj.getCell(i, j, k).gamma_inv[j][k]; */
-	/* 		} */
-	/* 		printf("%f ", sum); */
-	/* 	} */
-	/* 	printf("\n"); */
-	/* } */
-
 	/*
 	 * First we compute the partial derivative of the metric tensor
 	 * Then we use the partial derivative of the metric tensor to compute the Christoffel symbols
@@ -200,6 +184,7 @@ void GridTensor::compute_christoffel_3D(Grid &grid_obj, int i, int j, int k, dou
 	}
 
 
+
 	/*
 	 * The Christoffel symbols are computed using the formula:
 	 * \Gamma^i_{jk} = 1/2 g^{il} ( \partial_j g_{lk} + \partial_k g_{jl} - \partial_l g_{jk} )
@@ -217,7 +202,6 @@ void GridTensor::compute_christoffel_3D(Grid &grid_obj, int i, int j, int k, dou
 					sum += invg[kk][ll] * tmp;
 				}
 				grid_obj.getCell(i, j, k).Christoffel[kk][aa][bb] = 0.5 * sum;
-				
 			}
 		}
 	}

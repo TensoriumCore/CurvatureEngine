@@ -102,7 +102,7 @@ import numpy as np
 # Paramètres Kerr
 M = 1.0
 a = 0.9
-L = 11.0  # Domaine spatial
+L = 128.0  # Domaine spatial
 theta_res = 100  # Résolution angulaire
 phi_res = 100    # Résolution polaire
 

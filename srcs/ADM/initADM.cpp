@@ -223,8 +223,6 @@ void Grid::initializeKerrData(Grid &grid_obj) {
 		}
 	}
 	GridTensor gridtensor;
-	double Christo[3][3][3];
-
 	for (int i = 1; i < NX - 1; i++) {
 		for (int j = 1; j < NY - 1; j++) {
 			for (int k = 1; k < NZ - 1; k++) {
