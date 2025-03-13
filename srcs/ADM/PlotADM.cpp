@@ -2,7 +2,7 @@
 #include <Geodesics.h>
 
 void export_gamma_slice(Grid &grid_obj, int j) {
-    std::ofstream file("gamma_slice_full.csv");
+    std::ofstream file("Output/gamma_slice_full.csv");
 
     file << "x,z,"
          << "gamma_00,gamma_01,gamma_02,"
@@ -27,7 +27,7 @@ void export_gamma_slice(Grid &grid_obj, int j) {
 }
 
 void export_K_slice(Grid &grid_obj, int j) {
-    std::ofstream file("K_slice.csv");
+    std::ofstream file("Output/K_slice.csv");
 
     file << "x,z,K00,K01,K02,K10,K11,K12,K20,K21,K22\n";
 
@@ -49,7 +49,7 @@ void export_K_slice(Grid &grid_obj, int j) {
 }
 
 void export_K_3D(Grid &grid_obj) {
-    std::ofstream file("K_full.vtk");
+    std::ofstream file("Output/K_full.vtk");
     file << "# vtk DataFile Version 2.0\n";
     file << "K extrinsic curvature\n";
     file << "ASCII\n";
@@ -87,7 +87,7 @@ void export_K_3D(Grid &grid_obj) {
 
 
 void export_alpha_slice(Grid &grid_obj, int j) {
-    std::ofstream file("alpha_slice.csv");
+    std::ofstream file("Output/alpha_slice.csv");
 
     file << "x,z,alpha\n";
     for(int i = 0; i < NX; i++) {
@@ -106,7 +106,7 @@ void export_alpha_slice(Grid &grid_obj, int j) {
 
 
 void export_gauge_slice(Grid &grid_obj, int j) {
-    std::ofstream file("gauge_slice.csv");
+    std::ofstream file("Output/gauge_slice.csv");
     file << "x,z,alpha,beta0,beta1,beta2,d_alpha_dt,d_beta0_dt,d_beta1_dt,d_beta2_dt\n";
 
     for (int i = 0; i < NX; i++) {
@@ -132,7 +132,7 @@ void export_gauge_slice(Grid &grid_obj, int j) {
 
 
 void GridTensor::export_christoffel_slice(Grid &grid_obj, int j) {
-    std::ofstream file("christoffel_slice.csv");
+    std::ofstream file("Output/christoffel_slice.csv");
 	double L = 6.0;
     double x_min = -L, x_max = L;
     double y_min = -L, y_max = L;
@@ -181,7 +181,7 @@ void Grid::export_fluid_slice(int j_slice) {
     double x_min = -L, x_max = L;
     double y_min = -L, y_max = L;
     double z_min = -L, z_max = L;
-    std::ofstream file("fluid_slice.csv");
+    std::ofstream file("Output/fluid_slice.csv");
     if (!file.is_open()) {
         std::cerr << "Erreur : impossible d'ouvrir le fichier fluid_slice.csv" << std::endl;
         return;
@@ -208,7 +208,7 @@ void Grid::export_fluid_slice(int j_slice) {
 
 
 void Grid::export_energy_momentum_tensor_slice(int slice_y) {
-    std::ofstream file("T_energy_momentum.csv");
+    std::ofstream file("Output/T_energy_momentum.csv");
     if (!file.is_open()) {
         std::cerr << "Erreur lors de l'ouverture du fichier !\n";
         return;

@@ -121,3 +121,156 @@ double second_partial_alpha(Grid &grid_obj, int i, int j, int k, int a, int b)
 	return 0.0;
 }
 
+double GridTensor::partialX_gamma(Grid &grid_obj, int i, int j, int k, int a, int b) {
+    if (i >= 2 && i <= NX - 3) {
+        return fourth_order_diff(
+            grid_obj.getCell(i+2, j, k).gamma[a][b],
+            grid_obj.getCell(i+1, j, k).gamma[a][b],
+            grid_obj.getCell(i-1, j, k).gamma[a][b],
+            grid_obj.getCell(i-2, j, k).gamma[a][b],
+            DX 
+        );
+    } else if (i >= 1 && i <= NX - 2) {
+        return second_order_diff(
+            grid_obj.getCell(i+1, j, k).gamma[a][b],
+            grid_obj.getCell(i-1, j, k).gamma[a][b],
+            DX 
+        );
+    } else if (i == 0) {
+        return (grid_obj.getCell(i+1, j, k).gamma[a][b] - 
+                grid_obj.getCell(i, j, k).gamma[a][b]) / DX;
+    } else if (i == NX - 1) {
+        return (grid_obj.getCell(i, j, k).gamma[a][b] - 
+                grid_obj.getCell(i-1, j, k).gamma[a][b]) / DX;
+    }
+    return 0.0;
+}
+
+double GridTensor::partialY_gamma(Grid &grid_obj, int i, int j, int k, int a, int b) {
+    if (j >= 2 && j <= NY - 3) {
+        return fourth_order_diff(
+            grid_obj.getCell(i, j+2, k).gamma[a][b],
+            grid_obj.getCell(i, j+1, k).gamma[a][b],
+            grid_obj.getCell(i, j-1, k).gamma[a][b],
+            grid_obj.getCell(i, j-2, k).gamma[a][b],
+            DY
+        );
+    } else if (j >= 1 && j <= NY - 2) {
+        return second_order_diff(
+            grid_obj.getCell(i, j+1, k).gamma[a][b],
+            grid_obj.getCell(i, j-1, k).gamma[a][b],
+            DY
+        );
+    } else if (j == 0) {
+        return (grid_obj.getCell(i, j+1, k).gamma[a][b] - 
+                grid_obj.getCell(i, j, k).gamma[a][b]) / DY;
+    } else if (j == NY - 1) {
+        return (grid_obj.getCell(i, j, k).gamma[a][b] - 
+                grid_obj.getCell(i, j-1, k).gamma[a][b]) / DY;
+    }
+    return 0.0;
+}
+
+double GridTensor::partialZ_gamma(Grid &grid_obj, int i, int j, int k, int a, int b) {
+    if (k >= 2 && k <= NZ - 3) {
+        return fourth_order_diff(
+            grid_obj.getCell(i, j, k+2).gamma[a][b],
+            grid_obj.getCell(i, j, k+1).gamma[a][b],
+            grid_obj.getCell(i, j, k-1).gamma[a][b],
+            grid_obj.getCell(i, j, k-2).gamma[a][b],
+            DZ
+        );
+    } else if (k >= 1 && k <= NZ - 2) {
+        return second_order_diff(
+            grid_obj.getCell(i, j, k+1).gamma[a][b],
+            grid_obj.getCell(i, j, k-1).gamma[a][b],
+            DZ
+        );
+    } else if (k == 0) {
+        return (grid_obj.getCell(i, j, k+1).gamma[a][b] - 
+                grid_obj.getCell(i, j, k).gamma[a][b]) / DZ;
+    } else if (k == NZ - 1) {
+        return (grid_obj.getCell(i, j, k).gamma[a][b] - 
+                grid_obj.getCell(i, j, k-1).gamma[a][b]) / DZ;
+    }
+    return 0.0;
+}
+
+double GridTensor::partialX_Kij(Grid &grid_obj, int i, int j, int k, int a, int b)
+{
+	if (i >= 2 && i <= NX - 3) {
+		return fourth_order_diff(
+			grid_obj.getCell(i+2, j, k).K[a][b],
+			grid_obj.getCell(i+1, j, k).K[a][b],
+			grid_obj.getCell(i-1, j, k).K[a][b],
+			grid_obj.getCell(i-2, j, k).K[a][b],
+			DX 
+		);
+	} else if (i >= 1 && i <= NX - 2) {
+		return second_order_diff(
+			grid_obj.getCell(i+1, j, k).K[a][b],
+			grid_obj.getCell(i-1, j, k).K[a][b],
+			DX 
+		);
+	} else if (i == 0) {
+		return (grid_obj.getCell(i+1, j, k).K[a][b] - 
+				grid_obj.getCell(i, j, k).K[a][b]) / DX;
+	} else if (i == NX - 1) {
+		return (grid_obj.getCell(i, j, k).K[a][b] - 
+				grid_obj.getCell(i-1, j, k).K[a][b]) / DX;
+	}
+	return 0.0;
+}
+
+double GridTensor::partialY_Kij(Grid &grid_obj, int i, int j, int k, int a, int b)
+{
+	if (j >= 2 && j <= NY - 3) {
+		return fourth_order_diff(
+			grid_obj.getCell(i, j+2, k).K[a][b],
+			grid_obj.getCell(i, j+1, k).K[a][b],
+			grid_obj.getCell(i, j-1, k).K[a][b],
+			grid_obj.getCell(i, j-2, k).K[a][b],
+			DY
+		);
+	} else if (j >= 1 && j <= NY - 2) {
+		return second_order_diff(
+			grid_obj.getCell(i, j+1, k).K[a][b],
+			grid_obj.getCell(i, j-1, k).K[a][b],
+			DY
+		);
+	} else if (j == 0) {
+		return (grid_obj.getCell(i, j+1, k).K[a][b] - 
+				grid_obj.getCell(i, j, k).K[a][b]) / DY;
+	} else if (j == NY - 1) {
+		return (grid_obj.getCell(i, j, k).K[a][b] - 
+				grid_obj.getCell(i, j-1, k).K[a][b]) / DY;
+	}
+	return 0.0;
+}
+
+
+double GridTensor::partialZ_Kij(Grid &grid_obj, int i, int j, int k, int a, int b)
+{
+	if (k >= 2 && k <= NZ - 3) {
+		return fourth_order_diff(
+			grid_obj.getCell(i, j, k+2).K[a][b],
+			grid_obj.getCell(i, j, k+1).K[a][b],
+			grid_obj.getCell(i, j, k-1).K[a][b],
+			grid_obj.getCell(i, j, k-2).K[a][b],
+			DZ
+		);
+	} else if (k >= 1 && k <= NZ - 2) {
+		return second_order_diff(
+			grid_obj.getCell(i, j, k+1).K[a][b],
+			grid_obj.getCell(i, j, k-1).K[a][b],
+			DZ
+		);
+	} else if (k == 0) {
+		return (grid_obj.getCell(i, j, k+1).K[a][b] - 
+				grid_obj.getCell(i, j, k).K[a][b]) / DZ;
+	} else if (k == NZ - 1) {
+		return (grid_obj.getCell(i, j, k).K[a][b] - 
+				grid_obj.getCell(i, j, k-1).K[a][b]) / DZ;
+	}
+	return 0.0;
+}

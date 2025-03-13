@@ -205,25 +205,25 @@ void Grid::compute_constraints(Grid &grid_obj, int i, int j, int k, double &hami
 	for(int i_comp=0; i_comp<3; i_comp++){
 		momentum[i_comp] = compute_momentum_i(grid_obj, i, j, k, i_comp);
 	}
-	double constraint_H = 0.0;
-	for (int i = 1; i < NX - 1; i++) {
-		for (int j = 1; j < NY - 1; j++) {
-			for (int k = 1; k < NZ - 1; k++) {
-				double R = compute_ricci_scalar(grid_obj, i, j, k); 
+	/* double constraint_H = 0.0; */
+	/* for (int i = 1; i < NX - 1; i++) { */
+	/* 	for (int j = 1; j < NY - 1; j++) { */
+	/* 		for (int k = 1; k < NZ - 1; k++) { */
+	/* 			double R = compute_ricci_scalar(grid_obj, i, j, k);  */
 				/* if (fabs(R) > 1e-5) { */
 				/* 	printf("Ricci scalar = %f\n", R); */
 				/* } */
-				double Ktrace = 0.0;
-				for (int a = 0; a < 3; a++) {
-					for (int b = 0; b < 3; b++) {
-						Ktrace += gammaInv[a][b] * globalGrid[i][j][k].K[a][b];
-					}
-				}
-				double term = R - Ktrace * Ktrace;
-				constraint_H += term * term;
-			}
-		}
-	}
-	constraint_H = sqrt(constraint_H / (NX * NY * NZ));
-	printf("Violation de la contrainte hamiltonienne = %f\n", constraint_H);
+	/* 			double Ktrace = 0.0; */
+	/* 			for (int a = 0; a < 3; a++) { */
+	/* 				for (int b = 0; b < 3; b++) { */
+	/* 					Ktrace += gammaInv[a][b] * globalGrid[i][j][k].K[a][b]; */
+	/* 				} */
+	/* 			} */
+	/* 			double term = R - Ktrace * Ktrace; */
+	/* 			constraint_H += term * term; */
+	/* 		} */
+	/* 	} */
+	/* } */
+	/* constraint_H = sqrt(constraint_H / (NX * NY * NZ)); */
+	/* printf("Violation de la contrainte hamiltonienne = %f\n", constraint_H); */
 }

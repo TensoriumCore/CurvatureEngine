@@ -185,17 +185,17 @@ void GridTensor::compute_christoffel_3D(Grid &grid_obj, int i, int j, int k, dou
 			dgamma[0][a][b] = partialX_gamma(grid_obj, i, j, k, a, b);
 			dgamma[1][a][b] = partialY_gamma(grid_obj, i, j, k, a, b);
 			dgamma[2][a][b] = partialZ_gamma(grid_obj, i, j, k, a, b);
-			printf("dx_g[%d][%d] = %e, dy_g[%d][%d] = %e, dz_g[%d][%d] = %e\n", 
-					a, b, partialX_gamma(grid_obj, i, j, k, a, b),
-					a, b, partialY_gamma(grid_obj, i, j, k, a, b),
-					a, b, partialZ_gamma(grid_obj, i, j, k, a, b));
-			printf("Test cohérence : ∂xg[%d][%d] - ∂yg[%d][%d] = %e\n", 
-					a, b, a, b, 
-					partialX_gamma(grid_obj, i, j, k, a, b) - partialY_gamma(grid_obj, i, j, k, a, b));
-
-			double avg_dx = (partialX_gamma(grid_obj, i, j, k, a, b) + partialX_gamma(grid_obj, i+1, j, k, a, b) + partialX_gamma(grid_obj, i-1, j, k, a, b)) / 3.0;
-			double avg_dy = (partialY_gamma(grid_obj, i, j, k, a, b) + partialY_gamma(grid_obj, i, j+1, k, a, b) + partialY_gamma(grid_obj, i, j-1, k, a, b)) / 3.0;
-			printf("Moyenne dx_g[%d][%d] = %e, Moyenne dy_g[%d][%d] = %e\n", a, b, avg_dx, a, b, avg_dy);
+			/* printf("dx_g[%d][%d] = %e, dy_g[%d][%d] = %e, dz_g[%d][%d] = %e\n",  */
+			/* 		a, b, partialX_gamma(grid_obj, i, j, k, a, b), */
+			/* 		a, b, partialY_gamma(grid_obj, i, j, k, a, b), */
+			/* 		a, b, partialZ_gamma(grid_obj, i, j, k, a, b)); */
+			/* printf("Test cohérence : ∂xg[%d][%d] - ∂yg[%d][%d] = %e\n",  */
+			/* 		a, b, a, b,  */
+			/* 		partialX_gamma(grid_obj, i, j, k, a, b) - partialY_gamma(grid_obj, i, j, k, a, b)); */
+			/*  */
+			/* double avg_dx = (partialX_gamma(grid_obj, i, j, k, a, b) + partialX_gamma(grid_obj, i+1, j, k, a, b) + partialX_gamma(grid_obj, i-1, j, k, a, b)) / 3.0; */
+			/* double avg_dy = (partialY_gamma(grid_obj, i, j, k, a, b) + partialY_gamma(grid_obj, i, j+1, k, a, b) + partialY_gamma(grid_obj, i, j-1, k, a, b)) / 3.0; */
+			/* printf("Moyenne dx_g[%d][%d] = %e, Moyenne dy_g[%d][%d] = %e\n", a, b, avg_dx, a, b, avg_dy); */
 		}
 	}
 

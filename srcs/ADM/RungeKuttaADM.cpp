@@ -116,6 +116,7 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 					gridTensor.export_christoffel_slice(grid_obj, NY / 2);
 					/* export_fluid_slice(NY / 2); */
 					/* export_energy_momentum_tensor_slice(NY / 2); */
+					export_alpha_slice(grid_obj, NY / 2);
 					export_K_3D(grid_obj);
 				}
 			}
