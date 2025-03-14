@@ -94,7 +94,7 @@ void Grid::initializeData_Minkowski()
 
 void Grid::initializeKerrData(Grid &grid_obj) {
     double a = 0.9;   
-    double L = 11.0;
+    double L = 9.0;
     double x_min = -L, x_max = L;
     double y_min = -L, y_max = L;
     double z_min = -L, z_max = L;

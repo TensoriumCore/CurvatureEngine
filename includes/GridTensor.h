@@ -2,21 +2,6 @@
 
 #include <Geodesics.h>
 
-
-template <class T>
-inline double fourth_order_diff(const T &plus2, const T &plus1, 
-                         const T &minus1, const T &minus2, double dx)
-{
-    return (-plus2 + 8.0*plus1 - 8.0*minus1 + minus2) / (12.0*dx);
-}
-
-
-template <class T>
-inline double second_order_diff(const T &plus1, const T &minus1, double dx)
-{
-    return (plus1 - minus1)/(2.0*dx);
-}
-
 class GridTensor {
 	public:
 		GridTensor() = default;

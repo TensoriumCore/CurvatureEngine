@@ -1,7 +1,55 @@
 #include <Geodesics.h>
 
 
+void apply_asymptotic_boundary_conditions(Grid &grid_obj, double R_max) {
+    for (int i = 0; i < NX; i++) {
+        for (int j = 0; j < NY; j++) {
+            for (int k = 0; k < NZ; k++) {
+                double x = i * DX ;
+                double y = j * DY ;
+                double z = k * DZ ;
+                double r = sqrt(x * x + y * y + z * z);
+
+                if (r > R_max) {
+                    grid_obj.getCell(i, j, k).alpha = 1.0;
+                    grid_obj.getCell(i, j, k).beta[0] = 0.0;
+                    grid_obj.getCell(i, j, k).beta[1] = 0.0;
+                    grid_obj.getCell(i, j, k).beta[2] = 0.0;
+
+                    for (int a = 0; a < 3; a++) {
+                        for (int b = 0; b < 3; b++) {
+                            grid_obj.getCell(i, j, k).K[a][b] = 0.0;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/* void apply_horizon_excision(Grid &grid_obj, double r_H) { */
+/*     for (int i = 0; i < NX; i++) { */
+/*         for (int j = 0; j < NY; j++) { */
+/*             for (int k = 0; k < NZ; k++) { */
+/*                 double x = i * DX; */
+/*                 double y = j * DY; */
+/*                 double z = k * DZ; */
+/*                 double r = sqrt(x * x + y * y + z * z); */
+/*  */
+/*                 if (r < r_H) { */
+/*                     grid_obj.getCell(i, j, k).alpha = 1.0 / sqrt(1.0 + 2.0 * grid_obj.getCell(i, j, k).H); */
+/*                     grid_obj.getCell(i, j, k).beta[0] = grid_obj.getCell(i, j, k).l_x; */
+/*                     grid_obj.getCell(i, j, k).beta[1] = grid_obj.getCell(i, j, k).l_y; */
+/*                     grid_obj.getCell(i, j, k).beta[2] = grid_obj.getCell(i, j, k).l_z; */
+/*                 } */
+/*             } */
+/*         } */
+/*     } */
+/* } */
+/*  */
+
 void apply_boundary_conditions(Grid &grid_obj) {
+	apply_asymptotic_boundary_conditions(grid_obj, 128.0);
     for (int j = 0; j < NY; j++) {
         for (int k = 0; k < NZ; k++) {
             grid_obj.getCell(0, j, k) = grid_obj.getCell(1, j, k);

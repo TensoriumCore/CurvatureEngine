@@ -57,14 +57,14 @@ void export_K_3D(Grid &grid_obj) {
 
     file << "DIMENSIONS " << NX << " " << NY << " " << NZ << "\n";
 
-    double x0 = -256.0;
-    double y0 = -256.0;
-    double z0 = -256.0;
+    double x0 = -9.0;
+    double y0 = -9.0;
+    double z0 = -9.0;
     file << "ORIGIN " << x0 << " " << y0 << " " << z0 << "\n";
 
-    double dx = 512.0 / (NX - 1);
-    double dy = 512.0 / (NY - 1);
-    double dz = 512.0 / (NZ - 1);
+    double dx = 18.0 / (NX - 1);
+    double dy = 18.0 / (NY - 1);
+    double dz = 18.0 / (NZ - 1);
     file << "SPACING " << dx << " " << dy << " " << dz << "\n";
 
     file << "POINT_DATA " << (NX * NY * NZ) << "\n";

@@ -1,5 +1,19 @@
 #include "Spectral.h"
 
+/*
+ * This function compute Partial derivative using spectral methods
+ * its based on the Chebyshev spectral methods and the barycentric interpolation
+ *
+ * This is not currently working because the Grid is not currently ready to use theses differentiation methods
+ * @param i , j , k the index of the cell
+ * @param a , b the index of the tensor
+ * @return the partial derivative of the tensor
+ *
+ * THIS IS JUST AN EXAMPLE OF HOW TO USE THE SPECTRAL METHODS
+ *
+ * */
+
+
 std::vector<double> computeBaryWeights(const std::vector<double>& nodes) {
     int N = nodes.size();
     std::vector<double> weights(N, 1.0);
@@ -13,6 +27,15 @@ std::vector<double> computeBaryWeights(const std::vector<double>& nodes) {
     }
     return weights;
 }
+
+/*
+ * This function compute the barycentric interpolation of a function
+ * @param x the point to interpolate
+ * @param nodes the nodes of the function
+ * @param fVals the values of the function at the nodes
+ * @param weights the weights of the barycentric interpolation
+ * @return the interpolated value
+ * */
 
 double barycentricInterpolate(double x, 
                                 const std::vector<double>& nodes, 

@@ -172,6 +172,11 @@ double GridTensor::partialY_gamma(Grid &grid_obj, int i, int j, int k, int a, in
     return 0.0;
 }
 
+/*
+ * The partial derivative of the metric tensor with respect to z
+ * it uses a 2nd, fourth or sixth order finite difference scheme
+ * */
+
 double GridTensor::partialZ_gamma(Grid &grid_obj, int i, int j, int k, int a, int b) {
     if (k >= 2 && k <= NZ - 3) {
         return fourth_order_diff(
@@ -197,8 +202,22 @@ double GridTensor::partialZ_gamma(Grid &grid_obj, int i, int j, int k, int a, in
     return 0.0;
 }
 
+/*
+ * these functions are used to compute the partial derivative of the extrinsic curvature tensor
+ * and the Christoffel symbols, beta and alpha gauges conditions
+ * All of these use a 2nd, fourth or sixth order finite difference scheme
+ * it's working nicely but it's not optimized and probably not the best way to do it
+ *
+ * I'm currently working on a new method based on the spectral differentiation using Chebyshev polynomials
+ * and the barycentric interpolation or the Lagrange interpolation (not sure yet)
+ * */
+
+
 double GridTensor::partialX_Kij(Grid &grid_obj, int i, int j, int k, int a, int b)
 {
+	/*
+	 * The fourth order difference is used when the point is not near the boundary
+	 * */
 	if (i >= 2 && i <= NX - 3) {
 		return fourth_order_diff(
 			grid_obj.getCell(i+2, j, k).K[a][b],
@@ -207,12 +226,22 @@ double GridTensor::partialX_Kij(Grid &grid_obj, int i, int j, int k, int a, int 
 			grid_obj.getCell(i-2, j, k).K[a][b],
 			DX 
 		);
+
+	/*
+	 * The second order difference is used when the point is near the boundary
+	 *  This is done to avoid the out of bounds error (boundary conditions are not implemented yet 
+	 *  exept for a Cell copy at the boundary, not really useful for now but it's a start)
+	 * */
+
 	} else if (i >= 1 && i <= NX - 2) {
 		return second_order_diff(
 			grid_obj.getCell(i+1, j, k).K[a][b],
 			grid_obj.getCell(i-1, j, k).K[a][b],
 			DX 
 		);
+		/*
+		 * The first order difference is used when the point is at the boundary
+		 * */
 	} else if (i == 0) {
 		return (grid_obj.getCell(i+1, j, k).K[a][b] - 
 				grid_obj.getCell(i, j, k).K[a][b]) / DX;

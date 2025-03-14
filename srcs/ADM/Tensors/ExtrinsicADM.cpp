@@ -1,14 +1,14 @@
 #include <Geodesics.h>
 
-double compute_partial_beta(Grid &grid_obj, int i, int j, int k, int beta_index, int dim, double dx) {
-    double beta_p = grid_obj.getCell(i + (dim == 0), j + (dim == 1), k + (dim == 2)).beta[beta_index];
-    double beta_m = grid_obj.getCell(i - (dim == 0), j - (dim == 1), k - (dim == 2)).beta[beta_index];
-
-    if (beta_p == 0.0 || beta_m == 0.0) 
-        return (grid_obj.getCell(i, j, k).beta[beta_index] - beta_m) / dx;
-    return (beta_p - beta_m) / (2.0 * dx);
-}
-
+/* double compute_partial_beta(Grid &grid_obj, int i, int j, int k, int beta_index, int dim, double dx) { */
+/*     double beta_p = grid_obj.getCell(i + (dim == 0), j + (dim == 1), k + (dim == 2)).beta[beta_index]; */
+/*     double beta_m = grid_obj.getCell(i - (dim == 0), j - (dim == 1), k - (dim == 2)).beta[beta_index]; */
+/*  */
+/*     if (beta_p == 0.0 || beta_m == 0.0)  */
+/*         return (grid_obj.getCell(i, j, k).beta[beta_index] - beta_m) / dx; */
+/*     return (beta_p - beta_m) / (2.0 * dx); */
+/* } */
+/*  */
 void GridTensor::compute_extrinsic_curvature(Grid &grid_obj, int i, int j, int k, \
 											 double dx, double dy, double dz) {
 	Grid::Cell2D &cell = grid_obj.getCell(i, j, k);

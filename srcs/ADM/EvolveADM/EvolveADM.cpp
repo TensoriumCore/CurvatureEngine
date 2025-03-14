@@ -1,6 +1,7 @@
 #include <Geodesics.h>
 #include <cassert>
 
+
 void Grid::compute_time_derivatives(Grid &grid_obj, int i, int j, int k)
 {
     Cell2D &cell = globalGrid[i][j][k];
@@ -31,12 +32,17 @@ void Grid::compute_time_derivatives(Grid &grid_obj, int i, int j, int k)
     double Ricci[3][3];
     compute_ricci_3D(grid_obj, i, j, k, Ricci);
 
-    auto partial_m_alpha = [&](int ii, int jj, int kk, int m){
-        if(m==0) return partialX_alpha(grid_obj, ii, jj, kk);
-        if(m==1) return partialY_alpha(grid_obj, ii, jj, kk);
-        if(m==2) return partialZ_alpha(grid_obj, ii, jj, kk);
-        return 0.0;
-    };
+    
+	auto partial_m_alpha = [&](int ii, int jj, int kk, int m) {
+		auto alpha_accessor = [](const Grid::Cell2D &cell) {
+			return cell.alpha;
+		};
+
+		if (m == 0) return partialX(grid_obj, ii, jj, kk, alpha_accessor);
+		if (m == 1) return partialY(grid_obj, ii, jj, kk, alpha_accessor);
+		if (m == 2) return partialZ(grid_obj, ii, jj, kk, alpha_accessor);
+		return 0.0;
+	};
 
     auto D_iD_j_alpha = [&](int a, int b) {
         double secondPart = second_partial_alpha(grid_obj, i, j, k, a, b);
@@ -47,26 +53,24 @@ void Grid::compute_time_derivatives(Grid &grid_obj, int i, int j, int k)
         return (secondPart - sumG);
     };
 
-    auto partial_m_K = [&](int a, int b, int dim){
-        if(dim==0) return (gridTensor.partialX_Kij(grid_obj, i, j, k, a, b));
-        if(dim==1) return (gridTensor.partialY_Kij(grid_obj, i, j, k, a, b));
-        if(dim==2) return (gridTensor.partialZ_Kij(grid_obj, i, j, k, a, b));
-        return 0.0;
-    };
+	auto partial_m_K = [&](int a, int b, int dim) {
+		return partial_m(grid_obj, i, j, k, dim, [&](const Grid::Cell2D &cell) {
+				return cell.K[a][b];
+				});
+	};
 
-    auto partial_m_gamma = [&](int a, int b, int dim){
-        if(dim==0) return (gridTensor.partialX_gamma(grid_obj, i, j, k, a, b));
-        if(dim==1) return (gridTensor.partialY_gamma(grid_obj, i, j, k, a, b));
-        if(dim==2) return (gridTensor.partialZ_gamma(grid_obj, i, j, k, a, b));
-        return 0.0;
-    };
+	auto partial_m_gamma = [&](int a, int b, int dim) {
+		return partial_m(grid_obj, i, j, k, dim, [&](const Grid::Cell2D &cell) {
+				return cell.gamma[a][b];
+				});
+	};
+    
+	auto partial_j_beta_comp = [&](int dimSpace, int compBeta) {
+		return partial_m(grid_obj, i, j, k, dimSpace, [&](const Grid::Cell2D &cell) {
+				return cell.beta[compBeta];
+				});
+	};
 
-    auto partial_j_beta_comp = [&](int dimSpace, int compBeta){
-        if(dimSpace == 0) return (partialX_betacomp(grid_obj, i, j, k, compBeta));
-        if(dimSpace == 1) return (partialY_betacomp(grid_obj, i, j, k, compBeta));
-        if(dimSpace == 2) return (partialZ_betacomp(grid_obj, i, j, k, compBeta));
-        return 0.0;
-    };
     double partialBeta[3][3];
     for(int jDim = 0; jDim < 3; jDim++){
         for(int iComp = 0; iComp < 3; iComp++){
