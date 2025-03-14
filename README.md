@@ -26,19 +26,23 @@ Run the simulation with:
 ```
 Data will be stored in CSV and VTK (for extrinsic curvature tensor components and Geodesics)format for further analysis.
 The plots are managed in the scripts (all python and for k_to_vtk you need paraview and pvpython)
-## Future Work
+## Future Work (TODO)
 - Extend support to Kerr-Newman/dS/adS and other exotic spacetimes.
 - Unit tests and debug mode.
 - Class template to integrate your own problems
-- Optimize for parallel computation.
 - Optimize for parallel computation and SIMDs.
-- Implement relativistic fluid dynamics.
+- Implement relativistic fluid dynamics template.
 - Implement GPU acceleration for faster computations.
 - Improve numerical stability of high-curvature geodesics and ADM compute (AMR grid and CFL conditions).
-- Implement spectral methods.
-- Implement BSSN formalism (modern and currently wip)
-- Add a FFT solver for spectral differentiation (from scratch or with FFTW, maybe on GPU) for vaccum solutions or GRMHD
-- Chebyshev polynomial imp for non-uniform grids (rotating spacetime)
+- Implement spectral methods (see spectral methods TODO section).
+- Implement BSSN formalism (modern and currently wip).
+- Add a FFT solver for spectral differentiation (from scratch or with FFTW, maybe on GPU) for vaccum solutions or GRMHD.
+- Chebyshev polynomial imp for non-uniform grids (rotating spacetime).
+- Add analyticals approximations and tests.
+- Improve stability (Spectral BSSN/z4c) and reduce constraints violations.
+- Klein-Gordon Scalar fields template.
+- Gravitational waves and binary black holes template.
+
 ## Contributions
 Contributions are welcome! If you wish to contribute, feel free to open a pull request or issue.
 
