@@ -155,6 +155,9 @@ void GridTensor::compute_christoffel_3D(Grid &grid_obj, int i, int j, int k, dou
 		}
 	}
 	
+	/* printf("dxgamma tcheby = %f\n", partialX_gammaSpec(grid_obj, i, j, k, 0, 0)); */
+	/* printf("dxgamma = %f\n", partialX_gamma(grid_obj, i, j, k, 0, 0)); */
+
 	/*
 	 * First we compute the partial derivative of the metric tensor
 	 * Then we use the partial derivative of the metric tensor to compute the Christoffel symbols

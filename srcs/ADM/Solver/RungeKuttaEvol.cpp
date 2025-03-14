@@ -92,4 +92,3 @@ void Grid::combineStages(Cell2D &cell, double dt) {
                           cell.betaStage[3][m]);
     }
 }
-

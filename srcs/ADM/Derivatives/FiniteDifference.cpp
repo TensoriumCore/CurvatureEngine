@@ -1,5 +1,5 @@
 #include <Geodesics.h>
-
+#include "Spectral.h"
 /*
  * Theses functions are used to compute the partial derivative of the metric tensor
  * and the Christoffel symbols, beta and alpha gauges conditions
@@ -120,6 +120,7 @@ double second_partial_alpha(Grid &grid_obj, int i, int j, int k, int a, int b)
 
 	return 0.0;
 }
+
 
 double GridTensor::partialX_gamma(Grid &grid_obj, int i, int j, int k, int a, int b) {
     if (i >= 2 && i <= NX - 3) {
@@ -274,3 +275,6 @@ double GridTensor::partialZ_Kij(Grid &grid_obj, int i, int j, int k, int a, int 
 	}
 	return 0.0;
 }
+
+
+

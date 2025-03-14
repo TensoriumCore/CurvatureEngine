@@ -1,8 +1,6 @@
 #include <Geodesics.h>
 #include <cassert>
 
-
-
 void Grid::compute_time_derivatives(Grid &grid_obj, int i, int j, int k)
 {
     Cell2D &cell = globalGrid[i][j][k];

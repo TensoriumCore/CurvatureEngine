@@ -36,5 +36,6 @@ class GridTensor {
 		double partialX_Kij(Grid &grid_obj, int i, int j, int k, int a, int b);
 		double partialY_Kij(Grid &grid_obj, int i, int j, int k, int a, int b);
 		double partialZ_Kij(Grid &grid_obj, int i, int j, int k, int a, int b);
+		double partialX_gammaSpec(Grid &grid_obj, int i, int j, int k, int a, int b);
 };
 
