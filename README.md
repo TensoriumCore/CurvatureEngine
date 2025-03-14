@@ -36,9 +36,9 @@ The plots are managed in the scripts (all python and for k_to_vtk you need parav
 - Improve numerical stability of high-curvature geodesics and ADM compute (AMR grid and CFL conditions).
 - Implement spectral methods (see spectral methods TODO section).
 - Implement BSSN formalism (modern and currently wip).
-- Add a FFT solver for spectral differentiation (from scratch or with FFTW, maybe on GPU) for vaccum solutions or GRMHD.
+- Add a FFT solver for spectral differentiation (from scratch or with FFTW, maybe on GPU) for vacuum solutions or GRMHD.
 - Chebyshev polynomial imp for non-uniform grids (rotating spacetime).
-- Add analyticals approximations and tests.
+- Add analytical approximations and tests.
 - Improve stability (Spectral BSSN/z4c) and reduce constraints violations.
 - Klein-Gordon Scalar fields template.
 - Gravitational waves and binary black holes template.
