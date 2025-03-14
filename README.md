@@ -36,8 +36,8 @@ The plots are managed in the scripts (all python and for k_to_vtk you need parav
 - Implement GPU acceleration for faster computations.
 - Improve numerical stability of high-curvature geodesics and ADM compute (AMR grid and CFL conditions).
 - Implement spectral methods.
-- Implement BSSN formalism (modern).
-
+- Implement BSSN formalism (modern and currently wip)
+- Add a FFT solver for spectral differentiation (from scratch or with FFTW, maybe on GPU)
 ## Contributions
 Contributions are welcome! If you wish to contribute, feel free to open a pull request or issue.
 
