@@ -6,9 +6,9 @@
 #define DX 0.1
 #define DY 0.1
 #define DZ 0.1
-#define NX 64
-#define NY 64
-#define NZ 64
+#define NX 175
+#define NY 175
+#define NZ 175
 #define GHOST 2  
 #define NX_TOTAL (NX + 2*GHOST) 
 #define NY_TOTAL (NY + 2*GHOST)
