@@ -11,8 +11,8 @@ void export_gamma_slice(Grid &grid_obj, int j) {
     
     for (int i = 0; i < NX; i++) {
         for (int k = 0; k < NZ; k++) {
-            double x = -256.0 + i * (512.0 / (NX - 1));
-            double z = -256.0 + k * (512.0 / (NZ - 1));
+            double x = -9.0 + i * (18.0 / (NX - 1));
+            double z = -9.0 + k * (18.0 / (NZ - 1));
 
             Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
 
@@ -33,8 +33,8 @@ void export_K_slice(Grid &grid_obj, int j) {
 
     for (int i = 0; i < NX; i++) {
         for (int k = 0; k < NZ; k++) {
-            double x = -256.0 + i * (512.0 / (NX - 1));
-            double z = -256.0 + k * (512.0 / (NZ - 1));
+            double x = -9.0 + i * (18.0 / (NX - 1));
+            double z = -9.0 + k * (18.0 / (NZ - 1));
 
             Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
 
@@ -46,6 +46,14 @@ void export_K_slice(Grid &grid_obj, int j) {
     }
     file.close();
     std::cout << "K slice saved to K_slice.csv\n";
+}
+
+double r_e_plus(double theta, double a) {
+    return M + sqrt(M * M - a * a * cos(theta) * cos(theta));  // Ergosphère externe
+}
+
+double r_e_minus(double theta, double a) {
+    return M - sqrt(M * M - a * a * cos(theta) * cos(theta));  // Ergosphère interne
 }
 
 void export_K_3D(Grid &grid_obj) {
@@ -60,6 +68,7 @@ void export_K_3D(Grid &grid_obj) {
     double x0 = -9.0;
     double y0 = -9.0;
     double z0 = -9.0;
+    double a = 0.998;  
     file << "ORIGIN " << x0 << " " << y0 << " " << z0 << "\n";
 
     double dx = 18.0 / (NX - 1);
@@ -81,8 +90,54 @@ void export_K_3D(Grid &grid_obj) {
         }
     }
 
+    double r_H = M + sqrt(M * M - a * a); 
+
+    file << "SCALARS Horizon float 1\n";
+    file << "LOOKUP_TABLE default\n";
+    for (int i = 0; i < NX; i++) {
+        for (int j = 0; j < NY; j++) {
+            for (int k = 0; k < NZ; k++) {
+                double x = x0 + i * dx;
+                double y = y0 + j * dy;
+                double z = z0 + k * dz;
+                double r = sqrt(x * x + y * y + z * z);
+                file << (r < r_H ? 1.0 : 0.0) << "\n";
+            }
+        }
+    }
+
+    file << "SCALARS Ergosphere_plus float 1\n";
+    file << "LOOKUP_TABLE default\n";
+    for (int i = 0; i < NX; i++) {
+        for (int j = 0; j < NY; j++) {
+            for (int k = 0; k < NZ; k++) {
+                double x = x0 + i * dx;
+                double y = y0 + j * dy;
+                double z = z0 + k * dz;
+                double theta = atan2(sqrt(x * x + y * y), z);
+                double r = sqrt(x * x + y * y + z * z);
+                file << (r < r_e_plus(theta, a) ? 1.0 : 0.0) << "\n";
+            }
+        }
+    }
+
+    file << "SCALARS Ergosphere_minus float 1\n";
+    file << "LOOKUP_TABLE default\n";
+    for (int i = 0; i < NX; i++) {
+        for (int j = 0; j < NY; j++) {
+            for (int k = 0; k < NZ; k++) {
+                double x = x0 + i * dx;
+                double y = y0 + j * dy;
+                double z = z0 + k * dz;
+                double theta = atan2(sqrt(x * x + y * y), z);
+                double r = sqrt(x * x + y * y + z * z);
+                file << (r < r_e_minus(theta, a) ? 1.0 : 0.0) << "\n";
+            }
+        }
+    }
+
     file.close();
-    std::cout << "K 3D VTK file saved to K_full.vtk\n";
+    std::cout << "K 3D VTK file with Kerr surfaces saved to K_full.vtk\n";
 }
 
 
@@ -92,8 +147,8 @@ void export_alpha_slice(Grid &grid_obj, int j) {
     file << "x,z,alpha\n";
     for(int i = 0; i < NX; i++) {
         for(int k = 0; k < NZ; k++) {
-            double x = -256.0 + i * (512.0 / (NX - 1));
-            double z = -256.0 + k * (512.0 / (NZ - 1));
+            double x = -9.0 + i * (18.0 / (NX - 1));
+            double z = -9.0 + k * (18.0 / (NZ - 1));
 
             Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
             file << x << "," << z << "," << cell.alpha << "\n";
@@ -111,8 +166,8 @@ void export_gauge_slice(Grid &grid_obj, int j) {
 
     for (int i = 0; i < NX; i++) {
         for (int k = 0; k < NZ; k++) {
-            double x = -256.0 + i * (512.0 / (NX - 1));
-            double z = -256.0 + k * (512.0 / (NZ - 1));
+            double x = -9.0 + i * (18.0 / (NX - 1));
+            double z = -9.0 + k * (18.0 / (NZ - 1));
 
             Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
             double d_alpha_dt, d_beta_dt[3];

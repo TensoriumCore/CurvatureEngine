@@ -1,42 +1,14 @@
 from paraview.simple import *
 
+# Charger le fichier VTK
 reader = LegacyVTKReader(FileNames=["K_full.vtk"])
 Show(reader)
 rv = GetActiveViewOrCreate("RenderView")
 ResetCamera()
 
 # -------------------------------------------------------------
-# K_0 : slice + color map + opacité
+# K_8 : Isosurfaces + Color map + Transparence
 # -------------------------------------------------------------
-# -------------------------------------------------------------
-# K_4 : volume + opacité "peak" + autre palette
-# -------------------------------------------------------------
-calcK4 = Calculator(Input=reader)
-calcK4.ResultArrayName = "K_4_diagonal"
-calcK4.Function = "K_4"
-Show(calcK4, rv)
-calcK4Rep = GetDisplayProperties(calcK4, view=rv)
-calcK4Rep.Representation = "Volume"
-ColorBy(calcK4Rep, ('POINTS', 'K_4_diagonal'))
-calcK4Rep.SetScalarBarVisibility(rv, True)
-
-k4_ctf = GetColorTransferFunction('K_4_diagonal')
-k4_ctf.ApplyPreset('RdBu', True)
-k4_ctf.RescaleTransferFunction(-0.2, 0.2)
-
-k4_otf = GetOpacityTransferFunction('K_4_diagonal')
-k4_otf.Points = [
-    -0.2, 0.0, 0.5, 0.0,
-    -0.05, 0.7, 0.5, 0.0,
-    0.0, 1.0, 0.5, 0.0,
-    0.05, 0.7, 0.5, 0.0,
-    0.2, 0.0, 0.5, 0.0
-]
-
-# -------------------------------------------------------------
-# K_8 : isosurfaces + color map
-# -------------------------------------------------------------
-
 calcK8 = Calculator(Input=reader)
 calcK8.ResultArrayName = "K_8_diagonal"
 calcK8.Function = "K_8"
@@ -47,10 +19,7 @@ contK8.Isosurfaces = [-0.1, 0.0, 0.1, 0.2]
 
 Show(contK8, rv)
 contK8Rep = GetDisplayProperties(contK8, view=rv)
-
-# Passer en Wireframe pour afficher uniquement les lignes du maillage
-contK8Rep.Representation = "Wireframe"
-
+contK8Rep.Representation = "Wireframe"  # Mode grille
 ColorBy(contK8Rep, ('POINTS', 'K_8_diagonal'))
 contK8Rep.SetScalarBarVisibility(rv, True)
 contK8Rep.Opacity = 0.3
@@ -59,103 +28,54 @@ k8_ctf = GetColorTransferFunction('K_8_diagonal')
 k8_ctf.ApplyPreset('Cool to Warm (Extended)', True)  # Palette plus moderne
 k8_ctf.RescaleTransferFunction(-0.2, 0.2)
 
-print("Nombre de cellules de l'isosurface : ", contK8.GetDataInformation().GetNumberOfCells())
-
-#
 # -------------------------------------------------------------
-# Trace : K_0 + K_4 + K_8 en volume
+# Affichage de l'Horizon des Événements
 # -------------------------------------------------------------
-# calcTrace = Calculator(Input=reader)
-# calcTrace.ResultArrayName = "K_trace"
-# calcTrace.Function = "K_0 + K_4 + K_8"
-# Show(calcTrace, rv)
-# traceRep = GetDisplayProperties(calcTrace, view=rv)
-# traceRep.Representation = "Volume"
-# ColorBy(traceRep, ('POINTS', 'K_trace'))
-# traceRep.SetScalarBarVisibility(rv, True)
-# traceRep.Opacity = 0.3
-#
-# trace_ctf = GetColorTransferFunction('K_trace')
-# trace_ctf.ApplyPreset('Viridis (matplotlib)', True)
-# trace_ctf.RescaleTransferFunction(-0.3, 0.3)
-#
-# trace_otf = GetOpacityTransferFunction('K_trace')
-# trace_otf.Points = [
-#     -0.3, 0.0, 0.5, 0.0,
-#     -0.1, 0.6, 0.5, 0.0,
-#     0.0, 1.0, 0.5, 0.0,
-#     0.1, 0.6, 0.5, 0.0,
-#     0.3, 0.0, 0.5, 0.0
-# ]
+contHorizon = Contour(Input=reader)
+contHorizon.ContourBy = ['POINTS', 'Horizon']
+contHorizon.Isosurfaces = [1.0]  # Wireframe de l'horizon
 
-import numpy as np
-M = 1.0
-a = 0.9
-L = 9.0  
-theta_res = 100 
-phi_res = 100
+Show(contHorizon, rv)
+contHorizonRep = GetDisplayProperties(contHorizon, view=rv)
+contHorizonRep.Representation = "Wireframe"
+contHorizonRep.Opacity = 0.5  # Transparence partielle
+contHorizonRep.DiffuseColor = [0.0, 1.0, 0.0]  # Rouge pour l'horizon
+ColorBy(contHorizonRep, ('POINTS', 'Horizon'))
+contHorizonRep.SetScalarBarVisibility(rv, False)
 
-r_H = M + np.sqrt(M**2 - a**2) 
-r_e_plus = lambda theta: M + np.sqrt(M**2 - a**2 * np.cos(theta)**2)  
-r_e_minus = lambda theta: M - np.sqrt(M**2 - a**2 * np.cos(theta)**2) 
+# -------------------------------------------------------------
+# Affichage de l'Ergosphère Externe
+# -------------------------------------------------------------
+contErgosphereExt = Contour(Input=reader)
+contErgosphereExt.ContourBy = ['POINTS', 'Ergosphere_plus']
+contErgosphereExt.Isosurfaces = [1.0]  # Wireframe de l'ergosphère externe
 
-def generate_surface_points(radius_func, color, opacity=0.3):
-    theta_vals = np.linspace(0, np.pi, theta_res)
-    phi_vals = np.linspace(0, 2*np.pi, phi_res)
-    points = []
+Show(contErgosphereExt, rv)
+contErgosphereExtRep = GetDisplayProperties(contErgosphereExt, view=rv)
+contErgosphereExtRep.Representation = "Wireframe"
+contErgosphereExtRep.Opacity = 0.3  # Transparence élevée
+contErgosphereExtRep.DiffuseColor = [0.0, 0.0, 1.0]  # Bleu pour l'ergosphère externe
+ColorBy(contErgosphereExtRep, ('POINTS', 'Ergosphere_plus'))
+contErgosphereExtRep.SetScalarBarVisibility(rv, False)
 
-    for theta in theta_vals:
-        for phi in phi_vals:
-            r = radius_func(theta)
-            x = r * np.sin(theta) * np.cos(phi)
-            y = r * np.sin(theta) * np.sin(phi)
-            z = r * np.cos(theta)
-            points.append([x, y, z])
+# -------------------------------------------------------------
+# Affichage de l'Ergosphère Interne
+# -------------------------------------------------------------
+contErgosphereInt = Contour(Input=reader)
+contErgosphereInt.ContourBy = ['POINTS', 'Ergosphere_minus']
+contErgosphereInt.Isosurfaces = [1.0]  # Wireframe de l'ergosphère interne
 
-    surface_source = ProgrammableSource()
-    surface_source.OutputDataSetType = 'vtkPolyData'
-    surface_source.Script = f"""
-import vtk
-import numpy as np
+Show(contErgosphereInt, rv)
+contErgosphereIntRep = GetDisplayProperties(contErgosphereInt, view=rv)
+contErgosphereIntRep.Representation = "Wireframe"
+contErgosphereIntRep.Opacity = 0.4  # Transparence intermédiaire
+contErgosphereIntRep.DiffuseColor = [0.0, 1.0, 0.0]  # Vert pour l'ergosphère interne
+ColorBy(contErgosphereIntRep, ('POINTS', 'Ergosphere_minus'))
+contErgosphereIntRep.SetScalarBarVisibility(rv, False)
 
-points = {points}
-num_points = len(points)
-
-polydata = self.GetOutput()
-pts = vtk.vtkPoints()
-cells = vtk.vtkCellArray()
-
-for p in points:
-    pts.InsertNextPoint(p)
-
-for i in range(num_points - 1):
-    line = vtk.vtkLine()
-    line.GetPointIds().SetId(0, i)
-    line.GetPointIds().SetId(1, i + 1)
-    cells.InsertNextCell(line)
-
-polydata.SetPoints(pts)
-polydata.SetLines(cells)
-"""
-
-    Show(surface_source, rv)
-    surfaceRep = GetDisplayProperties(surface_source, view=rv)
-    surfaceRep.Representation = "Wireframe"
-    surfaceRep.AmbientColor = color 
-    surfaceRep.Opacity = opacity 
-    return surface_source
-
-# ----------------------------------------
-# Affichage des différentes surfaces de Kerr
-# ----------------------------------------
-
-horizon_source = generate_surface_points(lambda theta: r_H, [1, 0, 0], 0.5)
-
-ergosphere_plus_source = generate_surface_points(r_e_plus, [0, 0, 1], 0.3)
-
-ergosphere_minus_source = generate_surface_points(r_e_minus, [0, 1, 0], 0.3)
-ResetCamera()
-Render()
+# -------------------------------------------------------------
+# Rendu final et Interactivité
+# -------------------------------------------------------------
 ResetCamera()
 Render()
 Interact()
