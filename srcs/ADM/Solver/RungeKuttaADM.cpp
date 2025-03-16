@@ -9,6 +9,11 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 	double dt = dtinitital;
 	double hamiltonian, momentum[3];
 
+	std::ofstream outfile("constraints_output.txt");
+	if (!outfile.is_open()) {
+		std::cerr << "Erreur lors de l'ouverture du fichier de sortie.\n";
+		return ;
+	}
 	for (int step = 0; step < nSteps; step++) {
 		dt = computeCFL_dt(CFL);
 		apply_boundary_conditions(grid_obj);
@@ -31,6 +36,17 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 						compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
 						/* update_fluid_velocity(i, j, k, dt); */
 						compute_constraints(grid_obj, i, j, k, hamiltonian, momentum);
+						std::stringstream ss;
+						ss << "Pour la cellule (" << i << ", " << j << ", " << k << "):\n"
+							<< "Hamiltonian = " << hamiltonian << "\n"
+							<< "Momentum = [ " << momentum[0] << ", "
+							<< momentum[1] << ", " << momentum[2] << " ]\n";
+
+#pragma omp critical
+						{
+							outfile << ss.str();
+						}
+            
 						storeStage(globalGrid[i][j][k], 0, d_alpha_dt, d_beta_dt);
 					}
 				}

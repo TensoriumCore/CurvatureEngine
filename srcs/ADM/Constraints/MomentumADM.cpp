@@ -153,6 +153,7 @@ double compute_momentum_i(Grid &grid, int i, int j, int k, int i_comp)
 double Grid::compute_ricci_scalar(Grid &grid, int i, int j, int k)
 {
 	Cell2D &cell = grid.globalGrid[i][j][k];
+	Log log_obj;
 	double gammaInv[3][3];
 	double gTmp[3][3];
 	for(int a=0; a<3; a++){
@@ -167,6 +168,8 @@ double Grid::compute_ricci_scalar(Grid &grid, int i, int j, int k)
 	for(int a=0; a<3; a++){
 		for(int b=0; b<3; b++){
 			R += gammaInv[a][b]*Ricci[a][b];
+			/* log_obj.log_value("Ricci", Ricci[a][b], i, j, k, a, b); */
+
 		}
 	}
 	return R;
@@ -192,27 +195,32 @@ void Grid::compute_constraints(Grid &grid_obj, int i, int j, int k, double &hami
     }
     double Ktrace = 0.0;
     double KK = 0.0;
-    for (int a = 0; a < 3; a++) {
-        for (int b = 0; b < 3; b++) {
-            Ktrace += gammaInv[a][b] * cell.K[a][b];
-            for (int c = 0; c < 3; c++) {
-                KK += cell.K[a][b] * gammaInv[a][c] * cell.K[c][b];
-            }
-        }
-    }
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			for (int k = 0; k < 3; k++) {
+				for (int l = 0; l < 3; l++) {
+					KK += cell.K[i][j] * gammaInv[i][k] * gammaInv[j][l] * cell.K[k][l];
+				}
+			}
+		}
+	}
+
+	Log log_obj;
     hamiltonian = R + Ktrace * Ktrace - KK;
     hamiltonianGrid[i][j][k] = hamiltonian;
+	/* log_obj.log_value("hamiltonian", hamiltonian, i, j, k); */
 	for(int i_comp=0; i_comp<3; i_comp++){
 		momentum[i_comp] = compute_momentum_i(grid_obj, i, j, k, i_comp);
+		/* log_obj.log_value("momentum", momentum[i_comp], i, j, k, i_comp); */
 	}
 	/* double constraint_H = 0.0; */
 	/* for (int i = 1; i < NX - 1; i++) { */
 	/* 	for (int j = 1; j < NY - 1; j++) { */
 	/* 		for (int k = 1; k < NZ - 1; k++) { */
 	/* 			double R = compute_ricci_scalar(grid_obj, i, j, k);  */
-				/* if (fabs(R) > 1e-5) { */
-				/* 	printf("Ricci scalar = %f\n", R); */
-				/* } */
+	/* 			if (fabs(R) > 1e-5) { */
+	/* 				printf("Ricci scalar = %f\n", R); */
+	/* 			} */
 	/* 			double Ktrace = 0.0; */
 	/* 			for (int a = 0; a < 3; a++) { */
 	/* 				for (int b = 0; b < 3; b++) { */
