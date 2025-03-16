@@ -38,7 +38,7 @@ axes[3].set_title("Composante $v_y$ du fluide")
 fig.colorbar(im4, ax=axes[3])
 
 vz_grid = vz.reshape(NX, NZ)
-im5 = axes[4].imshow(vz_grid, extent=[x.min(), x.max(), z.min(), z.max()], origin="lower", cmap="hot")
+im5 = axes[4].imshow(vz_grid, extent=[x.min(), x.max(), z.min(), z.max()], origin="lower", cmap="viridis")
 axes[4].set_title("Composante $v_z$ du fluide")
 fig.colorbar(im5, ax=axes[4])
 

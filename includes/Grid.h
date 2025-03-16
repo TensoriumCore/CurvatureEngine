@@ -6,9 +6,9 @@
 #define DX 0.1
 #define DY 0.1
 #define DZ 0.1
-#define NX 64
-#define NY 64
-#define NZ 64
+#define NX 128
+#define NY 128
+#define NZ 128
 #define GHOST 2  
 #define NX_TOTAL (NX + 2*GHOST) 
 #define NY_TOTAL (NY + 2*GHOST)
@@ -61,9 +61,10 @@ class Grid {
 			double KStage[4][3][3];   
 			double vx, vy, vz;
 			double p;
-			double T[3][3];
+			double T[4][4];
 		};
-
+		void compute_energy_momentum_evolution(int i, int j, int k, double dt);
+		void update_energy_momentum_tensor(int i, int j, int k);
 		double compute_ricci_scalar(Grid &grid, int i, int j, int k);
 		void export_fluid_slice(int j_slice);
 		void initializeKerrData();

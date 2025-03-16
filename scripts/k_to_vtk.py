@@ -15,7 +15,7 @@ contK8.Isosurfaces = [-0.1, 0.0, 0.1, 0.2]
 
 Show(contK8, rv)
 contK8Rep = GetDisplayProperties(contK8, view=rv)
-contK8Rep.Representation = "Wireframe" 
+contK8Rep.Representation = "Surface" 
 ColorBy(contK8Rep, ('POINTS', 'K_8_diagonal'))
 contK8Rep.SetScalarBarVisibility(rv, True)
 contK8Rep.Opacity = 0.1

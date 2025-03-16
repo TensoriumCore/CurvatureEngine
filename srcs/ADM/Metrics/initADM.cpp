@@ -168,7 +168,7 @@ void Grid::initializeKerrData(Grid &grid_obj) {
 					cell.rho = exp(-r_cart * r_cart / 2.0);
 					cell.p = 0.3 * cell.rho + 0.5 * cell.rho * cell.rho;
 
-					double vr = 2.4;  
+					double vr = 2.0;  
 					if (r_cart > 1e-6) {
 						cell.vx = -vr * y / r_cart;
 						cell.vy = vr * x / r_cart;
@@ -185,11 +185,11 @@ void Grid::initializeKerrData(Grid &grid_obj) {
 					if (diff < epsilon) {
 						horizonPoints.push_back({x, y, z});
 					}
-					if (r < r_horizon) {
-						cell.vx = cell.vy = cell.vz = 0.0;
-						cell.rho = 0.0;
-						cell.p = 0.0;
-					}
+					/* if (r < r_horizon) { */
+					/* 	cell.vx = cell.vy = cell.vz = 0.0; */
+					/* 	cell.rho = 0.0; */
+					/* 	cell.p = 0.0; */
+					/* } */
 
 				#endif
 

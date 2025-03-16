@@ -152,12 +152,25 @@ sort_idx = np.argsort(i_vals)
 i_vals = i_vals[sort_idx]
 H_vals_line = H_vals_line[sort_idx]
 
-# Tracé
+
+# Définir la taille de la fenêtre de lissage (ajustable)
+window_size = 5  # Nombre de points utilisés pour la moyenne mobile
+
+# Calcul de la moyenne mobile (avec gestion des bords)
+H_vals_smooth = np.convolve(H_vals_line, np.ones(window_size)/window_size, mode='valid')
+
+# Ajuster les indices pour correspondre à la taille réduite après convolution
+i_vals_smooth = i_vals[:len(H_vals_smooth)]
+
+# Tracé avec la courbe moyenne
 plt.figure(figsize=(7, 4))
-plt.plot(i_vals, H_vals_line, 'o-', label=f'Hamiltonian (j={j_fixed}, k={k_fixed})')
+plt.plot(i_vals, H_vals_line, 'o-', label=f'Hamiltonian (j={j_fixed}, k={k_fixed})', alpha=0.6)
+plt.plot(i_vals_smooth, H_vals_smooth, '-', linewidth=2, color='red', label="Moyenne mobile")
 plt.xlabel("i")
 plt.ylabel("Hamiltonian")
-plt.title(f"Coupe 1D de l'Hamiltonian (j={j_fixed}, k={k_fixed})")
+plt.title(f"Coupe 1D de l'Hamiltonian avec moyenne mobile (j={j_fixed}, k={k_fixed})")
+plt.legend()
 plt.grid(True)
 plt.tight_layout()
 plt.show()
+

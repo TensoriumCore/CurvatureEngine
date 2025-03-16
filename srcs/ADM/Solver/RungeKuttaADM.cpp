@@ -9,11 +9,6 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 	double dt = dtinitital;
 	double hamiltonian, momentum[3];
 
-	std::ofstream outfile("constraints_output.txt");
-	if (!outfile.is_open()) {
-		std::cerr << "Erreur lors de l'ouverture du fichier de sortie.\n";
-		return ;
-	}
 	for (int step = 0; step < nSteps; step++) {
 		dt = computeCFL_dt(CFL);
 		apply_boundary_conditions(grid_obj);
@@ -34,23 +29,12 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 						compute_time_derivatives(grid_obj, i, j, k);
 						double d_alpha_dt, d_beta_dt[3];
 						compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
-						/* update_fluid_velocity(i, j, k, dt); */
 						compute_constraints(grid_obj, i, j, k, hamiltonian, momentum);
-						std::stringstream ss;
-						ss << "Pour la cellule (" << i << ", " << j << ", " << k << "):\n"
-							<< "Hamiltonian = " << hamiltonian << "\n"
-							<< "Momentum = [ " << momentum[0] << ", "
-							<< momentum[1] << ", " << momentum[2] << " ]\n";
-
-#pragma omp critical
-						{
-							outfile << ss.str();
-						}
-            
 						storeStage(globalGrid[i][j][k], 0, d_alpha_dt, d_beta_dt);
 					}
 				}
 			}
+
 #pragma omp for collapse(3) schedule(dynamic)
 			for (int i = 1; i < NX - 1; i++) {
 				for (int j = 1; j < NY - 1; j++) {
@@ -66,7 +50,6 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 						compute_time_derivatives(grid_obj, i, j, k);
 						double d_alpha_dt, d_beta_dt[3];
 						compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
-						/* update_fluid_velocity(i, j, k, dt); */
 						storeStage(globalGrid[i][j][k], 1, d_alpha_dt, d_beta_dt);
 					}
 				}
@@ -86,7 +69,6 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 						compute_time_derivatives(grid_obj, i, j, k);
 						double d_alpha_dt, d_beta_dt[3];
 						compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
-						/* update_fluid_velocity(i, j, k, dt); */
 						compute_constraints(grid_obj, i, j, k, hamiltonian, momentum);
 						storeStage(globalGrid[i][j][k], 2, d_alpha_dt, d_beta_dt);
 					}
@@ -107,7 +89,6 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 						compute_time_derivatives(grid_obj, i, j, k);
 						double d_alpha_dt, d_beta_dt[3];
 						compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
-						/* update_fluid_velocity(i, j, k, dt); */
 						compute_constraints(grid_obj, i, j, k, hamiltonian, momentum);
 						storeStage(globalGrid[i][j][k], 3, d_alpha_dt, d_beta_dt);
 					}
@@ -130,8 +111,6 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 					export_gauge_slice(grid_obj, NY / 2);
 					export_gamma_slice(grid_obj, NY / 2);
 					gridTensor.export_christoffel_slice(grid_obj, NY / 2);
-					/* export_fluid_slice(NY / 2); */
-					/* export_energy_momentum_tensor_slice(NY / 2); */
 					export_alpha_slice(grid_obj, NY / 2);
 					export_K_3D(grid_obj);
 				}

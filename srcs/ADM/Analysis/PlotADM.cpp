@@ -135,6 +135,28 @@ void export_K_3D(Grid &grid_obj) {
             }
         }
     }
+	
+	file << "SCALARS fluid float 1\n";
+	file << "LOOKUP_TABLE default\n";
+	for (int i = 0; i < NX; i++) {
+		for (int j = 0; j < NY; j++) {
+			for (int k = 0; k < NZ; k++) {
+				Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
+				file << (cell.rho > 1e-10 ? 1.0 : 0.0) << "\n";
+			}
+		}
+	}
+	
+	file << "SCALARS fluid_velocity float 1\n";
+	file << "LOOKUP_TABLE default\n";
+	for (int i = 0; i < NX; i++) {
+		for (int j = 0; j < NY; j++) {
+			for (int k = 0; k < NZ; k++) {
+				Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
+				file << sqrt(cell.vx * cell.vx + cell.vy * cell.vy + cell.vz * cell.vz) << "\n";
+			}
+		}
+	}
 
     file.close();
     std::cout << "K 3D VTK file with Kerr surfaces saved to K_full.vtk\n";
@@ -262,6 +284,7 @@ void Grid::export_fluid_slice(int j_slice) {
 }
 
 
+
 void Grid::export_energy_momentum_tensor_slice(int slice_y) {
     std::ofstream file("Output/T_energy_momentum.csv");
     if (!file.is_open()) {
@@ -269,16 +292,21 @@ void Grid::export_energy_momentum_tensor_slice(int slice_y) {
         return;
     }
 
-    // En-têtes du CSV
-    file << "x,z,T_00,T_01,T_02,T_10,T_11,T_12,T_20,T_21,T_22\n";
+    file << "x,z";
+    for (int a = 0; a < 4; a++) {
+        for (int b = 0; b < 4; b++) {
+            file << ",T_" << a << b;
+        }
+    }
+    file << "\n";
 
     for (int i = 0; i < NX; i++) {
         for (int k = 0; k < NZ; k++) {
             Cell2D &cell = globalGrid[i][slice_y][k];
 
             file << i << "," << k;
-            for (int a = 0; a < 3; a++) {
-                for (int b = 0; b < 3; b++) {
+            for (int a = 0; a < 4; a++) {
+                for (int b = 0; b < 4; b++) {
                     file << "," << cell.T[a][b];
                 }
             }
@@ -287,5 +315,6 @@ void Grid::export_energy_momentum_tensor_slice(int slice_y) {
     }
 
     file.close();
-    std::cout << "Exportation de T_{ab} terminée : T_energy_momentum.csv\n";
+    std::cout << "Exportation de T^{mu nu} terminée : T_energy_momentum.csv\n";
 }
+
