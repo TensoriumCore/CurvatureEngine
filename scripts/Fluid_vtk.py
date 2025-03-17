@@ -6,7 +6,6 @@ Show(reader)
 rv = GetActiveViewOrCreate("RenderView")
 ResetCamera()
 
-# ========================== Horizon du trou noir ========================== #
 contHorizon = Contour(Input=reader)
 contHorizon.ContourBy = ['POINTS', 'Horizon']
 contHorizon.Isosurfaces = [1.0] 
