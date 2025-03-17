@@ -18,7 +18,7 @@ contHorizonRep.DiffuseColor = [0.0, 1.0, 0.0]  # Vert
 ColorBy(contHorizonRep, ('POINTS', 'Horizon'))
 contHorizonRep.SetScalarBarVisibility(rv, False)
 
-# ========================== Ergosphère ========================== #
+
 contErgosphere = Contour(Input=reader)
 contErgosphere.ContourBy = ['POINTS', 'Ergosphere_plus']
 contErgosphere.Isosurfaces = [1.0] 
@@ -31,7 +31,7 @@ contErgosphereRep.DiffuseColor = [1.0, 0.0, 1.0]  # Magenta
 ColorBy(contErgosphereRep, ('POINTS', 'Ergosphere_plus'))
 contErgosphereRep.SetScalarBarVisibility(rv, False)
 
-# ========================== Filtrage du disque d'accrétion (fluide) ========================== #
+
 thresholdFluid = Threshold(Input=reader)
 thresholdFluid.Scalars = ['POINTS', 'fluid']
 thresholdFluid.ThresholdMethod = "Between"  # Sélectionne un intervalle
@@ -50,7 +50,7 @@ contFluidRep.DiffuseColor = [0.0, 0.0, 1.0]  # Bleu
 ColorBy(contFluidRep, ('POINTS', 'fluid'))
 contFluidRep.SetScalarBarVisibility(rv, False)
 
-# ========================== Coupe équatoriale du disque ========================== #
+
 sliceDisk = Slice(Input=thresholdFluid)
 sliceDisk.SliceType = "Plane"
 sliceDisk.SliceType.Origin = [0.0, 0.0, 0.0]  # Centre de la coupe
@@ -64,7 +64,7 @@ sliceDiskRep.DiffuseColor = [0.5, 0.5, 1.0]  # Bleu clair
 ColorBy(sliceDiskRep, ('POINTS', 'fluid'))
 sliceDiskRep.SetScalarBarVisibility(rv, True)
 
-# ========================== Vitesse du fluide ========================== #
+
 contFluidVelocity = Contour(Input=reader)
 contFluidVelocity.ContourBy = ['POINTS', 'fluid_velocity']
 contFluidVelocity.Isosurfaces = [0.1, 0.3, 0.5]
@@ -77,7 +77,7 @@ contFluidVelocityRep.DiffuseColor = [1.0, 0.5, 0.0]  # Orange
 ColorBy(contFluidVelocityRep, ('POINTS', 'fluid_velocity'))
 contFluidVelocityRep.SetScalarBarVisibility(rv, True)
 
-# ========================== Affichage final ========================== #
+
 ResetCamera()
 Render()
 Interact()
