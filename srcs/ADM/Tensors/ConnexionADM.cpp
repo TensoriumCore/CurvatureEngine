@@ -142,106 +142,92 @@ void print_matrix_2D(const char *name, double matrix[3][3]) {
 }
 
 void GridTensor::compute_christoffel_3D(Grid &grid_obj, int i, int j, int k, double christof[3][3][3]) {
-	Matrix matrix_obj;
-	double g[3][3];
-	double invg[3][3]; 
+    Matrix matrix_obj;
+    double g[3][3];
+    double invg[3][3]; 
+
+    for (int a = 0; a < 3; a++) {
+        for (int b = 0; b < 3; b++) {
+            invg[a][b] = grid_obj.getCell(i, j, k).gamma_inv[a][b];
+            g[a][b] = grid_obj.getCell(i, j, k).gamma[a][b];
+            for (int c = 0; c < 3; c++) {
+                christof[a][b][c] = grid_obj.getCell(i, j, k).Christoffel[a][b][c];
+            }
+        }
+    }
+
+    double dgamma[3][3][3];
+
+
 	for (int a = 0; a < 3; a++) {
 		for (int b = 0; b < 3; b++) {
-			invg[a][b] = grid_obj.getCell(i, j, k).gamma_inv[a][b];
-			g[a][b] = grid_obj.getCell(i, j, k).gamma[a][b];
-			for (int c = 0; c < 3; c++) {
-				christof[a][b][c] = grid_obj.getCell(i, j, k).Christoffel[a][b][c];
-			}
+			dgamma[0][a][b] = (i >= 2 && i <= NX - 3) ? fourth_order_diff(
+					grid_obj.getCell(i+2, j, k).gamma[a][b],
+					grid_obj.getCell(i+1, j, k).gamma[a][b],
+					grid_obj.getCell(i-1, j, k).gamma[a][b],
+					grid_obj.getCell(i-2, j, k).gamma[a][b],
+					DX
+					) : (i >= 1 && i <= NX - 2) ? second_order_diff(
+						grid_obj.getCell(i+1, j, k).gamma[a][b],
+						grid_obj.getCell(i-1, j, k).gamma[a][b],
+						DX
+						) : (i == 0) ? 
+					(grid_obj.getCell(i+1, j, k).gamma[a][b] - grid_obj.getCell(i, j, k).gamma[a][b]) / DX
+					: 
+					(grid_obj.getCell(i, j, k).gamma[a][b] - grid_obj.getCell(i-1, j, k).gamma[a][b]) / DX;
+
+			dgamma[1][a][b] = (j >= 2 && j <= NY - 3) ? fourth_order_diff(
+					grid_obj.getCell(i, j+2, k).gamma[a][b],
+					grid_obj.getCell(i, j+1, k).gamma[a][b],
+					grid_obj.getCell(i, j-1, k).gamma[a][b],
+					grid_obj.getCell(i, j-2, k).gamma[a][b],
+					DY
+					) : (j >= 1 && j <= NY - 2) ? second_order_diff(
+						grid_obj.getCell(i, j+1, k).gamma[a][b],
+						grid_obj.getCell(i, j-1, k).gamma[a][b],
+						DY
+						) : (j == 0) ? 
+					(grid_obj.getCell(i, j+1, k).gamma[a][b] - grid_obj.getCell(i, j, k).gamma[a][b]) / DY
+					: 
+					(grid_obj.getCell(i, j, k).gamma[a][b] - grid_obj.getCell(i, j-1, k).gamma[a][b]) / DY;
+
+			dgamma[2][a][b] = (k >= 2 && k <= NZ - 3) ? fourth_order_diff(
+					grid_obj.getCell(i, j, k+2).gamma[a][b],
+					grid_obj.getCell(i, j, k+1).gamma[a][b],
+					grid_obj.getCell(i, j, k-1).gamma[a][b],
+					grid_obj.getCell(i, j, k-2).gamma[a][b],
+					DZ
+					) : (k >= 1 && k <= NZ - 2) ? second_order_diff(
+						grid_obj.getCell(i, j, k+1).gamma[a][b],
+						grid_obj.getCell(i, j, k-1).gamma[a][b],
+						DZ
+						) : (k == 0) ? 
+					(grid_obj.getCell(i, j, k+1).gamma[a][b] - grid_obj.getCell(i, j, k).gamma[a][b]) / DZ
+					: 
+					(grid_obj.getCell(i, j, k).gamma[a][b] - grid_obj.getCell(i, j, k-1).gamma[a][b]) / DZ;
+
+			/* if (i == NX/2 && j == NY/2 && k == NZ/2) { */
+			/* 	printf("∆X = %e, ∆Y = %e, ∆Z = %e\n", DX, DY, DZ); */
+			/* 	printf("∂_x g[0][0] = %e\n", dgamma[0][0][0]); */
+			/* 	printf("∂_y g[0][0] = %e\n", dgamma[1][0][0]); */
+			/* 	printf("∂_z g[0][0] = %e\n", dgamma[2][0][0]); */
+			/* } */
+
+
 		}
 	}
-	
-	/* printf("dxgamma tcheby = %f\n", partialX_gammaSpec(grid_obj, i, j, k, 0, 0)); */
-	/* printf("dxgamma = %f\n", partialX_gamma(grid_obj, i, j, k, 0, 0)); */
 
-	/*
-	 * First we compute the partial derivative of the metric tensor
-	 * Then we use the partial derivative of the metric tensor to compute the Christoffel symbols
-	 * The Christoffel symbols are computed using the formula:
-	 * \Gamma^i_{jk} = 1/2 g^{il} ( \partial_j g_{lk} + \partial_k g_{jl} - \partial_l g_{jk} )
-	 * where g_{ij} is the metric tensor and g^{ij} is the inverse of the metric tensor
-	 * */
 
-	double dgamma[3][3][3];
-	for (int a = 0; a < 3; a++) {
-		for (int b = 0; b < 3; b++) {
-			for (int m = 0; m < 3; m++) {  // m = 0 (X), m = 1 (Y), m = 2 (Z)
-				dgamma[m][a][b] = partial_m(grid_obj, i, j, k, m, [&](const Grid::Cell2D &cell) {
-						return cell.gamma[a][b];
-						});
-			}
-		}
-	}
-
-	/*
-	 * The Christoffel symbols are computed using the formula:
-	 * \Gamma^i_{jk} = 1/2 g^{il} ( \partial_j g_{lk} + \partial_k g_{jl} - \partial_l g_{jk} )
-	 * where g_{ij} is the metric tensor and g^{ij} is the inverse of the metric tensor
-	 * This use the standard formula to compute the Christoffel symbols in ADM 3+1 formalism
-	 * */
-
-	for(int kk=0; kk<3; kk++){
-		for(int aa=0; aa<3; aa++){
-			for(int bb=0; bb<3; bb++){
-				double sum=0.0;
-				for(int ll=0; ll<3; ll++){
-
-					double tmp = dgamma[aa][ll][bb] + dgamma[bb][ll][aa] - dgamma[ll][aa][bb];
-					sum += invg[kk][ll] * tmp;
-				}
-				grid_obj.getCell(i, j, k).Christoffel[kk][aa][bb] = 0.5 * sum;
-			}
-		}
-	}
-	/* if (i == NX/2 && j == NY/2 && k == NZ/2) { */
-	/* 	printf("Dérivées de gamma :\n"); */
-	/* 	print_matrix_2D("dgamma/dx", dgamma[0]); */
-	/* 	print_matrix_2D("dgamma/dy", dgamma[1]); */
-	/* 	print_matrix_2D("dgamma/dz", dgamma[2]); */
-	/* } */
-	/* printf("Vérification de la symétrie des dérivées de g_{ij} :\n"); */
-	/* for (int i = 0; i < 3; i++) { */
-	/* 	for (int j = 0; j < 3; j++) { */
-	/* 		printf("∂_x g[%d][%d] - ∂_y g[%d][%d] = %e\n", i, j, i, j,  */
-	/* 				partialX_gamma(grid_obj, NX/2, NY/2, NZ/2, i, j) -  */
-	/* 				partialY_gamma(grid_obj, NX/2, NY/2, NZ/2, i, j)); */
-	/* 	} */
-	/* } */
-	/* if (i == NX/2 && j == NY/2 && k == NZ/2) { */
-	/* 	printf("Christoffel Symboles :\n"); */
-	/* 	for (int a = 0; a < 3; a++) { */
-	/* 		for (int b = 0; b < 3; b++) { */
-	/* 			for (int c = 0; c < 3; c++) { */
-	/* 				printf("Γ[%d][%d][%d] = %e\n", a, b, c, grid_obj.getCell(i, j, k).Christoffel[a][b][c]); */
-	/* 			} */
-	/* 		} */
-	/* 	} */
-	/* } */
-	/* double sum = 0.0; */
-	/* int count = 0; */
-	/* for (int a = 0; a < 3; a++) { */
-	/* 	for (int b = 0; b < 3; b++) { */
-	/* 		for (int c = 0; c < 3; c++) { */
-	/* 			sum += fabs(grid_obj.getCell(i, j, k).Christoffel[a][b][c]); */
-	/* 			count++; */
-	/* 		} */
-	/* 	} */
-	/* } */
-	/* printf("Moyenne absolue des Christoffel: %e\n", sum / count); */
-	/*  */
-	/* double max_diff = 0.0; */
-	/* for (int a = 0; a < 3; a++) { */
-	/* 	for (int b = 0; b < 3; b++) { */
-	/* 		double diff_x = fabs(partialX_gamma(grid_obj, NX/2, NY/2, NZ/2, a, b)); */
-	/* 		double diff_y = fabs(partialY_gamma(grid_obj, NX/2, NY/2, NZ/2, a, b)); */
-	/* 		double diff_z = fabs(partialZ_gamma(grid_obj, NX/2, NY/2, NZ/2, a, b)); */
-	/* 		max_diff = fmax(max_diff, diff_x + diff_y + diff_z); */
-	/* 	} */
-	/* } */
-	/* printf("Max des dérivées de g_{ij}: %e\n", max_diff); */
+    for (int kk = 0; kk < 3; kk++) {
+        for (int aa = 0; aa < 3; aa++) {
+            for (int bb = 0; bb < 3; bb++) {
+                double sum = 0.0;
+                for (int ll = 0; ll < 3; ll++) {
+                    double tmp = dgamma[aa][ll][bb] + dgamma[bb][ll][aa] - dgamma[ll][aa][bb];
+                    sum += invg[kk][ll] * tmp;
+                }
+                grid_obj.getCell(i, j, k).Christoffel[kk][aa][bb] = 0.5 * sum;
+            }
+        }
+    }
 }
-

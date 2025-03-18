@@ -3,9 +3,9 @@
 #include <Geodesics.h>
 
 #define DIM3 3
-#define DX 0.1
-#define DY 0.1
-#define DZ 0.1
+constexpr double DX = 0.1;
+constexpr double DY = 0.1;
+constexpr double DZ = 0.1;
 #define NX 128
 #define NY 128
 #define NZ 128
@@ -25,12 +25,19 @@ using Riemann3D = std::array<std::array<std::array<std::array<double, DIM3>, DIM
 
 class Grid {
     public:
+
+		std::vector<double> dgammaX[3][3];
+		std::vector<double> dgammaY[3][3];
+		std::vector<double> dgammaZ[3][3];
 		struct Cell2D {
 			Matrix3x3 gamma;     
 			Matrix3x3 gamma_inv; 
 			Tensor3D Gamma3;    
 			Matrix3x3 K;        
-			Matrix3x3 Ricci;     
+			Matrix3x3 Ricci;    
+			double dgammaX[3][3];
+			double dgammaY[3][3];
+			double dgammaZ[3][3];
 			double H;    
 			double momentum[3];
 			double hamiltonian;
@@ -63,6 +70,7 @@ class Grid {
 			double p;
 			double T[4][4];
 		};
+		void compute_spectral_derivatives_for_gamma() ;
 		void compute_energy_momentum_evolution(int i, int j, int k, double dt);
 		void update_energy_momentum_tensor(int i, int j, int k);
 		double compute_ricci_scalar(Grid &grid, int i, int j, int k);

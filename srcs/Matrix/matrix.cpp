@@ -88,7 +88,7 @@ void Matrix::transpose3x3(const Matrix3x3& mat, Matrix3x3& transposed) {
 
 int Matrix::inverse_matrix(const MatrixNDIM& mat, MatrixNDIM& inverse) {
     double det = determinant4x4(mat);
-    if (fabs(det) < 1e-6) {
+    if (fabs(det) < 1e-10) {
         return 0; 
     }
 

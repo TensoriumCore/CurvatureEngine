@@ -2,10 +2,16 @@
 #include <Grid.h> 
 class Grid;
 
-template <class T>
+
+inline double safe_dx(double dx) {
+    return (dx > 1e-12) ? dx : 1e-12;  // Évite les divisions instables
+}
+
+	template <class T>
 inline double fourth_order_diff(const T &plus2, const T &plus1, 
                          const T &minus1, const T &minus2, double dx)
 {
+	dx = safe_dx(dx);
     return (-plus2 + 8.0*plus1 - 8.0*minus1 + minus2) / (12.0*dx);
 }
 
@@ -42,40 +48,50 @@ class Derivatives
         double partialXZ_alpha(int i, int j, int k);
         double partialYZ_alpha(int i, int j, int k);
 
-        double second_partial_alpha(int i, int j, int k, int a, int b);
+		double second_partial_alpha(int i, int j, int k, int a, int b);
 };
-
+void spectral_derivative_3D(const std::vector<double> &f_in,
+				std::vector<double> &f_out,
+				int N_x, int N_y, int N_z,
+				double dx, double dy, double dz,
+				int dim);
 template <typename Func>
 double partialX(Grid &grid_obj, int i, int j, int k, Func f) {
-    if (i >= 2 && i <= NX - 3) {
-        return fourth_order_diff(
-            f(grid_obj.getCell(i+2, j, k)),
-            f(grid_obj.getCell(i+1, j, k)),
-            f(grid_obj.getCell(i-1, j, k)),
-            f(grid_obj.getCell(i-2, j, k)),
-            DX
-        );
-    } else if (i >= 1 && i <= NX - 2) {
-        return second_order_diff(
-            f(grid_obj.getCell(i+1, j, k)),
-            f(grid_obj.getCell(i-1, j, k)),
-            DX
-        );
-    } else if (i == 0) {
-        return (f(grid_obj.getCell(i+1, j, k)) - f(grid_obj.getCell(i, j, k))) / DX;
-    } else if (i == NX - 1) {
-        return (f(grid_obj.getCell(i, j, k)) - f(grid_obj.getCell(i-1, j, k))) / DX;
-    }
-    return 0.0;
+	if (i < 0 || i >= NX) return 0.0;
+	if (j < 0 || j >= NY) return 0.0;
+	if (k < 0 || k >= NZ) return 0.0;
+	if (i >= 2 && i <= NX - 3) {
+		return fourth_order_diff(
+				f(grid_obj.getCell(i+2, j, k)),
+				f(grid_obj.getCell(i+1, j, k)),
+				f(grid_obj.getCell(i-1, j, k)),
+				f(grid_obj.getCell(i-2, j, k)),
+				DX
+				);
+	} else if (i >= 1 && i <= NX - 2) {
+		return second_order_diff(
+				f(grid_obj.getCell(i+1, j, k)),
+				f(grid_obj.getCell(i-1, j, k)),
+				DX
+				);
+	} else if (i == 0) {
+		return (f(grid_obj.getCell(i+1, j, k)) - f(grid_obj.getCell(i, j, k))) / DX;
+	} else if (i == NX - 1) {
+		return (f(grid_obj.getCell(i, j, k)) - f(grid_obj.getCell(i-1, j, k))) / DX;
+	}
+	return 0.0;
 }
 
 
 template <typename Func>
 double partialY(Grid &grid_obj, int i, int j, int k, Func f) {
+	if (j < 0 || j >= NY) return 0.0;
+	if (i < 0 || i >= NX) return 0.0;
+	if (k < 0 || k >= NZ) return 0.0;
 	if (j >= 2 && j <= NY - 3) {
 		return fourth_order_diff(
-			f(grid_obj.getCell(i, j+2, k)),
-			f(grid_obj.getCell(i, j+1, k)),
+				f(grid_obj.getCell(i, j+2, k)),
+				f(grid_obj.getCell(i, j+1, k)),
 			f(grid_obj.getCell(i, j-1, k)),
 			f(grid_obj.getCell(i, j-2, k)),
 			DY
@@ -96,6 +112,9 @@ double partialY(Grid &grid_obj, int i, int j, int k, Func f) {
 
 template <typename Func>
 double partialZ(Grid &grid_obj, int i, int j, int k, Func f) {
+	if (k < 0 || k >= NZ) return 0.0;
+	if (i < 0 || i >= NX) return 0.0;
+	if (j < 0 || j >= NY) return 0.0;
 	if (k >= 2 && k <= NZ - 3) {
 		return fourth_order_diff(
 			f(grid_obj.getCell(i, j, k+2)),

@@ -14,7 +14,7 @@
 #include <iomanip>
 #include <vector>
 #include <fstream>
-
+#include <fftw3.h>
 #define C 1.0
 #define G 1.0 
 #define M 1.0
@@ -27,7 +27,7 @@
 #define ALIGNMENT 32
 #define AVX2 1
 #define ARCH "AVX2"
-#define TOLERANCE 1e-4
+#define TOLERANCE 1e-10
 #define DELTA 1e-6
 #define NDIM3 3
 #define DELTA3 1e-4

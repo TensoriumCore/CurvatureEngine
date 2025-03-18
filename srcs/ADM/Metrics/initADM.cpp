@@ -20,6 +20,13 @@ void Grid::allocateGlobalGrid(){
             }
         }
     }
+	for (int a = 0; a < 3; a++) {
+		for (int b = 0; b < 3; b++) {
+			dgammaX[a][b].resize(NX*NY*NZ);
+			dgammaY[a][b].resize(NX*NY*NZ);
+			dgammaZ[a][b].resize(NX*NY*NZ);
+		}
+	}
 }
 
 
@@ -205,17 +212,13 @@ void Grid::initializeKerrData(Grid &grid_obj) {
 					cell.beta[2] *= scale;
 
 				}
-				/* if (i == NX/2 && j == NY/2 && k == NZ/2) { */
-				/* 	printf("beta[0](+dx) = %e, beta[0](-dx) = %e\n", */
-				/* 			grid_obj.getCell(i+1, j, k).beta[0], grid_obj.getCell(i-1, j, k).beta[0]); */
-				/* 	printf("beta[1](+dy) = %e, beta[1](-dy) = %e\n", */
-				/* 			grid_obj.getCell(i, j+1, k).beta[1], grid_obj.getCell(i, j-1, k).beta[1]); */
-				/* 	printf("beta[2](+dz) = %e, beta[2](-dz) = %e\n", */
-				/* 			grid_obj.getCell(i, j, k+1).beta[2], grid_obj.getCell(i, j, k-1).beta[2]); */
-				/* } */
+
 				if (j == NY / 2 && k == NZ / 2) {
-                    printf("gamma[0][0] à (i=%d, j=%d, k=%d) = %e\n", i, j, k, cell.gamma[0][0]);
-                }
+					printf("gamma[0][0] at (i=%d, j=%d, k=%d) = %e\n", i, j, k, cell.gamma[0][0]);
+					printf("gamma[1][1] at (i=%d, j=%d, k=%d) = %e\n", i, j, k, cell.gamma[1][1]);
+					printf("gamma[2][2] at (i=%d, j=%d, k=%d) = %e\n", i, j, k, cell.gamma[2][2]);
+				}
+
 				if (i == NX / 2 && j == NY / 2 && k == NZ / 2) {
 					printf("H = %e at r = %e (x=%e, y=%e, z=%e)\n", H, r, x, y, z);
 				}
