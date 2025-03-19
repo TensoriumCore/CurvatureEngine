@@ -19,7 +19,6 @@ This project is optimized for **Clang++** with advanced compiler flags for perfo
 make
 ```
 
-
 ## Usage
 Run the simulation with:
 ```sh
