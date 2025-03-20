@@ -184,60 +184,17 @@ void Grid::initializeKerrData(Grid &grid_obj) {
                 cell.gamma[2][2] = 1.0 + 2.0 * H * lzlz;
 
                 matrix.inverse_3x3(cell.gamma, cell.gamma_inv);
-/* #ifndef DEBUG */
-/* #pragma omp critical */
-/* 				{ */
-/* 					printf("Identity:\n"); */
-/* 					for (int a = 0; a < 3; a++) { */
-/* 						for (int b = 0; b < 3; b++) { */
-/* 							double sum = 0.0; */
-/* 							for (int c = 0; c < 3; c++) { */
-/* 								sum += cell.gamma[a][c] * cell.gamma_inv[c][b]; */
-/* 							} */
-/* 							printf("%f ", sum); */
-/* 						} */
-/* 						printf("\n"); */
-/* 					} */
-/* 				} */
-/* #endif */
 				cell.alpha = 1.0 / std::sqrt(1.0 + 2.0 * H);
 				cell.beta[0] = 2.0 * H * lx;
 				cell.beta[1] = 2.0 * H * ly;
 				cell.beta[2] = 2.0 * H * lz;
-				gridtensor.compute_christoffel_3D(grid_obj, i, j, k, cell.Christoffel);
+				/* gridtensor.compute_christoffel_3D(grid_obj, i, j, k, cell.Christoffel); */
 				for (int a_idx = 0; a_idx < 3; a_idx++) {
 					for (int b_idx = 0; b_idx < 3; b_idx++) {
 						cell.K[a_idx][b_idx] = 0.0;
 					}
 				}
 
-#ifndef PFLUID
-				{
-					double r_cart = std::sqrt(x*x + y*y + z*z);
-					cell.rho = std::exp(-r_cart * r_cart / 2.0);
-					cell.p   = 0.3 * cell.rho + 0.5 * cell.rho * cell.rho;
-
-					double vr = 2.0;
-					if (r_cart > 1e-6) {
-						cell.vx = -vr * y / r_cart;
-						cell.vy =  vr * x / r_cart;
-						cell.vz =  0.0;  
-					} else {
-						cell.vx = 0.0; 
-						cell.vy = 0.0; 
-						cell.vz = 0.0;
-					}
-				}
-#endif
-
-				double r_horizon = M + std::sqrt(M*M - a*a);
-				double r_cart    = std::sqrt(x*x + y*y + z*z);
-				double diff      = std::fabs(r_cart - r_horizon);
-				double epsilon   = 1e-2;
-				if (diff < epsilon) {
-#pragma omp critical
-					horizonPoints.push_back({x, y, z});
-				}
 			} 
 		}
 	} 
@@ -267,15 +224,6 @@ void Grid::initializeKerrData(Grid &grid_obj) {
 		printf("Eq plane r = %f : H = %e, alpha = %e (Schw approx)\n", 
 				test_r, H_test, alpha_test);
 	}
-
-	{
-        std::ofstream ofs("horizon.csv");
-        ofs << "x,y,z\n";
-        for (auto &pt : horizonPoints) {
-            ofs << pt[0] << "," << pt[1] << "," << pt[2] << "\n";
-        }
-        ofs.close();
-    }
 }
 
 

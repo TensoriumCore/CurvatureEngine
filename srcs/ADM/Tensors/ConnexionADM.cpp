@@ -217,7 +217,6 @@ void GridTensor::compute_christoffel_3D(Grid &grid_obj, int i, int j, int k, dou
 		}
 	}
 
-
     for (int kk = 0; kk < 3; kk++) {
         for (int aa = 0; aa < 3; aa++) {
             for (int bb = 0; bb < 3; bb++) {

@@ -7,21 +7,21 @@ void Grid::compute_time_derivatives(Grid &grid_obj, int i, int j, int k)
     Cell2D &cell = globalGrid[i][j][k];
     double alpha = cell.alpha;
     double beta[3] = { cell.beta[0], cell.beta[1], cell.beta[2] };
-    double gammaLocal[3][3], KLocal[3][3];
+    double gammaLocal[3][3];
     for(int a=0; a<3; a++){
         for(int b=0; b<3; b++){
             gammaLocal[a][b] = cell.gamma[a][b];
-            KLocal[a][b]     = cell.K[a][b];
+            cell.K[a][b]     = cell.K[a][b];
         }
     }
 
-    double gammaInv[3][3];
-    invert_3x3(gammaLocal, gammaInv);
-
+    /* double cell.gamma_inv[3][3]; */
+    /* invert_3x3(gammaLocal, cell.gamma_inv); */
+    /*  */
     double Ktrace = 0.0;
     for(int a=0; a<3; a++){
         for(int b=0; b<3; b++){
-            Ktrace += gammaInv[a][b] * KLocal[a][b];
+            Ktrace += cell.gamma_inv[a][b] * cell.K[a][b];
         }
     }
 
@@ -81,7 +81,7 @@ void Grid::compute_time_derivatives(Grid &grid_obj, int i, int j, int k)
     double dtGamma[3][3];
     for(int a = 0; a < 3; a++){
         for(int b = 0; b < 3; b++){
-            double rhs = -2.0 * alpha * KLocal[a][b];
+            double rhs = -2.0 * alpha * cell.K[a][b];
 
             double advection = 0.0;
             for(int m = 0; m < 3; m++){
@@ -98,6 +98,9 @@ void Grid::compute_time_derivatives(Grid &grid_obj, int i, int j, int k)
         }
     }
 
+	if (i == NX/2 && j == NY/2 && k == NZ/2) {
+		printf("K_00 = %e, K_11 = %e, K_22 = %e\n", cell.K[0][0], cell.K[1][1], cell.K[2][2]);
+	}
 
     double dtK[3][3];
     for(int a = 0; a < 3; a++){
@@ -110,7 +113,7 @@ void Grid::compute_time_derivatives(Grid &grid_obj, int i, int j, int k)
                     double sum_ = 0.0;
                     for(int r = 0; r < 3; r++){
                         for(int s = 0; s < 3; s++){
-                            sum_ += gammaInv[m][r] * gammaInv[n][s] * KLocal[r][s];
+                            sum_ += cell.gamma_inv[m][r] * cell.gamma_inv[n][s] * cell.K[r][s];
                         }
                     }
                     KContra[m][n] = sum_;
@@ -120,16 +123,16 @@ void Grid::compute_time_derivatives(Grid &grid_obj, int i, int j, int k)
             double KtraceLocal = 0.0;
             for(int x = 0; x < 3; x++){
                 for(int y = 0; y < 3; y++){
-                    KtraceLocal += gammaInv[x][y] * KLocal[x][y];
+                    KtraceLocal += cell.gamma_inv[x][y] * cell.K[x][y];
                 }
             }
 
             double RicciTerm  = Ricci[a][b];
-            double KKab       = KtraceLocal * KLocal[a][b];
+            double KKab       = KtraceLocal * cell.K[a][b];
 
             double KaM_KM_b = 0.0;
             for(int m = 0; m < 3; m++){
-                KaM_KM_b += KLocal[a][m] * KContra[m][b];
+                KaM_KM_b += cell.K[a][m] * KContra[m][b];
             }
 
             double termB = alpha * (RicciTerm + KKab - 2.0 * KaM_KM_b);
@@ -141,8 +144,8 @@ void Grid::compute_time_derivatives(Grid &grid_obj, int i, int j, int k)
 
             double shiftK = 0.0;
             for(int m = 0; m < 3; m++){
-                shiftK += KLocal[m][b] * partialBeta[a][m];
-                shiftK += KLocal[a][m] * partialBeta[b][m];
+                shiftK += cell.K[m][b] * partialBeta[a][m];
+                shiftK += cell.K[a][m] * partialBeta[b][m];
             }
 
             double lieBetaK = advK + shiftK;
