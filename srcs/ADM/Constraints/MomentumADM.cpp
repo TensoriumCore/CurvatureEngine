@@ -158,7 +158,7 @@ double Grid::compute_ricci_scalar(Grid &grid, int i, int j, int k)
 	for(int a=0; a<3; a++){
 		for(int b=0; b<3; b++){
 			R += cell.gamma_inv[a][b]*cell.Ricci[a][b];
-			/* log_obj.log_value("cell.Ricci", cell.Ricci[a][b], i, j, k, a, b); */
+			log_obj.log_value("cell.Ricci", cell.Ricci[a][b], i, j, k, a, b);
 
 		}
 	}
