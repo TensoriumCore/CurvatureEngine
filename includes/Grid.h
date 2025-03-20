@@ -38,12 +38,16 @@ class Grid {
 			double dgammaX[3][3];
 			double dgammaY[3][3];
 			double dgammaZ[3][3];
-			double H;    
+			double H;   
+			double tilde_gamma[3][3];
+			double chi;
 			double momentum[3];
 			double hamiltonian;
 			double alpha;        
 			Vector3 beta_cov;     
-			Vector3 beta_con;    
+			Vector3 beta_con;  
+			double tildeGamma[3];
+			double Atilde[3][3];
 			double beta[3];
 			Matrix3x3 dgamma_dt;   
 			Matrix3x3 dK_dt;      
@@ -124,7 +128,7 @@ class Grid {
 
 		double computeTraceK(Grid &grid, int i, int j, int k);
 		double christoffelTerm(Grid &grid, int i, int j, int k, int i_comp);
-		void compute_gauge_derivatives(int i, int j, int k, double &d_alpha_dt, double d_beta_dt[3]);
+		void compute_gauge_derivatives(Grid &grid_obj, int i, int j, int k, double &d_alpha_dt, double d_beta_dt[3]);
 		
 		Cell2D& getCell(int i, int j, int k) {
 			return globalGrid[i][j][k];

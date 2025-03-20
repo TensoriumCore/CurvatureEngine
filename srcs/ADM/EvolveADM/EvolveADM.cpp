@@ -98,9 +98,9 @@ void Grid::compute_time_derivatives(Grid &grid_obj, int i, int j, int k)
         }
     }
 
-	if (i == NX/2 && j == NY/2 && k == NZ/2) {
-		printf("K_00 = %e, K_11 = %e, K_22 = %e\n", cell.K[0][0], cell.K[1][1], cell.K[2][2]);
-	}
+if (i == NX/2 && j == NY/2 && k == NZ/2) {
+    printf("K_00 = %e, K_11 = %e, K_22 = %e\n", cell.K[0][0], cell.K[1][1], cell.K[2][2]);
+}
 
     double dtK[3][3];
     for(int a = 0; a < 3; a++){

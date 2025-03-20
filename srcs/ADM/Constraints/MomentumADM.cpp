@@ -14,18 +14,16 @@ double Grid::KUpAt(Grid &grid, int ip, int jp, int kp, int j_up, int i_low)
     }
 
     Cell2D &cell = grid.globalGrid[ip][jp][kp];
-    double gammaInv[3][3];
     double gtmp[3][3];
     for(int a=0; a<3; a++){
         for(int b=0; b<3; b++){
             gtmp[a][b] = cell.gamma[a][b];
         }
     }
-    invert_3x3(gtmp, gammaInv);
 
     double val = 0.0;
     for(int c=0; c<3; c++){
-        val += gammaInv[j_up][c] * cell.K[c][i_low];
+        val += cell.gamma_inv[j_up][c] * cell.K[c][i_low];
     }
     return val;
 }
@@ -64,19 +62,17 @@ double Grid::christoffelTerm(Grid &grid, int i, int j, int k, int i_comp)
     Cell2D &cell = grid.globalGrid[i][j][k];
     double KupLocal[3][3];
     {
-        double gammaInv[3][3];
         double tmpG[3][3];
         for(int a=0; a<3; a++){
             for(int b=0; b<3; b++){
                 tmpG[a][b] = cell.gamma[a][b];
             }
         }
-        invert_3x3(tmpG, gammaInv);
         for(int aa=0; aa<3; aa++){
             for(int bb=0; bb<3; bb++){
                 double sum=0.0;
                 for(int cc=0; cc<3; cc++){
-                    sum += gammaInv[aa][cc]*cell.K[cc][bb];
+                    sum += cell.gamma_inv[aa][cc]*cell.K[cc][bb];
                 }
                 KupLocal[aa][bb] = sum;
             }
@@ -96,18 +92,16 @@ double Grid::christoffelTerm(Grid &grid, int i, int j, int k, int i_comp)
 double Grid::computeTraceK(Grid &grid, int i, int j, int k)
 {
     Cell2D &cell = grid.globalGrid[i][j][k];
-    double gammaInv[3][3];
     double gTmp[3][3];
     for(int a=0; a<3; a++){
         for(int b=0; b<3; b++){
             gTmp[a][b] = cell.gamma[a][b];
         }
     }
-    invert_3x3(gTmp, gammaInv);
     double trace = 0.0;
     for(int a=0; a<3; a++){
         for(int b=0; b<3; b++){
-            trace += gammaInv[a][b]*cell.K[a][b];
+            trace += cell.gamma_inv[a][b]*cell.K[a][b];
         }
     }
     return trace;
@@ -154,21 +148,17 @@ double Grid::compute_ricci_scalar(Grid &grid, int i, int j, int k)
 {
 	Cell2D &cell = grid.globalGrid[i][j][k];
 	Log log_obj;
-	double gammaInv[3][3];
 	double gTmp[3][3];
 	for(int a=0; a<3; a++){
 		for(int b=0; b<3; b++){
 			gTmp[a][b] = cell.gamma[a][b];
 		}
 	}
-	invert_3x3(gTmp, gammaInv);
-	double Ricci[3][3];
-	grid.compute_ricci_3D(grid, i, j, k, Ricci);
 	double R = 0.0;
 	for(int a=0; a<3; a++){
 		for(int b=0; b<3; b++){
-			R += gammaInv[a][b]*Ricci[a][b];
-			/* log_obj.log_value("Ricci", Ricci[a][b], i, j, k, a, b); */
+			R += cell.gamma_inv[a][b]*cell.Ricci[a][b];
+			/* log_obj.log_value("cell.Ricci", cell.Ricci[a][b], i, j, k, a, b); */
 
 		}
 	}
@@ -177,20 +167,17 @@ double Grid::compute_ricci_scalar(Grid &grid, int i, int j, int k)
 
 
 void Grid::compute_constraints(Grid &grid_obj, int i, int j, int k, double &hamiltonian, double momentum[3]) {
-    double Ricci[3][3];
-    compute_ricci_3D(grid_obj, i, j, k, Ricci);
     Cell2D &cell = globalGrid[i][j][k];
-    double gammaLocal[3][3], gammaInv[3][3];
+    double gammaLocal[3][3];
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
             gammaLocal[a][b] = cell.gamma[a][b];
         }
     }
-    invert_3x3(gammaLocal, gammaInv);
     double R = 0.0;
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
-            R += gammaInv[a][b] * Ricci[a][b];
+            R += cell.gamma_inv[a][b] * cell.Ricci[a][b];
         }
     }
     double Ktrace = 0.0;
@@ -199,7 +186,7 @@ void Grid::compute_constraints(Grid &grid_obj, int i, int j, int k, double &hami
 		for (int j = 0; j < 3; j++) {
 			for (int k = 0; k < 3; k++) {
 				for (int l = 0; l < 3; l++) {
-					KK += cell.K[i][j] * gammaInv[i][k] * gammaInv[j][l] * cell.K[k][l];
+					KK += cell.K[i][j] * cell.gamma_inv[i][k] * cell.gamma_inv[j][l] * cell.K[k][l];
 				}
 			}
 		}
@@ -211,27 +198,9 @@ void Grid::compute_constraints(Grid &grid_obj, int i, int j, int k, double &hami
 	/* log_obj.log_value("hamiltonian", hamiltonian, i, j, k); */
 	for(int i_comp=0; i_comp<3; i_comp++){
 		momentum[i_comp] = compute_momentum_i(grid_obj, i, j, k, i_comp);
-		/* log_obj.log_value("momentum", momentum[i_comp], i, j, k, i_comp); */
+/* #pragma omp critical */
+/* 		{ */
+/* 		log_obj.log_value("momentum", momentum[i_comp], i, j, k, i_comp); */
+/* 		} */
 	}
-	/* double constraint_H = 0.0; */
-	/* for (int i = 1; i < NX - 1; i++) { */
-	/* 	for (int j = 1; j < NY - 1; j++) { */
-	/* 		for (int k = 1; k < NZ - 1; k++) { */
-	/* 			double R = compute_ricci_scalar(grid_obj, i, j, k);  */
-	/* 			if (fabs(R) > 1e-5) { */
-	/* 				printf("Ricci scalar = %f\n", R); */
-	/* 			} */
-	/* 			double Ktrace = 0.0; */
-	/* 			for (int a = 0; a < 3; a++) { */
-	/* 				for (int b = 0; b < 3; b++) { */
-	/* 					Ktrace += gammaInv[a][b] * globalGrid[i][j][k].K[a][b]; */
-	/* 				} */
-	/* 			} */
-	/* 			double term = R - Ktrace * Ktrace; */
-	/* 			constraint_H += term * term; */
-	/* 		} */
-	/* 	} */
-	/* } */
-	/* constraint_H = sqrt(constraint_H / (NX * NY * NZ)); */
-	/* printf("Violation de la contrainte hamiltonienne = %f\n", constraint_H); */
 }

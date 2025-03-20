@@ -28,7 +28,7 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 					for (int k = 1; k < NZ - 1; k++) {
 						compute_time_derivatives(grid_obj, i, j, k);
 						double d_alpha_dt, d_beta_dt[3];
-						compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
+						compute_gauge_derivatives(grid_obj, i, j, k, d_alpha_dt, d_beta_dt);
 						compute_constraints(grid_obj, i, j, k, hamiltonian, momentum);
 						storeStage(globalGrid[i][j][k], 0, d_alpha_dt, d_beta_dt);
 					}
@@ -49,7 +49,7 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 					for (int k = 1; k < NZ - 1; k++) {
 						compute_time_derivatives(grid_obj, i, j, k);
 						double d_alpha_dt, d_beta_dt[3];
-						compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
+						compute_gauge_derivatives(grid_obj, i, j, k, d_alpha_dt, d_beta_dt);
 						storeStage(globalGrid[i][j][k], 1, d_alpha_dt, d_beta_dt);
 					}
 				}
@@ -68,7 +68,7 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 					for (int k = 1; k < NZ - 1; k++) {
 						compute_time_derivatives(grid_obj, i, j, k);
 						double d_alpha_dt, d_beta_dt[3];
-						compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
+						compute_gauge_derivatives(grid_obj, i, j, k, d_alpha_dt, d_beta_dt);
 						compute_constraints(grid_obj, i, j, k, hamiltonian, momentum);
 						storeStage(globalGrid[i][j][k], 2, d_alpha_dt, d_beta_dt);
 					}
@@ -88,7 +88,7 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 					for (int k = 1; k < NZ - 1; k++) {
 						compute_time_derivatives(grid_obj, i, j, k);
 						double d_alpha_dt, d_beta_dt[3];
-						compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
+						compute_gauge_derivatives(grid_obj, i, j, k, d_alpha_dt, d_beta_dt);
 						compute_constraints(grid_obj, i, j, k, hamiltonian, momentum);
 						storeStage(globalGrid[i][j][k], 3, d_alpha_dt, d_beta_dt);
 					}

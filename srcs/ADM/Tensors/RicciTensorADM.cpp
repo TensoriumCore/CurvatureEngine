@@ -82,7 +82,7 @@ void GridTensor::compute_partial_christoffel(Grid &grid_obj, int i, int j, int k
 
 void Grid::compute_ricci_3D(Grid &grid_obj, int i, int j, int k, double Ricci[3][3]) {
     GridTensor gridTensor;
-    gridTensor.compute_christoffel_3D(grid_obj, i, j, k, grid_obj.getCell(i, j, k).Christoffel);
+    /* gridTensor.compute_christoffel_3D(grid_obj, i, j, k, grid_obj.getCell(i, j, k).Christoffel); */
 
     double partialGamma[3][3][3][3] = {};
 	Log logger;
@@ -108,9 +108,11 @@ void Grid::compute_ricci_3D(Grid &grid_obj, int i, int j, int k, double Ricci[3]
 			Ricci[a][b] = term1 - term2 - term3 + term4;
 		}
 	}
-
-/* #pragma omp critical */
-/* { */
-/* 	print_matrix_2D("Ricci", Ricci); */
-/* } */
+	for (int a = 0; a < 3; a++) 
+		for (int b = 0; b < 3; b++) 
+			grid_obj.getCell(i, j, k).Ricci[a][b] = Ricci[a][b];
+	/* #pragma omp critical */
+	/* { */
+	/* 	print_matrix_2D("Ricci", Ricci); */
+	/* } */
 }

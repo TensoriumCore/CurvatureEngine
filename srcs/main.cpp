@@ -14,7 +14,7 @@ int main(int argc, char **argv)
 		printf("       -R <Spin value a> - Riemann tensor calculation\n");
 		printf("       -M <Spin value a> - Metric tensor calculation (a = 0 -> Schwarzschild or a > 0 -> Kerr)\n");
 		printf("       -S <Spin value a> - Black hole shadow generation\n");	
-		printf("       -C <Spin value a> - ADM solver Kerr-Schild coordinates\n");
+		printf("       -C <Spin value a> - ADM solver Kerr-Schild coordinates (tests with flat Minkowski by replacing in probs)\n");
 		return 0;
 	}
 

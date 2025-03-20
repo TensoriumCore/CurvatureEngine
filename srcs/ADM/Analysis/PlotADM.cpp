@@ -49,11 +49,11 @@ void export_K_slice(Grid &grid_obj, int j) {
 }
 
 double r_e_plus(double theta, double a) {
-    return M + sqrt(M * M - a * a * cos(theta) * cos(theta));  
+    return M + sqrt(M * M - a * a * cos(theta) * cos(theta));  // Ergosphère externe
 }
 
 double r_e_minus(double theta, double a) {
-    return M - sqrt(M * M - a * a * cos(theta) * cos(theta)); 
+    return M - sqrt(M * M - a * a * cos(theta) * cos(theta));  // Ergosphère interne
 }
 
 void export_K_3D(Grid &grid_obj) {
@@ -62,12 +62,13 @@ void export_K_3D(Grid &grid_obj) {
     file << "K extrinsic curvature\n";
     file << "ASCII\n";
     file << "DATASET STRUCTURED_POINTS\n";
+
     file << "DIMENSIONS " << NX << " " << NY << " " << NZ << "\n";
 
     double x0 = -9.0;
     double y0 = -9.0;
     double z0 = -9.0;
-    double a = 0.998;
+    double a = 0.9999;  
     file << "ORIGIN " << x0 << " " << y0 << " " << z0 << "\n";
 
     double dx = 18.0 / (NX - 1);
@@ -88,10 +89,18 @@ void export_K_3D(Grid &grid_obj) {
             }
         }
     }
+    file << "TENSORS dKt float\n";
+    for (int i = 0; i < NX; i++) {
+        for (int j = 0; j < NY; j++) {
+            for (int k = 0; k < NZ; k++) {
+                Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
+                file << cell.dKt[0][0] << " " << cell.dKt[0][1] << " " << cell.dKt[0][2] << "\n";
+                file << cell.dKt[1][0] << " " << cell.dKt[1][1] << " " << cell.dKt[1][2] << "\n";
+                file << cell.dKt[2][0] << " " << cell.dKt[2][1] << " " << cell.dKt[2][2] << "\n\n";
+            }
+        }
+    }    double r_H = M + sqrt(M * M - a * a); 
 
-    // Calcul du rayon de l'horizon en coordonnées de Boyer-Lindquist
-    // r_plus = M + sqrt(M^2 - a^2)
-    double r_plus = M + sqrt(M * M - a * a);
     file << "SCALARS Horizon float 1\n";
     file << "LOOKUP_TABLE default\n";
     for (int i = 0; i < NX; i++) {
@@ -100,11 +109,8 @@ void export_K_3D(Grid &grid_obj) {
                 double x = x0 + i * dx;
                 double y = y0 + j * dy;
                 double z = z0 + k * dz;
-                double R2 = x * x + y * y + z * z;
-                double temp = (R2 - a * a);
-                double r2 = 0.5 * (temp + sqrt(temp * temp + 4 * a * a * z * z));
-                double r_BL = sqrt(r2);
-                file << (r_BL < r_plus ? 1.0 : 0.0) << "\n";
+                double r = sqrt(x * x + y * y + z * z);
+                file << (r < r_H ? 1.0 : 0.0) << "\n";
             }
         }
     }
@@ -138,48 +144,48 @@ void export_K_3D(Grid &grid_obj) {
             }
         }
     }
+	
+	file << "SCALARS fluid float 1\n";
+	file << "LOOKUP_TABLE default\n";
+	for (int i = 0; i < NX; i++) {
+		for (int j = 0; j < NY; j++) {
+			for (int k = 0; k < NZ; k++) {
+				Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
+				file << (cell.rho > 1e-10 ? 1.0 : 0.0) << "\n";
+			}
+		}
+	}
+	
+	file << "SCALARS fluid_velocity float 1\n";
+	file << "LOOKUP_TABLE default\n";
+	for (int i = 0; i < NX; i++) {
+		for (int j = 0; j < NY; j++) {
+			for (int k = 0; k < NZ; k++) {
+				Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
+				file << sqrt(cell.vx * cell.vx + cell.vy * cell.vy + cell.vz * cell.vz) << "\n";
+			}
+		}
+	}
 
-    file << "SCALARS fluid float 1\n";
-    file << "LOOKUP_TABLE default\n";
-    for (int i = 0; i < NX; i++) {
-        for (int j = 0; j < NY; j++) {
-            for (int k = 0; k < NZ; k++) {
-                Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
-                file << (cell.rho > 1e-10 ? 1.0 : 0.0) << "\n";
-            }
+	file << "SCALARS alpha float 1\n";
+	file << "LOOKUP_TABLE default\n";
+	for (int i = 0; i < NX; i++) {
+		for (int j = 0; j < NY; j++) {
+			for (int k = 0; k < NZ; k++) {
+				auto &cell = grid_obj.getCell(i, j, k);
+				file << cell.alpha << "\n";
+			}
+		}
+	}
+	file << "VECTORS shift float\n";
+for (int i = 0; i < NX; i++) {
+    for (int j = 0; j < NY; j++) {
+        for (int k = 0; k < NZ; k++) {
+            auto &cell = grid_obj.getCell(i, j, k);
+            file << cell.beta[0] << " " << cell.beta[1] << " " << cell.beta[2] << "\n";
         }
     }
-
-    file << "SCALARS fluid_velocity float 1\n";
-    file << "LOOKUP_TABLE default\n";
-    for (int i = 0; i < NX; i++) {
-        for (int j = 0; j < NY; j++) {
-            for (int k = 0; k < NZ; k++) {
-                Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
-                file << sqrt(cell.vx * cell.vx + cell.vy * cell.vy + cell.vz * cell.vz) << "\n";
-            }
-        }
-    }
-
-    file << "SCALARS alpha float 1\n";
-    file << "LOOKUP_TABLE default\n";
-    for (int i = 0; i < NX; i++) {
-        for (int j = 0; j < NY; j++) {
-            for (int k = 0; k < NZ; k++) {
-                auto &cell = grid_obj.getCell(i, j, k);
-                file << cell.alpha << "\n";
-            }
-        }
-    }
-    file << "VECTORS shift float\n";
-    for (int i = 0; i < NX; i++) {
-        for (int j = 0; j < NY; j++) {
-            for (int k = 0; k < NZ; k++) {
-                auto &cell = grid_obj.getCell(i, j, k);
-                file << cell.beta[0] << " " << cell.beta[1] << " " << cell.beta[2] << "\n";
-            }
-        }
-    }
+}
 
     file.close();
     std::cout << "K 3D VTK file with Kerr surfaces saved to K_full.vtk\n";
@@ -187,39 +193,39 @@ void export_K_3D(Grid &grid_obj) {
 
 
 void export_alpha_slice(Grid &grid_obj, int j) {
-	std::ofstream file("Output/alpha_slice.csv");
+    std::ofstream file("Output/alpha_slice.csv");
 
-	file << "x,z,alpha\n";
-	for(int i = 0; i < NX; i++) {
-		for(int k = 0; k < NZ; k++) {
-			double x = -9.0 + i * (18.0 / (NX - 1));
-			double z = -9.0 + k * (18.0 / (NZ - 1));
+    file << "x,z,alpha\n";
+    for(int i = 0; i < NX; i++) {
+        for(int k = 0; k < NZ; k++) {
+            double x = -9.0 + i * (18.0 / (NX - 1));
+            double z = -9.0 + k * (18.0 / (NZ - 1));
 
-			Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
-			file << x << "," << z << "," << cell.alpha << "\n";
-		}
-	}
-	file.close();
-	std::cout << "Alpha slice saved to alpha_slice.csv\n";
+            Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
+            file << x << "," << z << "," << cell.alpha << "\n";
+        }
+    }
+    file.close();
+    std::cout << "Alpha slice saved to alpha_slice.csv\n";
 }
 
 
 
 void export_gauge_slice(Grid &grid_obj, int j) {
-	std::ofstream file("Output/gauge_slice.csv");
-	file << "x,z,alpha,beta0,beta1,beta2,d_alpha_dt,d_beta0_dt,d_beta1_dt,d_beta2_dt\n";
+    std::ofstream file("Output/gauge_slice.csv");
+    file << "x,z,alpha,beta0,beta1,beta2,d_alpha_dt,d_beta0_dt,d_beta1_dt,d_beta2_dt\n";
 
-	for (int i = 0; i < NX; i++) {
-		for (int k = 0; k < NZ; k++) {
-			double x = -9.0 + i * (18.0 / (NX - 1));
-			double z = -9.0 + k * (18.0 / (NZ - 1));
+    for (int i = 0; i < NX; i++) {
+        for (int k = 0; k < NZ; k++) {
+            double x = -9.0 + i * (18.0 / (NX - 1));
+            double z = -9.0 + k * (18.0 / (NZ - 1));
 
-			Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
-			double d_alpha_dt, d_beta_dt[3];
-			grid_obj.compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
+            Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
+            double d_alpha_dt, d_beta_dt[3];
+            grid_obj.compute_gauge_derivatives(grid_obj, i, j, k, d_alpha_dt, d_beta_dt);
 
-			file << x << "," << z << "," 
-				<< cell.alpha << "," << cell.beta[0] << "," << cell.beta[1] << "," << cell.beta[2] << ","
+            file << x << "," << z << "," 
+                 << cell.alpha << "," << cell.beta[0] << "," << cell.beta[1] << "," << cell.beta[2] << ","
                  << d_alpha_dt << "," << d_beta_dt[0] << "," << d_beta_dt[1] << "," << d_beta_dt[2] << "\n";
         }
     }
@@ -233,7 +239,7 @@ void export_gauge_slice(Grid &grid_obj, int j) {
 
 void GridTensor::export_christoffel_slice(Grid &grid_obj, int j) {
     std::ofstream file("Output/christoffel_slice.csv");
-	double L = 6.0;
+	double L = 9.0;
     double x_min = -L, x_max = L;
     double y_min = -L, y_max = L;
     double z_min = -L, z_max = L;
