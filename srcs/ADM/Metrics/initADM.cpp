@@ -98,18 +98,35 @@ void Grid::initializeData_Minkowski()
 }
 
 
+inline double kerrSchildRadius(double x, double y, double z, double a)
+{
+    const double r2   = x*x + y*y + z*z;
+    const double a2   = a*a;
+    const double alpha = r2 - a2;
+    const double inside = alpha*alpha + 4.0*a2*z*z;
+
+    const double term = 0.5 * (alpha + std::sqrt(inside));
+
+    if (term <= 0.0) {
+        return 0.0;
+    }
+    return std::sqrt(term);
+}
 
 void Grid::initializeKerrData(Grid &grid_obj) {
-    double a = 0.998;   
-    double L = 9.0;
-    double x_min = -L, x_max = L;
-    double y_min = -L, y_max = L;
-    double z_min = -L, z_max = L;
+    double a = 0.998;
+    double L = 9.0; 
+    double x_min = -L, x_max =  L;
+    double y_min = -L, y_max =  L;
+    double z_min = -L, z_max =  L;
+
     double dx = (x_max - x_min) / (NX - 1);
     double dy = (y_max - y_min) / (NY - 1);
     double dz = (z_max - z_min) / (NZ - 1);
-    Matrix matrix;
-	std::vector<std::array<double, 3>> horizonPoints;
+
+	GridTensor gridtensor;
+    Matrix matrix;   
+    std::vector<std::array<double, 3>> horizonPoints;
     globalGrid.resize(NX);
     for (int i = 0; i < NX; i++) {
         globalGrid[i].resize(NY);
@@ -122,110 +139,109 @@ void Grid::initializeKerrData(Grid &grid_obj) {
     for (int i = 0; i < NX; i++) {
         for (int j = 0; j < NY; j++) {
             for (int k = 0; k < NZ; k++) {
+
                 double x = x_min + i * dx;
                 double y = y_min + j * dy;
                 double z = z_min + k * dz;
-                double R2 = x * x + y * y + z * z;
 
-				Cell2D &cell = globalGrid[i][j][k];
+                double rKS = kerrSchildRadius(x, y, z, a);
 
-				double r2 = x*x + y*y + z*z;
-				double r  = sqrt(r2);
-				double r4 = r2*r2;
-				double H  = (r < 1e-12) ? 0.0 
-					: (M * r*r*r) / (r4 + a*a*z*z);
+                double cosTheta = 0.0;
+                if (rKS > 1e-14) {
+                    cosTheta = z / rKS;
+                }
 
-				double denom = (r2 + a*a);
-				double lx = (r*x + a*y) / denom;
-				double ly = (r*y - a*x) / denom;
-				double lz = (r > 1e-12) ? (z / r) : 0.0;
+                double denomKS = (rKS * rKS) + (a * a * cosTheta * cosTheta);
+                double H = 0.0;
+                if (rKS > 1e-14 && denomKS > 1e-14) {
+                    H = (M * rKS) / denomKS;
+                }
 
-				double lxlx = lx * lx;
-				double lyly = ly * ly;
-				double lzlz = lz * lz;
+                double denomVec = (rKS * rKS) + (a * a);
+                double lx = 0.0, ly = 0.0, lz = 0.0;
+                if (denomVec > 1e-14) {
+                    lx = (rKS * x + a * y) / denomVec;
+                    ly = (rKS * y - a * x) / denomVec;
+                }
+                if (rKS > 1e-14) {
+                    lz = z / rKS;
+                }
 
-				cell.gamma[0][0] = 1.0 + 2.0*H*lxlx; 
-				cell.gamma[0][1] = 2.0*H*lx*ly;      
-				cell.gamma[0][2] = 2.0*H*lx*lz;
-				cell.gamma[1][0] = cell.gamma[0][1]; 
-				cell.gamma[1][1] = 1.0 + 2.0*H*lyly; 
-				cell.gamma[1][2] = 2.0*H*ly*lz;
-				cell.gamma[2][0] = cell.gamma[0][2];
-				cell.gamma[2][1] = cell.gamma[1][2];
-				cell.gamma[2][2] = 1.0 + 2.0*H*lzlz;
+                Cell2D &cell = globalGrid[i][j][k];
 
+                double lxlx = lx * lx;
+                double lyly = ly * ly;
+                double lzlz = lz * lz;
 
-                cell.alpha = 1.0 / sqrt(1.0 + 2 * H);
+                cell.gamma[0][0] = 1.0 + 2.0 * H * lxlx;
+                cell.gamma[0][1] = 2.0 * H * lx * ly;
+                cell.gamma[0][2] = 2.0 * H * lx * lz;
+                cell.gamma[1][0] = cell.gamma[0][1];
+                cell.gamma[1][1] = 1.0 + 2.0 * H * lyly;
+                cell.gamma[1][2] = 2.0 * H * ly * lz;
+                cell.gamma[2][0] = cell.gamma[0][2];
+                cell.gamma[2][1] = cell.gamma[1][2];
+                cell.gamma[2][2] = 1.0 + 2.0 * H * lzlz;
 
                 matrix.inverse_3x3(cell.gamma, cell.gamma_inv);
+/* #ifndef DEBUG */
+/* #pragma omp critical */
+/* 				{ */
+/* 					printf("Identity:\n"); */
+/* 					for (int a = 0; a < 3; a++) { */
+/* 						for (int b = 0; b < 3; b++) { */
+/* 							double sum = 0.0; */
+/* 							for (int c = 0; c < 3; c++) { */
+/* 								sum += cell.gamma[a][c] * cell.gamma_inv[c][b]; */
+/* 							} */
+/* 							printf("%f ", sum); */
+/* 						} */
+/* 						printf("\n"); */
+/* 					} */
+/* 				} */
+/* #endif */
+				cell.alpha = 1.0 / std::sqrt(1.0 + 2.0 * H);
 				cell.beta[0] = 2.0 * H * lx;
 				cell.beta[1] = 2.0 * H * ly;
 				cell.beta[2] = 2.0 * H * lz;
-
-				cell.alpha = 1.0 / sqrt(1.0 + 2.0 * H);
-
+				gridtensor.compute_christoffel_3D(grid_obj, i, j, k, cell.Christoffel);
 				for (int a_idx = 0; a_idx < 3; a_idx++) {
 					for (int b_idx = 0; b_idx < 3; b_idx++) {
 						cell.K[a_idx][b_idx] = 0.0;
 					}
 				}
-				#ifndef PFLUID
-				
-					double r_cart = sqrt(x * x + y * y + z * z);
-					cell.rho = exp(-r_cart * r_cart / 2.0);
-					cell.p = 0.3 * cell.rho + 0.5 * cell.rho * cell.rho;
 
-					double vr = 2.0;  
+#ifndef PFLUID
+				{
+					double r_cart = std::sqrt(x*x + y*y + z*z);
+					cell.rho = std::exp(-r_cart * r_cart / 2.0);
+					cell.p   = 0.3 * cell.rho + 0.5 * cell.rho * cell.rho;
+
+					double vr = 2.0;
 					if (r_cart > 1e-6) {
 						cell.vx = -vr * y / r_cart;
-						cell.vy = vr * x / r_cart;
-						cell.vz = vr * z / r_cart * (1.0 - 1.0 / r_cart);
+						cell.vy =  vr * x / r_cart;
+						cell.vz =  0.0;  
 					} else {
-						cell.vx = cell.vy = 0.0;
+						cell.vx = 0.0; 
+						cell.vy = 0.0; 
+						cell.vz = 0.0;
 					}
-					cell.vz = 0.0;
-
-					double r_horizon = M + sqrt(M * M - a * a);
-					double epsilon = 1e-2;
-
-					double diff = fabs(r - r_horizon);
-					if (diff < epsilon) {
-						horizonPoints.push_back({x, y, z});
-					}
-					/* if (r < r_horizon) { */
-					/* 	cell.vx = cell.vy = cell.vz = 0.0; */
-					/* 	cell.rho = 0.0; */
-					/* 	cell.p = 0.0; */
-					/* } */
-
-				#endif
-
-                cell.beta[0] = 2 * H * lx;
-                cell.beta[1] = 2 * H * ly;
-                cell.beta[2] = 2 * H * lz;
-				double norm_beta = sqrt(cell.beta[0] * cell.beta[0] + cell.beta[1] * cell.beta[1] + cell.beta[2] * cell.beta[2]);
-				/* printf("norm_beta = %e\n", norm_beta); */
-				if (norm_beta > 1.0) {
-					double scale = 1.0 / norm_beta;
-					cell.beta[0] *= scale;
-					cell.beta[1] *= scale;
-					cell.beta[2] *= scale;
-
 				}
+#endif
 
-				if (j == NY / 2 && k == NZ / 2) {
-					printf("gamma[0][0] at (i=%d, j=%d, k=%d) = %e\n", i, j, k, cell.gamma[0][0]);
-					printf("gamma[1][1] at (i=%d, j=%d, k=%d) = %e\n", i, j, k, cell.gamma[1][1]);
-					printf("gamma[2][2] at (i=%d, j=%d, k=%d) = %e\n", i, j, k, cell.gamma[2][2]);
+				double r_horizon = M + std::sqrt(M*M - a*a);
+				double r_cart    = std::sqrt(x*x + y*y + z*z);
+				double diff      = std::fabs(r_cart - r_horizon);
+				double epsilon   = 1e-2;
+				if (diff < epsilon) {
+#pragma omp critical
+					horizonPoints.push_back({x, y, z});
 				}
-
-				if (i == NX / 2 && j == NY / 2 && k == NZ / 2) {
-					printf("H = %e at r = %e (x=%e, y=%e, z=%e)\n", H, r, x, y, z);
-				}
-			}
+			} 
 		}
-	}
-	GridTensor gridtensor;
+	} 
+
 	for (int i = 1; i < NX - 1; i++) {
 		for (int j = 1; j < NY - 1; j++) {
 			for (int k = 1; k < NZ - 1; k++) {
@@ -233,22 +249,25 @@ void Grid::initializeKerrData(Grid &grid_obj) {
 			}
 		}
 	}
-	printf("K = \n");
-	for (int i = 0; i < 3; i++) {
+
+	printf("K_{ij} near (1,1,1) = \n");
+	for (int p = 0; p < 3; p++) {
 		printf("  ");
-		for (int j = 0; j < 3; j++) {
-			printf("%e ", globalGrid[1][1][1].K[i][j]);
+		for (int q = 0; q < 3; q++) {
+			printf("%e ", globalGrid[1][1][1].K[p][q]);
 		}
 		printf("\n");
 	}
-	
 	printf("alpha_1_1_1 = %e\n", globalGrid[1][1][1].alpha);
-    double test_radii[] = {0.5, 1.0, 2.0, 5.0, 10.0};
-    for (double test_r : test_radii) {
-        double H_test = M / test_r;
-        double alpha_test = 1.0 / sqrt(1.0 + 2 * H_test);
-        printf("Eq plane r = %f : H = %e, alpha = %e\n", test_r, H_test, alpha_test);
-    }
+
+	double test_radii[] = {0.5, 1.0, 2.0, 5.0, 10.0};
+	for (double test_r : test_radii) {
+		double H_test = M / test_r;  
+		double alpha_test = 1.0 / std::sqrt(1.0 + 2.0 * H_test);
+		printf("Eq plane r = %f : H = %e, alpha = %e (Schw approx)\n", 
+				test_r, H_test, alpha_test);
+	}
+
 	{
         std::ofstream ofs("horizon.csv");
         ofs << "x,y,z\n";

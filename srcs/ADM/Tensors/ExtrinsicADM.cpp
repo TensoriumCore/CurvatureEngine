@@ -9,12 +9,11 @@
 /*     return (beta_p - beta_m) / (2.0 * dx); */
 /* } */
 /*  */
-void GridTensor::compute_extrinsic_curvature(Grid &grid_obj, int i, int j, int k, \
-											 double dx, double dy, double dz) {
-	Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
+void GridTensor::compute_extrinsic_curvature(Grid &grid_obj, int i, int j, int k,
+                                             double dx, double dy, double dz) {
+    Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
 
     double partialBeta[3][3];
-
     partialBeta[0][0] = (grid_obj.getCell(i+1, j, k).beta[0] - grid_obj.getCell(i-1, j, k).beta[0]) / (2.0 * dx);
     partialBeta[0][1] = (grid_obj.getCell(i, j+1, k).beta[0] - grid_obj.getCell(i, j-1, k).beta[0]) / (2.0 * dy);
     partialBeta[0][2] = (grid_obj.getCell(i, j, k+1).beta[0] - grid_obj.getCell(i, j, k-1).beta[0]) / (2.0 * dz);
@@ -26,13 +25,10 @@ void GridTensor::compute_extrinsic_curvature(Grid &grid_obj, int i, int j, int k
     partialBeta[2][0] = (grid_obj.getCell(i+1, j, k).beta[2] - grid_obj.getCell(i-1, j, k).beta[2]) / (2.0 * dx);
     partialBeta[2][1] = (grid_obj.getCell(i, j+1, k).beta[2] - grid_obj.getCell(i, j-1, k).beta[2]) / (2.0 * dy);
     partialBeta[2][2] = (grid_obj.getCell(i, j, k+1).beta[2] - grid_obj.getCell(i, j, k-1).beta[2]) / (2.0 * dz);
-	/* for (int ii = 0; ii < 3; ii++) { */
-	/* 	for (int jj = 0; jj < 3; jj++) { */
-	/* 		printf("partialBeta[%d][%d] = %e\n", ii, jj, partialBeta[ii][jj]); */
-	/* 	} */
-	/* } */
+
     compute_christoffel_3D(grid_obj, i, j, k, cell.Christoffel);
-	double sumGammaBeta[3][3] = {0.0};
+
+    double sumGammaBeta[3][3] = {0.0};
     for (int ii = 0; ii < 3; ii++) {
         for (int jj = 0; jj < 3; jj++) {
             for (int m = 0; m < 3; m++) {
@@ -46,7 +42,10 @@ void GridTensor::compute_extrinsic_curvature(Grid &grid_obj, int i, int j, int k
         for (int jj = 0; jj < 3; jj++) {
             double derivPart = partialBeta[ii][jj] + partialBeta[jj][ii];
             double gammaTerm = 2.0 * sumGammaBeta[ii][jj];
-            cell.K[ii][jj] = (1.0 / (2.0 * alphaLoc)) * (derivPart - gammaTerm);
+            double partial_t_gamma_ij = cell.dgt[ii][jj];
+
+            cell.K[ii][jj] = -0.5 / alphaLoc
+                             * (partial_t_gamma_ij - (derivPart - gammaTerm));
         }
     }
 }

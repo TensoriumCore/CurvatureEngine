@@ -45,7 +45,7 @@ int Geodesics_prob() {
 
 	std::chrono::duration<double> elapsed_seconds = end - start;
 	printf("Elapsed time: %f\n", elapsed_seconds.count());
-	write_vtk_file("output/geodesic.vtk");
+	write_vtk_file("Output/geodesic.vtk");
 	if (geodesic_points != NULL) {
 		free(geodesic_points);
 	}

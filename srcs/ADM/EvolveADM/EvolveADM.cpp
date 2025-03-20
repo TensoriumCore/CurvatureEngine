@@ -28,6 +28,7 @@ void Grid::compute_time_derivatives(Grid &grid_obj, int i, int j, int k)
     GridTensor gridTensor;
     double Gamma[3][3][3];
     gridTensor.compute_christoffel_3D(grid_obj, i, j, k, Gamma);
+
     double Ricci[3][3];
     compute_ricci_3D(grid_obj, i, j, k, Ricci);
 

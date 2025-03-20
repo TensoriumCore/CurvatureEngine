@@ -3,9 +3,9 @@
 #include <Geodesics.h>
 
 #define DIM3 3
-constexpr double DX = 0.1;
-constexpr double DY = 0.1;
-constexpr double DZ = 0.1;
+constexpr double DX = 0.09;
+constexpr double DY = 0.09;
+constexpr double DZ = 0.09;
 #define NX 128
 #define NY 128
 #define NZ 128
