@@ -80,7 +80,7 @@ void GridTensor::compute_partial_christoffel(Grid &grid_obj, int i, int j, int k
  * */
 
 
-void Grid::compute_ricci_3D(Grid &grid_obj, int i, int j, int k, double Ricci[3][3]) {
+void Grid::compute_ricci_3D_conformal(Grid &grid_obj, int i, int j, int k, double Ricci[3][3]) {
     GridTensor gridTensor;
     /* gridTensor.compute_christoffel_3D(grid_obj, i, j, k, grid_obj.getCell(i, j, k).Christoffel); */
 
@@ -108,6 +108,56 @@ void Grid::compute_ricci_3D(Grid &grid_obj, int i, int j, int k, double Ricci[3]
 			Ricci[a][b] = term1 - term2 - term3 + term4;
 		}
 	}
+
+
+}
+
+
+void GridTensor::compute_ricci_conformal_factor(Grid &grid_obj, int i, int j, int k, double RicciChi[3][3]) {
+    Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
+    double chi = cell.chi;
+    double invChi = 1.0 / chi;
+    double invChi2 = invChi * invChi;
+
+    double dChi[3];
+    dChi[0] = (grid_obj.getCell(i+1,j,k).chi - grid_obj.getCell(i-1,j,k).chi) / (2.0 * DX);
+    dChi[1] = (grid_obj.getCell(i,j+1,k).chi - grid_obj.getCell(i,j-1,k).chi) / (2.0 * DY);
+    dChi[2] = (grid_obj.getCell(i,j,k+1).chi - grid_obj.getCell(i,j,k-1).chi) / (2.0 * DZ);
+
+    double ddChi[3][3]; 
+    for (int a = 0; a < 3; ++a) {
+        for (int b = 0; b < 3; ++b) {
+            ddChi[a][b] = second_partial(grid_obj, i, j, k, a, b, [&](const Grid::Cell2D &c) {
+                return c.chi;
+            });
+        }
+    }
+
+    for (int a = 0; a < 3; ++a) {
+        for (int b = 0; b < 3; ++b) {
+            double term1 = 0.0, term2 = 0.0;
+            for (int m = 0; m < 3; ++m) {
+                for (int n = 0; n < 3; ++n) {
+                    term1 += cell.tildgamma_inv[m][n] * ddChi[m][n]; // Δχ
+                    term2 += cell.tildgamma_inv[m][n] * dChi[m] * dChi[n]; // |∇χ|^2
+                }
+            }
+
+            RicciChi[a][b] =
+                0.5 * invChi * (ddChi[a][b] + cell.tilde_gamma[a][b] * term1)
+              - 0.25 * invChi2 * (dChi[a] * dChi[b] + cell.tilde_gamma[a][b] * term2);
+        }
+    }
+}
+
+void GridTensor::compute_ricci_BSSN(Grid &grid_obj, int i, int j, int k, double Ricci[3][3]) {
+    double RicciTilde[3][3], RicciChi[3][3];
+    grid_obj.compute_ricci_3D_conformal(grid_obj, i, j, k, RicciTilde);
+    compute_ricci_conformal_factor(grid_obj, i, j, k, RicciChi);
+
+    for (int a = 0; a < 3; ++a)
+        for (int b = 0; b < 3; ++b)
+            Ricci[a][b] = RicciTilde[a][b] + RicciChi[a][b];
 	for (int a = 0; a < 3; a++) 
 		for (int b = 0; b < 3; b++) 
 			grid_obj.getCell(i, j, k).Ricci[a][b] = Ricci[a][b];

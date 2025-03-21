@@ -10,11 +10,14 @@ class GridTensor {
 		void export_christoffel_slice(Grid &grid_obj, int j);
 		void compute_extrinsic_curvature(Grid &grid_obj, int i, int j, int k, \
 											 double dx, double dy, double dz);
+		void compute_Atilde(Grid &grid_obj, int i, int j, int k);
 	protected:
 		void compute_christoffel_3D(Grid &grid_obj, int i, int j, int k, double christof[3][3][3]);
 		void compute_dt_tildeGamma(Grid &grid_obj, int i, int j, int k, double dt_tildeGamma[3]); 
 		void compute_tildeGamma(Grid &grid_obj, int i, int j, int k, double tildeGamma[3]);
 		void compute_partial_christoffel(Grid &grid_obj, int i, int j, int k, int dim, double partialGamma[3][3][3][3], double d);
+		void compute_ricci_conformal_factor(Grid &grid_obj, int i, int j, int k, double RicciChi[3][3]);
+		void compute_ricci_BSSN(Grid &grid_obj, int i, int j, int k, double Ricci[3][3]);
 		double partialX_gamma(Grid &grid_obj, int i, int j, int k, int a, int b);
 		double partialY_gamma(Grid &grid_obj, int i, int j, int k, int a, int b);
 		double partialZ_gamma(Grid &grid_obj, int i, int j, int k, int a, int b);
@@ -24,3 +27,13 @@ class GridTensor {
 		double partialX_gammaSpec(Grid &grid_obj, int i, int j, int k, int a, int b);
 };
 
+
+class BSSNevolve {
+	public:
+		BSSNevolve() = default;
+		~BSSNevolve() = default;
+		friend class Grid;
+		void compute_dt_chi(Grid &grid_obj, int i, int j, int k, double &dt_chi);
+	protected:
+
+};

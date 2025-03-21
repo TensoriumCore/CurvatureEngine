@@ -76,8 +76,9 @@ void apply_boundary_conditions(Grid &grid_obj) {
 void Grid::copyInitialState(Cell2D &cell) {
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
-            cell.gamma0[a][b] = cell.gamma[a][b];
+            cell.tilde_gamma0[a][b] = cell.gamma[a][b];
             cell.K0[a][b]     = cell.K[a][b];
+			cell.Atilde0[a][b] = cell.Atilde[a][b];
         }
     }
     cell.alpha0 = cell.alpha;
@@ -89,7 +90,7 @@ void Grid::copyInitialState(Cell2D &cell) {
 void Grid::updateIntermediateState(Cell2D &cell, double dtCoeff, int stageIndex) {
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
-            cell.gamma[a][b] = cell.gamma0[a][b] + dtCoeff * cell.gammaStage[stageIndex][a][b];
+            cell.tilde_gamma[a][b] = cell.tilde_gamma0[a][b] + dtCoeff * cell.gammaStage[stageIndex][a][b];
             cell.K[a][b]     = cell.K0[a][b]     + dtCoeff * cell.KStage[stageIndex][a][b];
         }
     }
@@ -115,7 +116,7 @@ void Grid::storeStage(Cell2D &cell, int stage, double d_alpha_dt, double d_beta_
 void Grid::combineStages(Cell2D &cell, double dt) {
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
-            cell.gamma[a][b] = cell.gamma0[a][b] +
+            cell.tilde_gamma[a][b] = cell.tilde_gamma0[a][b] +
                 (dt / 6.0) * (cell.gammaStage[0][a][b] +
                               2.0 * cell.gammaStage[1][a][b] +
                               2.0 * cell.gammaStage[2][a][b] +
@@ -125,6 +126,13 @@ void Grid::combineStages(Cell2D &cell, double dt) {
                               2.0 * cell.KStage[1][a][b] +
                               2.0 * cell.KStage[2][a][b] +
                               cell.KStage[3][a][b]);
+
+			cell.Atilde[a][b] = cell.Atilde0[a][b] +
+				(dt / 6.0) * (cell.AtildeStage[0][a][b] +
+						2.0 * cell.AtildeStage[1][a][b] +
+						2.0 * cell.AtildeStage[2][a][b] +
+						cell.AtildeStage[3][a][b]);
+
         }
     }
     cell.alpha = cell.alpha0 +

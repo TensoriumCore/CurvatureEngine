@@ -1,7 +1,5 @@
 #include <Geodesics.h>
 
-
-
 void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 	initialize_grid(); 
 	GridTensor gridTensor;
@@ -113,6 +111,7 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 					gridTensor.export_christoffel_slice(grid_obj, NY / 2);
 					export_alpha_slice(grid_obj, NY / 2);
 					export_K_3D(grid_obj);
+					export_tilde_gamma_3D(grid_obj);
 				}
 			}
 		}

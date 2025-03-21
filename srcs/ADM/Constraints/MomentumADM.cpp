@@ -158,8 +158,6 @@ double Grid::compute_ricci_scalar(Grid &grid, int i, int j, int k)
 	for(int a=0; a<3; a++){
 		for(int b=0; b<3; b++){
 			R += cell.gamma_inv[a][b]*cell.Ricci[a][b];
-			log_obj.log_value("cell.Ricci", cell.Ricci[a][b], i, j, k, a, b);
-
 		}
 	}
 	return R;
@@ -175,11 +173,12 @@ void Grid::compute_constraints(Grid &grid_obj, int i, int j, int k, double &hami
         }
     }
     double R = 0.0;
-    for (int a = 0; a < 3; a++) {
-        for (int b = 0; b < 3; b++) {
-            R += cell.gamma_inv[a][b] * cell.Ricci[a][b];
-        }
-    }
+    /* for (int a = 0; a < 3; a++) { */
+    /*     for (int b = 0; b < 3; b++) { */
+    /*         R += cell.gamma_inv[a][b] * cell.Ricci[a][b]; */
+    /*     } */
+    /* } */
+	R = compute_ricci_scalar(grid_obj, i, j, k);
     double Ktrace = 0.0;
     double KK = 0.0;
 	for (int i = 0; i < 3; i++) {
@@ -195,12 +194,12 @@ void Grid::compute_constraints(Grid &grid_obj, int i, int j, int k, double &hami
 	Log log_obj;
     hamiltonian = R + Ktrace * Ktrace - KK;
     hamiltonianGrid[i][j][k] = hamiltonian;
-	/* log_obj.log_value("hamiltonian", hamiltonian, i, j, k); */
 	for(int i_comp=0; i_comp<3; i_comp++){
 		momentum[i_comp] = compute_momentum_i(grid_obj, i, j, k, i_comp);
-/* #pragma omp critical */
-/* 		{ */
-/* 		log_obj.log_value("momentum", momentum[i_comp], i, j, k, i_comp); */
-/* 		} */
+#pragma omp critical
+		{
+		/* log_obj.log_value("momentum", momentum[i_comp], i, j, k, i_comp); */
+		/* log_obj.log_value("hamiltonian", hamiltonian, i, j, k); */
+		}
 	}
 }

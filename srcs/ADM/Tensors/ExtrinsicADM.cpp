@@ -28,24 +28,22 @@ void GridTensor::compute_extrinsic_curvature(Grid &grid_obj, int i, int j, int k
 
     /* compute_christoffel_3D(grid_obj, i, j, k, cell.Christoffel); */
 
-    double sumGammaBeta[3][3] = {0.0};
-    for (int ii = 0; ii < 3; ii++) {
-        for (int jj = 0; jj < 3; jj++) {
-            for (int m = 0; m < 3; m++) {
-                sumGammaBeta[ii][jj] += cell.Christoffel[ii][jj][m] * cell.beta[m];
+    double GammaBeta[3][3] = {0.0};
+    for (int i_idx = 0; i_idx < 3; ++i_idx) {
+        for (int j_idx = 0; j_idx < 3; ++j_idx) {
+            for (int k_idx = 0; k_idx < 3; ++k_idx) {
+                GammaBeta[i_idx][j_idx] += cell.Christoffel[i_idx][j_idx][k_idx] * cell.beta[k_idx];
             }
         }
     }
 
-    double alphaLoc = cell.alpha;
-    for (int ii = 0; ii < 3; ii++) {
-        for (int jj = 0; jj < 3; jj++) {
-            double derivPart = partialBeta[ii][jj] + partialBeta[jj][ii];
-            double gammaTerm = 2.0 * sumGammaBeta[ii][jj];
-            double partial_t_gamma_ij = cell.dgt[ii][jj];
+    double alpha = cell.alpha;
 
-            cell.K[ii][jj] = -0.5 / alphaLoc
-                             * (partial_t_gamma_ij - (derivPart - gammaTerm));
+    for (int a = 0; a < 3; ++a) {
+        for (int b = 0; b < 3; ++b) {
+            double sym_grad_beta = partialBeta[a][b] + partialBeta[b][a];
+            double correction = sym_grad_beta - 2.0 * GammaBeta[a][b];
+            cell.K[a][b] = -0.5 / alpha * (cell.dgt[a][b] - correction);
         }
     }
 }

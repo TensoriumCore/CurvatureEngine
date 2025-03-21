@@ -17,13 +17,76 @@ void export_gamma_slice(Grid &grid_obj, int j) {
             Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
 
             file << x << "," << z << ","
-                 << cell.gamma[0][0] << "," << cell.gamma[0][1] << "," << cell.gamma[0][2] << ","
-                 << cell.gamma[1][0] << "," << cell.gamma[1][1] << "," << cell.gamma[1][2] << ","
-                 << cell.gamma[2][0] << "," << cell.gamma[2][1] << "," << cell.gamma[2][2] << "\n";
+                 << cell.tilde_gamma[0][0] << "," << cell.tilde_gamma[0][1] << "," << cell.tilde_gamma[0][2] << ","
+                 << cell.tilde_gamma[1][0] << "," << cell.tilde_gamma[1][1] << "," << cell.tilde_gamma[1][2] << ","
+                 << cell.tilde_gamma[2][0] << "," << cell.tilde_gamma[2][1] << "," << cell.tilde_gamma[2][2] << "\n";
         }
     }
     file.close();
     std::cout << "Gamma slice (all components) saved to gamma_slice_full.csv\n";
+}
+
+
+
+void export_tilde_gamma_3D(Grid &grid_obj) {
+    std::ofstream file("Output/tilde_gamma_full.vtk");
+    file << "# vtk DataFile Version 2.0\n";
+    file << "Conformal metric tilde_gamma\n";
+    file << "ASCII\n";
+    file << "DATASET STRUCTURED_POINTS\n";
+
+    file << "DIMENSIONS " << NX << " " << NY << " " << NZ << "\n";
+    
+    double x0 = -9.0;
+    double y0 = -9.0;
+    double z0 = -9.0;
+    
+    file << "ORIGIN " << x0 << " " << y0 << " " << z0 << "\n";
+
+    double dx = 18.0 / (NX - 1);
+    double dy = 18.0 / (NY - 1);
+    double dz = 18.0 / (NZ - 1);
+    
+    file << "SPACING " << dx << " " << dy << " " << dz << "\n";
+
+    file << "POINT_DATA " << (NX * NY * NZ) << "\n";
+    file << "TENSORS tilde_gamma float\n";
+
+    for (int i = 0; i < NX; i++) {
+        for (int j = 0; j < NY; j++) {
+            for (int k = 0; k < NZ; k++) {
+                Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
+                file << cell.tilde_gamma[0][0] << " " << cell.tilde_gamma[0][1] << " " << cell.tilde_gamma[0][2] << "\n";
+                file << cell.tilde_gamma[1][0] << " " << cell.tilde_gamma[1][1] << " " << cell.tilde_gamma[1][2] << "\n";
+                file << cell.tilde_gamma[2][0] << " " << cell.tilde_gamma[2][1] << " " << cell.tilde_gamma[2][2] << "\n\n";
+            }
+        }
+    }
+
+    // Ajout des composantes diagonales comme scalaires
+    file << "SCALARS tilde_gamma_00 float 1\n";
+    file << "LOOKUP_TABLE default\n";
+    for (int i = 0; i < NX; i++)
+        for (int j = 0; j < NY; j++)
+            for (int k = 0; k < NZ; k++)
+                file << grid_obj.getCell(i, j, k).tilde_gamma[0][0] << "\n";
+
+    file << "SCALARS tilde_gamma_11 float 1\n";
+    file << "LOOKUP_TABLE default\n";
+    for (int i = 0; i < NX; i++)
+        for (int j = 0; j < NY; j++)
+            for (int k = 0; k < NZ; k++)
+                file << grid_obj.getCell(i, j, k).tilde_gamma[1][1] << "\n";
+
+    file << "SCALARS tilde_gamma_22 float 1\n";
+    file << "LOOKUP_TABLE default\n";
+    for (int i = 0; i < NX; i++)
+        for (int j = 0; j < NY; j++)
+            for (int k = 0; k < NZ; k++)
+                file << grid_obj.getCell(i, j, k).tilde_gamma[2][2] << "\n";
+
+    file.close();
+    std::cout << "✅ Fichier VTK de la métrique conforme tilde_gamma sauvegardé : tilde_gamma_full.vtk\n";
 }
 
 void export_K_slice(Grid &grid_obj, int j) {
@@ -49,11 +112,11 @@ void export_K_slice(Grid &grid_obj, int j) {
 }
 
 double r_e_plus(double theta, double a) {
-    return M + sqrt(M * M - a * a * cos(theta) * cos(theta));  // Ergosphère externe
+    return M + sqrt(M * M - a * a * cos(theta) * cos(theta)); 
 }
 
 double r_e_minus(double theta, double a) {
-    return M - sqrt(M * M - a * a * cos(theta) * cos(theta));  // Ergosphère interne
+    return M - sqrt(M * M - a * a * cos(theta) * cos(theta)); 
 }
 
 void export_K_3D(Grid &grid_obj) {
@@ -94,9 +157,9 @@ void export_K_3D(Grid &grid_obj) {
         for (int j = 0; j < NY; j++) {
             for (int k = 0; k < NZ; k++) {
                 Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
-                file << cell.dKt[0][0] << " " << cell.dKt[0][1] << " " << cell.dKt[0][2] << "\n";
-                file << cell.dKt[1][0] << " " << cell.dKt[1][1] << " " << cell.dKt[1][2] << "\n";
-                file << cell.dKt[2][0] << " " << cell.dKt[2][1] << " " << cell.dKt[2][2] << "\n\n";
+                file << cell.dt_Atilde[0][0] << " " << cell.dt_Atilde[0][1] << " " << cell.dt_Atilde[0][2] << "\n";
+                file << cell.dt_Atilde[1][0] << " " << cell.dt_Atilde[1][1] << " " << cell.dt_Atilde[1][2] << "\n";
+                file << cell.dt_Atilde[2][0] << " " << cell.dt_Atilde[2][1] << " " << cell.dt_Atilde[2][2] << "\n\n";
             }
         }
     }    double r_H = M + sqrt(M * M - a * a); 

@@ -38,7 +38,7 @@ void GridTensor::compute_dt_tildeGamma(Grid &grid_obj, int i, int j, int k, doub
 
 	for (int a = 0; a < 3; a++) {
 		for (int b = 0; b < 3; b++) {
-			cell.Atilde[a][b] = cell.K[a][b] - (1.0 / 3.0) * Ktrace * cell.gamma[a][b];
+			cell.Atilde[a][b] = cell.K[a][b] - (1.0 / 3.0) * Ktrace * cell.tilde_gamma[a][b];
 			cell.Atilde[a][b] *= cell.chi; 
 		}
 	}
@@ -65,10 +65,10 @@ void GridTensor::compute_dt_tildeGamma(Grid &grid_obj, int i, int j, int k, doub
 
 		for (int j_comp = 0; j_comp < 3; j_comp++) {
 			double AtildeP = grid_obj.getCell(iP, j, k).K[i_comp][j_comp] -
-				(1.0 / 3.0) * KtraceP * grid_obj.getCell(iP, j, k).gamma[i_comp][j_comp];
+				(1.0 / 3.0) * KtraceP * grid_obj.getCell(iP, j, k).tilde_gamma[i_comp][j_comp];
 
 			double AtildeM = grid_obj.getCell(iM, j, k).K[i_comp][j_comp] -
-				(1.0 / 3.0) * KtraceM * grid_obj.getCell(iM, j, k).gamma[i_comp][j_comp];
+				(1.0 / 3.0) * KtraceM * grid_obj.getCell(iM, j, k).tilde_gamma[i_comp][j_comp];
 
 			div_Atilde += (AtildeP - AtildeM) / (2.0 * DX);
 		}
@@ -91,6 +91,9 @@ void GridTensor::compute_dt_tildeGamma(Grid &grid_obj, int i, int j, int k, doub
 
 		dt_tildeGamma[i_comp] = -2.0 * alpha * div_Atilde + 2.0 * alpha * tildeGamma_Atilde + beta_term;
 	}
+	for (int i_comp = 0; i_comp < 3; i_comp++) {
+		dt_tildeGamma[i_comp] = cell.dt_tildeGamma[i_comp];
+	}
 }
 
 
@@ -108,7 +111,7 @@ void GridTensor::compute_tildeGamma(Grid &grid_obj, int i, int j, int k, double 
 
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
-            gammaInv[a][b] = cell.gamma_inv[a][b];
+            gammaInv[a][b] = cell.tildgamma_inv[a][b];
             for (int c = 0; c < 3; c++) {
                 christof[a][b][c] = cell.Christoffel[a][b][c];
             }
@@ -119,9 +122,9 @@ void GridTensor::compute_tildeGamma(Grid &grid_obj, int i, int j, int k, double 
 
 	/*
 	 * This use the christoffel symbols to compute the tildeGamma tensor
-	 * \tilde{\Gamma}^i = \gamma^{jk} \Gamma^i_{jk}
+	 * \tilde{\Gamma}^i = \tilde_gamma^{jk} \Gamma^i_{jk}
 	 * where \Gamma^i_{jk} is the christoffel symbol
-	 * Then we contract the tensor conexion using the invert of the metric gamma_ij --> \gamma^{ij}
+	 * Then we contract the tensor conexion using the invert of the metric gamma_ij --> \tilde_gamma^{ij}
 	 * */
 
     for (int i_comp = 0; i_comp < 3; i_comp++) { 
@@ -131,6 +134,9 @@ void GridTensor::compute_tildeGamma(Grid &grid_obj, int i, int j, int k, double 
             }
         }
     }
+	for (int i_comp = 0; i_comp < 3; i_comp++) {
+		tildeGamma[i_comp] = cell.tildeGamma[i_comp];
+	}
 }
 
 /** this function compute the Christoffel symbols at each point of the 3D grid
@@ -157,8 +163,8 @@ void GridTensor::compute_christoffel_3D(Grid &grid_obj, int i, int j, int k, dou
 
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
-            invg[a][b] = grid_obj.getCell(i, j, k).gamma_inv[a][b];
-            g[a][b] = grid_obj.getCell(i, j, k).gamma[a][b];
+            invg[a][b] = grid_obj.getCell(i, j, k).tildgamma_inv[a][b];
+            g[a][b] = grid_obj.getCell(i, j, k).tilde_gamma[a][b];
             for (int c = 0; c < 3; c++) {
                 christof[a][b][c] = grid_obj.getCell(i, j, k).Christoffel[a][b][c];
             }
@@ -171,49 +177,49 @@ void GridTensor::compute_christoffel_3D(Grid &grid_obj, int i, int j, int k, dou
 	for (int a = 0; a < 3; a++) {
 		for (int b = 0; b < 3; b++) {
 			dgamma[0][a][b] = (i >= 2 && i <= NX - 3) ? fourth_order_diff(
-					grid_obj.getCell(i+2, j, k).gamma[a][b],
-					grid_obj.getCell(i+1, j, k).gamma[a][b],
-					grid_obj.getCell(i-1, j, k).gamma[a][b],
-					grid_obj.getCell(i-2, j, k).gamma[a][b],
+					grid_obj.getCell(i+2, j, k).tilde_gamma[a][b],
+					grid_obj.getCell(i+1, j, k).tilde_gamma[a][b],
+					grid_obj.getCell(i-1, j, k).tilde_gamma[a][b],
+					grid_obj.getCell(i-2, j, k).tilde_gamma[a][b],
 					DX
 					) : (i >= 1 && i <= NX - 2) ? second_order_diff(
-						grid_obj.getCell(i+1, j, k).gamma[a][b],
-						grid_obj.getCell(i-1, j, k).gamma[a][b],
+						grid_obj.getCell(i+1, j, k).tilde_gamma[a][b],
+						grid_obj.getCell(i-1, j, k).tilde_gamma[a][b],
 						DX
 						) : (i == 0) ? 
-					(grid_obj.getCell(i+1, j, k).gamma[a][b] - grid_obj.getCell(i, j, k).gamma[a][b]) / DX
+					(grid_obj.getCell(i+1, j, k).tilde_gamma[a][b] - grid_obj.getCell(i, j, k).tilde_gamma[a][b]) / DX
 					: 
-					(grid_obj.getCell(i, j, k).gamma[a][b] - grid_obj.getCell(i-1, j, k).gamma[a][b]) / DX;
+					(grid_obj.getCell(i, j, k).tilde_gamma[a][b] - grid_obj.getCell(i-1, j, k).tilde_gamma[a][b]) / DX;
 
 			dgamma[1][a][b] = (j >= 2 && j <= NY - 3) ? fourth_order_diff(
-					grid_obj.getCell(i, j+2, k).gamma[a][b],
-					grid_obj.getCell(i, j+1, k).gamma[a][b],
-					grid_obj.getCell(i, j-1, k).gamma[a][b],
-					grid_obj.getCell(i, j-2, k).gamma[a][b],
+					grid_obj.getCell(i, j+2, k).tilde_gamma[a][b],
+					grid_obj.getCell(i, j+1, k).tilde_gamma[a][b],
+					grid_obj.getCell(i, j-1, k).tilde_gamma[a][b],
+					grid_obj.getCell(i, j-2, k).tilde_gamma[a][b],
 					DY
 					) : (j >= 1 && j <= NY - 2) ? second_order_diff(
-						grid_obj.getCell(i, j+1, k).gamma[a][b],
-						grid_obj.getCell(i, j-1, k).gamma[a][b],
+						grid_obj.getCell(i, j+1, k).tilde_gamma[a][b],
+						grid_obj.getCell(i, j-1, k).tilde_gamma[a][b],
 						DY
 						) : (j == 0) ? 
-					(grid_obj.getCell(i, j+1, k).gamma[a][b] - grid_obj.getCell(i, j, k).gamma[a][b]) / DY
+					(grid_obj.getCell(i, j+1, k).tilde_gamma[a][b] - grid_obj.getCell(i, j, k).tilde_gamma[a][b]) / DY
 					: 
-					(grid_obj.getCell(i, j, k).gamma[a][b] - grid_obj.getCell(i, j-1, k).gamma[a][b]) / DY;
+					(grid_obj.getCell(i, j, k).tilde_gamma[a][b] - grid_obj.getCell(i, j-1, k).tilde_gamma[a][b]) / DY;
 
 			dgamma[2][a][b] = (k >= 2 && k <= NZ - 3) ? fourth_order_diff(
-					grid_obj.getCell(i, j, k+2).gamma[a][b],
-					grid_obj.getCell(i, j, k+1).gamma[a][b],
-					grid_obj.getCell(i, j, k-1).gamma[a][b],
-					grid_obj.getCell(i, j, k-2).gamma[a][b],
+					grid_obj.getCell(i, j, k+2).tilde_gamma[a][b],
+					grid_obj.getCell(i, j, k+1).tilde_gamma[a][b],
+					grid_obj.getCell(i, j, k-1).tilde_gamma[a][b],
+					grid_obj.getCell(i, j, k-2).tilde_gamma[a][b],
 					DZ
 					) : (k >= 1 && k <= NZ - 2) ? second_order_diff(
-						grid_obj.getCell(i, j, k+1).gamma[a][b],
-						grid_obj.getCell(i, j, k-1).gamma[a][b],
+						grid_obj.getCell(i, j, k+1).tilde_gamma[a][b],
+						grid_obj.getCell(i, j, k-1).tilde_gamma[a][b],
 						DZ
 						) : (k == 0) ? 
-					(grid_obj.getCell(i, j, k+1).gamma[a][b] - grid_obj.getCell(i, j, k).gamma[a][b]) / DZ
+					(grid_obj.getCell(i, j, k+1).tilde_gamma[a][b] - grid_obj.getCell(i, j, k).tilde_gamma[a][b]) / DZ
 					: 
-					(grid_obj.getCell(i, j, k).gamma[a][b] - grid_obj.getCell(i, j, k-1).gamma[a][b]) / DZ;
+					(grid_obj.getCell(i, j, k).tilde_gamma[a][b] - grid_obj.getCell(i, j, k-1).tilde_gamma[a][b]) / DZ;
 
 			/* if (i == NX/2 && j == NY/2 && k == NZ/2) { */
 			/* 	printf("∆X = %e, ∆Y = %e, ∆Z = %e\n", DX, DY, DZ); */

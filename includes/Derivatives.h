@@ -146,4 +146,37 @@ double partial_m(Grid &grid_obj, int i, int j, int k, int dim, Getter getter) {
     return 0.0;
 }
 
+template <typename Getter>
+double second_partial(Grid &grid_obj, int i, int j, int k, int a, int b, Getter getter) {
+    if (a == b) {
+        if (a == 0 && i >= 1 && i <= NX - 2) {
+            return (getter(grid_obj.getCell(i+1, j, k)) - 2.0 * getter(grid_obj.getCell(i, j, k)) + getter(grid_obj.getCell(i-1, j, k))) / (DX * DX);
+        } else if (a == 1 && j >= 1 && j <= NY - 2) {
+            return (getter(grid_obj.getCell(i, j+1, k)) - 2.0 * getter(grid_obj.getCell(i, j, k)) + getter(grid_obj.getCell(i, j-1, k))) / (DY * DY);
+        } else if (a == 2 && k >= 1 && k <= NZ - 2) {
+            return (getter(grid_obj.getCell(i, j, k+1)) - 2.0 * getter(grid_obj.getCell(i, j, k)) + getter(grid_obj.getCell(i, j, k-1))) / (DZ * DZ);
+        }
+    } else {
+        int ip = i, im = i, jp = j, jm = j, kp = k, km = k;
+        if (a == 0) { ip = i + 1; im = i - 1; }
+        if (a == 1) { jp = j + 1; jm = j - 1; }
+        if (a == 2) { kp = k + 1; km = k - 1; }
+
+        if (b == 0) { ip = i + 1; im = i - 1; }
+        if (b == 1) { jp = j + 1; jm = j - 1; }
+        if (b == 2) { kp = k + 1; km = k - 1; }
+
+        double dx_a = (a == 0) ? DX : (a == 1) ? DY : DZ;
+        double dx_b = (b == 0) ? DX : (b == 1) ? DY : DZ;
+
+        dx_a = safe_dx(dx_a);
+        dx_b = safe_dx(dx_b);
+
+        return (getter(grid_obj.getCell(ip, jp, kp)) - getter(grid_obj.getCell(ip, jm, km))
+              - getter(grid_obj.getCell(im, jp, kp)) + getter(grid_obj.getCell(im, jm, km)))
+              / (4.0 * dx_a * dx_b);
+    }
+
+    return 0.0;
+}
 
