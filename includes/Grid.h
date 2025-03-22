@@ -72,6 +72,7 @@ class Grid {
 			double p;
 			double T[4][4];
 		};
+		void logger_evolve(Grid &grid_obj, double dt, int nstep);
 		void compute_spectral_derivatives_for_gamma() ;
 		void compute_energy_momentum_evolution(int i, int j, int k, double dt);
 		void update_energy_momentum_tensor(int i, int j, int k);
@@ -90,6 +91,7 @@ class Grid {
 				Vector3& beta_con,
 				Matrix3x3& gamma,
 				Matrix3x3& gamma_inv);
+		void export_constraints(std::string filename);
 		void initializeData(); 
 		void compute_ricci_3d(
 				Grid& grid_obj,  
@@ -123,7 +125,7 @@ class Grid {
 		double partialX_KUp(Grid &grid, int i, int j, int k, int j_up, int i_low);
 		double partialY_KUp(Grid &grid, int i, int j, int k, int j_up, int i_low);
 		double partialZ_KUp(Grid &grid, int i, int j, int k, int j_up, int i_low);
-
+		void export_chi_slice(Grid &grid_obj, double time);
 		double computeTraceK(Grid &grid, int i, int j, int k);
 		double christoffelTerm(Grid &grid, int i, int j, int k, int i_comp);
 		void compute_gauge_derivatives(Grid &grid_obj, int i, int j, int k, double &d_alpha_dt, double d_beta_dt[3]);
@@ -157,5 +159,5 @@ void export_K_3D(Grid &grid_obj);
 void export_alpha_slice(Grid &grid_obj, int j);
 void export_gauge_slice(Grid &grid_obj, int j);
 void export_K_slice(Grid &grid_obj, int j);
-void export_gamma_slice(Grid &grid_obj, int j);
+void export_gamma_slice(Grid &grid_obj, int j, double time);
 void export_tilde_gamma_3D(Grid &grid_obj);

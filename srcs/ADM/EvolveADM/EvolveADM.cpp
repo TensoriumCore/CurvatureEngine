@@ -90,11 +90,7 @@ void Grid::compute_time_derivatives(Grid &grid_obj, int i, int j, int k)
             cell.dt_Atilde[a][b] = cell.chi * (-D2_alpha + (1.0 / 3.0) * cell.tilde_gamma[a][b] * trace_D2_alpha + alpha * Ricci_TF)
                                  + alpha * (cell.K_trace * cell.Atilde[a][b] - 2.0 * A_A)
                                  + adv + shift_term;
-#pragma omp critical
-			{
-			if (i == 1 && j == 1 && k == 1) 
-				printf("dt_Atilde[%d][%d] = %e\n", a, b, cell.dt_Atilde[a][b]);
-			}
+
         }
     }
 

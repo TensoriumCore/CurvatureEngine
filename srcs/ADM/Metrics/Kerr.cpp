@@ -79,6 +79,31 @@ void Grid::initializeKerrData(Grid &grid_obj) {
 					}
 				}
 
+				/* double A = 0.2; */
+				/* double lambda = 3.0; */
+				/* double r0 = 3.0; */
+				/* double sigma = 0.6; */
+				/* double omega = 2.0 * M_PI / lambda; */
+				/* double r_cyl = std::sqrt(y*y + z*z); */
+				/* double phi = std::atan2(y, z); */
+				/* double K = omega; */
+				/* double phase = 2.0 * phi;  */
+				/* double envelope = std::exp(-((rKS - r0) * (rKS - r0)) / (sigma * sigma)); */
+				/* double h_plus = A / rKS * std::cos(phase) * envelope; */
+				/* double h_cross = A / rKS * std::sin(phase) * envelope; */
+				/*  */
+				/* cell.tilde_gamma[0][0] += h_plus; */
+				/* cell.tilde_gamma[0][1] += h_cross; */
+				/* cell.tilde_gamma[1][0] += h_cross; */
+				/* cell.tilde_gamma[1][1] -= h_plus; */
+
+				/* double dh_dt = -omega * A / rKS * std::sin(phase) * envelope; */
+				/* cell.Atilde[0][0] += -0.5 / cell.alpha * dh_dt; */
+				/* cell.Atilde[0][1] += -0.5 / cell.alpha * dh_dt; */
+				/* cell.Atilde[1][0] += -0.5 / cell.alpha * dh_dt; */
+				/* cell.Atilde[1][1] +=  0.5 / cell.alpha * dh_dt; */
+				/*  */
+
 				Matrix3x3 tilde_gamma_std;
 				Matrix3x3 tilde_gamma_inv_std;
 
@@ -92,27 +117,27 @@ void Grid::initializeKerrData(Grid &grid_obj) {
 					for (int b = 0; b < 3; ++b)
 						cell.tildgamma_inv[a][b] = tilde_gamma_inv_std[a][b];
 
-               
-                cell.alpha = 1.0 / std::sqrt(1.0 + 2.0 * H);
-                cell.beta[0] = 2.0 * H * lx;
-                cell.beta[1] = 2.0 * H * ly;
-                cell.beta[2] = 2.0 * H * lz;
 
-                for (int a_idx = 0; a_idx < 3; a_idx++) {
-                    for (int b_idx = 0; b_idx < 3; b_idx++) {
-                        cell.K[a_idx][b_idx] = 0.0;
-                    }
-                }
-            }
-        }
-    }
+				cell.alpha = 1.0 / std::sqrt(1.0 + 2.0 * H);
+				cell.beta[0] = 2.0 * H * lx;
+				cell.beta[1] = 2.0 * H * ly;
+				cell.beta[2] = 2.0 * H * lz;
 
-    for (int i = 1; i < NX - 1; i++) {
-        for (int j = 1; j < NY - 1; j++) {
-            for (int k = 1; k < NZ - 1; k++) {
-                gridtensor.compute_extrinsic_curvature(*this, i, j, k, dx, dy, dz);
+				for (int a_idx = 0; a_idx < 3; a_idx++) {
+					for (int b_idx = 0; b_idx < 3; b_idx++) {
+						cell.K[a_idx][b_idx] = 0.0;
+					}
+				}
+			}
+		}
+	}
+
+	for (int i = 1; i < NX - 1; i++) {
+		for (int j = 1; j < NY - 1; j++) {
+			for (int k = 1; k < NZ - 1; k++) {
+				gridtensor.compute_extrinsic_curvature(*this, i, j, k, dx, dy, dz);
 				gridtensor.compute_Atilde(*this, i, j, k);
-                Cell2D &cell = globalGrid[i][j][k];
+				Cell2D &cell = globalGrid[i][j][k];
 				/* if (i == NX/2 && j == NY/2 && k == NZ/2) { */
 				/* 	printf("Atilde_{ij} =\n"); */
 				/* 	for (int a = 0; a < 3; ++a) { */
@@ -134,12 +159,14 @@ void Grid::initializeKerrData(Grid &grid_obj) {
                         Ktrace += globalGrid[i][j][k].gamma_inv[a][b] * globalGrid[i][j][k].K[a][b];
                     }
                 }
-                for (int a = 0; a < 3; a++) {
-                    for (int b = 0; b < 3; b++) {
-                        globalGrid[i][j][k].Atilde[a][b] = globalGrid[i][j][k].K[a][b] 
-                            - (1.0 / 3.0) * Ktrace * globalGrid[i][j][k].gamma[a][b];
-                    }
-                }
+
+				for (int a = 0; a < 3; a++) {
+					for (int b = 0; b < 3; b++) {
+						globalGrid[i][j][k].Atilde[a][b] = cell.chi * (globalGrid[i][j][k].K[a][b] 
+								- (1.0 / 3.0) * Ktrace * globalGrid[i][j][k].gamma[a][b]);
+					}
+				}
+
             }
         }
 	}

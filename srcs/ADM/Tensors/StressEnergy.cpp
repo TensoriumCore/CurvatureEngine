@@ -67,7 +67,6 @@ void Grid::compute_energy_momentum_evolution(int i, int j, int k, double dt) {
         }
     }
 
-    // Mise à jour des valeurs dans la grille
     for (int mu = 0; mu < 4; mu++) {
         for (int nu = 0; nu < 4; nu++) {
             cell.T[mu][nu] += dt * dtT[mu][nu];

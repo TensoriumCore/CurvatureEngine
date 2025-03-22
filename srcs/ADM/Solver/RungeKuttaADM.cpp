@@ -1,5 +1,21 @@
 #include <Geodesics.h>
 
+void Grid::logger_evolve(Grid &grid_obj, double dt, int nstep)
+{    
+	Cell2D &cell = grid_obj.getCell(0, 0, 0);
+	printf("=====================================\n");
+	printf("Time step: %f, nstep: %d\n", dt, nstep);
+	printf("=====================================\n");
+	printf("alpha: %f\n", cell.alpha);
+	printf("beta: %f %f %f\n", cell.beta[0], cell.beta[1], cell.beta[2]);
+	printf("Hamiltonian: %f\n", cell.hamiltonian);
+	printf("Momentum: %f %f %f\n", cell.momentum[0], cell.momentum[1], cell.momentum[2]);
+	printf("Ricciscalar: %f\n", cell.Ricci);
+	printf("=====================================\n");
+	printf("\n\n");
+	
+}
+
 void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 	initialize_grid(); 
 	GridTensor gridTensor;
@@ -102,16 +118,19 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 			}
 #pragma omp single
 			{
+				logger_evolve(grid_obj, dt, step);
+				export_chi_slice(grid_obj, step * dt);
+				export_gamma_slice(grid_obj, NY / 2, step * dt);
 				if (step == nSteps- 1)
 				{
 					printf("Exporting slices\n");
 					export_K_slice(grid_obj, NY / 2);
 					export_gauge_slice(grid_obj, NY / 2);
-					export_gamma_slice(grid_obj, NY / 2);
 					gridTensor.export_christoffel_slice(grid_obj, NY / 2);
 					export_alpha_slice(grid_obj, NY / 2);
 					export_K_3D(grid_obj);
 					export_tilde_gamma_3D(grid_obj);
+					/* export_constraints("Output/constraints_N128.csv"); */
 				}
 			}
 		}

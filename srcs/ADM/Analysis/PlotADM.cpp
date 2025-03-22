@@ -1,20 +1,31 @@
 
 #include <Geodesics.h>
 
-void export_gamma_slice(Grid &grid_obj, int j) {
-    std::ofstream file("Output/gamma_slice_full.csv");
+void export_gamma_slice(Grid &grid_obj, int j, double time) {
+    std::ostringstream filename;
+    filename << "Output/gamma_slice_t" << std::fixed << std::setprecision(3) << time << ".csv";
+
+    std::ofstream file(filename.str());
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file: " << filename.str() << std::endl;
+        return;
+    }
 
     file << "x,z,"
          << "gamma_00,gamma_01,gamma_02,"
          << "gamma_10,gamma_11,gamma_12,"
          << "gamma_20,gamma_21,gamma_22\n";
-    
-    for (int i = 0; i < NX; i++) {
-        for (int k = 0; k < NZ; k++) {
-            double x = -9.0 + i * (18.0 / (NX - 1));
-            double z = -9.0 + k * (18.0 / (NZ - 1));
 
-            Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
+    double L = 9.0;
+    double dx = (2.0 * L) / (NX - 1);
+    double dz = (2.0 * L) / (NZ - 1);
+
+    for (int i = 0; i < NX; ++i) {
+        for (int k = 0; k < NZ; ++k) {
+            double x = -L + i * dx;
+            double z = -L + k * dz;
+
+            const Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
 
             file << x << "," << z << ","
                  << cell.tilde_gamma[0][0] << "," << cell.tilde_gamma[0][1] << "," << cell.tilde_gamma[0][2] << ","
@@ -22,11 +33,32 @@ void export_gamma_slice(Grid &grid_obj, int j) {
                  << cell.tilde_gamma[2][0] << "," << cell.tilde_gamma[2][1] << "," << cell.tilde_gamma[2][2] << "\n";
         }
     }
+
     file.close();
-    std::cout << "Gamma slice (all components) saved to gamma_slice_full.csv\n";
+    std::cout << "[Export] Gamma slice saved to: " << filename.str() << std::endl;
 }
 
 
+void Grid::export_chi_slice(Grid &grid_obj, double time) {
+    std::ofstream file;
+    char filename[256];
+    sprintf(filename, "Output/chi_slice_t%.3f.dat", time);
+    file.open(filename);
+	double L = 9.0;
+    int z_mid = NZ / 2; // Coupe au plan z = 0
+
+    for (int i = 0; i < NX; ++i) {
+        for (int j = 0; j < NY; ++j) {
+            double x = -L + i * DX;
+            double y = -L + j * DY;
+            double chi = globalGrid[i][j][z_mid].chi;
+            file << x << " " << y << " " << chi << "\n";
+        }
+        file << "\n";
+    }
+
+    file.close();
+}
 
 void export_tilde_gamma_3D(Grid &grid_obj) {
     std::ofstream file("Output/tilde_gamma_full.vtk");
@@ -88,6 +120,33 @@ void export_tilde_gamma_3D(Grid &grid_obj) {
     file.close();
     std::cout << "✅ Fichier VTK de la métrique conforme tilde_gamma sauvegardé : tilde_gamma_full.vtk\n";
 }
+
+/* void export_constraints(std::string filename) { */
+/*     std::ofstream file(filename); */
+/*     file << "x,y,z,Hamiltonian,Momentum_x,Momentum_y,Momentum_z\n"; */
+/*  */
+/*     for (int i = 0; i < NX; i++) { */
+/*         for (int j = 0; j < NY; j++) { */
+/*             for (int k = 0; k < NZ; k++) { */
+/*                 double x = -9.0 + i * (18.0 / (NX - 1)); */
+/*                 double y = -9.0 + j * (18.0 / (NY - 1)); */
+/*                 double z = -9.0 + k * (18.0 / (NZ - 1)); */
+/*  */
+/*                 double hamiltonian = hamiltonianGrid[i][j][k]; */
+/*                 double momentum[3] = {0.0, 0.0, 0.0}; */
+/*                 compute_constraints(*this, i, j, k, hamiltonian, momentum); */
+/*  */
+/*                 file << x << "," << y << "," << z << "," */
+/*                      << hamiltonian << "," */
+/*                      << momentum[0] << "," << momentum[1] << "," << momentum[2] << "\n"; */
+/*             } */
+/*         } */
+/*     } */
+/*  */
+/*     file.close(); */
+/*     std::cout << "✅ Contraintes exportées dans " << filename << std::endl; */
+/* } */
+
 
 void export_K_slice(Grid &grid_obj, int j) {
     std::ofstream file("Output/K_slice.csv");

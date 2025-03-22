@@ -7,6 +7,32 @@ void Grid::initialize_grid() {
     hamiltonianGrid.resize(NX, std::vector<std::vector<double>>(NY, std::vector<double>(NZ, 0.0)));
 }
 
+void Grid::export_constraints(std::string filename) {
+    std::ofstream file(filename);
+    file << "x,y,z,Hamiltonian,Momentum_x,Momentum_y,Momentum_z\n";
+
+    for (int i = 0; i < NX; i++) {
+        for (int j = 0; j < NY; j++) {
+            for (int k = 0; k < NZ; k++) {
+                double x = -9.0 + i * (18.0 / (NX - 1));
+                double y = -9.0 + j * (18.0 / (NY - 1));
+                double z = -9.0 + k * (18.0 / (NZ - 1));
+
+                double hamiltonian = hamiltonianGrid[i][j][k];
+                double momentum[3] = {0.0, 0.0, 0.0};
+                compute_constraints(*this, i, j, k, hamiltonian, momentum);
+
+                file << x << "," << y << "," << z << ","
+                     << hamiltonian << ","
+                     << momentum[0] << "," << momentum[1] << "," << momentum[2] << "\n";
+            }
+        }
+    }
+
+    file.close();
+    std::cout << "✅ Contraintes exportées dans " << filename << std::endl;
+}
+
 double Grid::KUpAt(Grid &grid, int ip, int jp, int kp, int j_up, int i_low)
 {
     if(ip<0 || ip>=NX || jp<0 || jp>=NY || kp<0 || kp>=NZ) {
@@ -194,8 +220,10 @@ void Grid::compute_constraints(Grid &grid_obj, int i, int j, int k, double &hami
 	Log log_obj;
     hamiltonian = R + Ktrace * Ktrace - KK;
     hamiltonianGrid[i][j][k] = hamiltonian;
+	cell.hamiltonian = hamiltonian;
 	for(int i_comp=0; i_comp<3; i_comp++){
 		momentum[i_comp] = compute_momentum_i(grid_obj, i, j, k, i_comp);
+		cell.momentum[i_comp] = momentum[i_comp];
 #pragma omp critical
 		{
 		/* log_obj.log_value("momentum", momentum[i_comp], i, j, k, i_comp); */
