@@ -54,4 +54,3 @@ For inquiries, reach out via GitHub Issues or email.
 
 ---
 This project is developed as part of personal advanced numerical relativity research and high-performance computing optimizations. The code and physics computations might have inconsistencies (still at the beginning of the project, and I'm not a physicist).
-
