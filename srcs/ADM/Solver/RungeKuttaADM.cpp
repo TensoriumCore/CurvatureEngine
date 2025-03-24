@@ -3,18 +3,37 @@
 void Grid::logger_evolve(Grid &grid_obj, double dt, int nstep)
 {    
 	Cell2D &cell = grid_obj.getCell(0, 0, 0);
-	printf("=====================================\n");
+	printf("=============================================\n");
 	printf("Time step: %f, nstep: %d\n", dt, nstep);
-	printf("=====================================\n");
-	printf("alpha: %f\n", cell.alpha);
-	printf("beta: %f %f %f\n", cell.beta[0], cell.beta[1], cell.beta[2]);
-	printf("Hamiltonian: %f\n", cell.hamiltonian);
-	printf("Momentum: %f %f %f\n", cell.momentum[0], cell.momentum[1], cell.momentum[2]);
-	printf("Ricciscalar: %f\n", cell.Ricci);
-	printf("=====================================\n");
+	printf("=============================================\n");
+	printf("alpha: %e\n", cell.gauge.alpha);
+	printf("beta: %e %e %e\n", cell.gauge.beta[0], cell.gauge.beta[1], cell.gauge.beta[2]);
+	printf("Hamiltonian: %e\n", cell.matter.hamiltonian);
+	printf("Momentum: %e %e %e\n", cell.matter.momentum[0], cell.matter.momentum[1], cell.matter.momentum[2]);
+	printf("dtAtilde:\n");
+	for (int i = 0; i < 3; i++)
+		printf("	  %e %e %e\n", cell.atilde.dt_Atilde[i][0], \
+								   cell.atilde.dt_Atilde[i][1], 
+								   cell.atilde.dt_Atilde[i][2]);
+	printf("Chi: %e\n", cell.dt_chi);
+	compute_ADM_mass();
+	printf("=============================================\n");
 	printf("\n\n");
 	
 }
+
+void Grid::export_1D_tilde_gamma_xx(int j_fixed, int k_fixed, double time) {
+	std::ofstream out("Output/tilde_gamma_xx_t=" + std::to_string(time) + ".csv");
+
+	for (int i = 0; i < NX; ++i) {
+		double x = i * DX;
+		double gxx = globalGrid[i][j_fixed][k_fixed].geom.tilde_gamma[0][0];
+		out << x << "," << gxx << "\n";
+	}
+
+	out.close();
+}
+
 
 void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 	initialize_grid(); 
@@ -28,7 +47,7 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 		apply_boundary_conditions(grid_obj);
 #pragma omp parallel 
 		{
-#pragma omp for collapse(3) schedule(dynamic)
+#pragma omp for collapse(3) schedule(runtime)
 			for (int i = 1; i < NX - 1; i++) {
 				for (int j = 1; j < NY - 1; j++) {
 					for (int k = 1; k < NZ - 1; k++) {
@@ -36,7 +55,7 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 					}
 				}
 			}
-#pragma omp for collapse(3) schedule(dynamic)
+#pragma omp for collapse(3) schedule(runtime)
 			for (int i = 1; i < NX - 1; i++) {
 				for (int j = 1; j < NY - 1; j++) {
 					for (int k = 1; k < NZ - 1; k++) {
@@ -49,7 +68,7 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 				}
 			}
 
-#pragma omp for collapse(3) schedule(dynamic)
+#pragma omp for collapse(3) schedule(runtime)
 			for (int i = 1; i < NX - 1; i++) {
 				for (int j = 1; j < NY - 1; j++) {
 					for (int k = 1; k < NZ - 1; k++) {
@@ -57,7 +76,7 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 					}
 				}
 			}
-#pragma omp for collapse(3) schedule(dynamic)
+#pragma omp for collapse(3) schedule(runtime)
 			for (int i = 1; i < NX - 1; i++) {
 				for (int j = 1; j < NY - 1; j++) {
 					for (int k = 1; k < NZ - 1; k++) {
@@ -68,7 +87,7 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 					}
 				}
 			}
-#pragma omp for collapse(3) schedule(dynamic)
+#pragma omp for collapse(3) schedule(runtime)
 			for (int i = 1; i < NX - 1; i++) {
 				for (int j = 1; j < NY - 1; j++) {
 					for (int k = 1; k < NZ - 1; k++) {
@@ -76,7 +95,7 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 					}
 				}
 			}
-#pragma omp for collapse(3) schedule(dynamic)
+#pragma omp for collapse(3) schedule(runtime)
 			for (int i = 1; i < NX - 1; i++) {
 				for (int j = 1; j < NY - 1; j++) {
 					for (int k = 1; k < NZ - 1; k++) {
@@ -88,7 +107,7 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 					}
 				}
 			}
-#pragma omp for collapse(3) schedule(dynamic)
+#pragma omp for collapse(3) schedule(runtime)
 			for (int i = 1; i < NX - 1; i++) {
 				for (int j = 1; j < NY - 1; j++) {
 					for (int k = 1; k < NZ - 1; k++) {
@@ -96,7 +115,7 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 					}
 				}
 			}
-#pragma omp for collapse(3) schedule(dynamic)
+#pragma omp for collapse(3) schedule(runtime)
 			for (int i = 1; i < NX - 1; i++) {
 				for (int j = 1; j < NY - 1; j++) {
 					for (int k = 1; k < NZ - 1; k++) {
@@ -108,7 +127,7 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 					}
 				}
 			}
-#pragma omp for collapse(3) schedule(dynamic)
+#pragma omp for collapse(3) schedule(runtime)
 			for (int i = 1; i < NX - 1; i++) {
 				for (int j = 1; j < NY - 1; j++) {
 					for (int k = 1; k < NZ - 1; k++) {
@@ -116,11 +135,10 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 					}
 				}
 			}
-#pragma omp single
+#pragma omp single nowait
 			{
 				logger_evolve(grid_obj, dt, step);
 				export_chi_slice(grid_obj, step * dt);
-				export_gamma_slice(grid_obj, NY / 2, step * dt);
 				if (step == nSteps- 1)
 				{
 					printf("Exporting slices\n");
@@ -133,6 +151,7 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 					/* export_constraints("Output/constraints_N128.csv"); */
 				}
 			}
+			grid_obj.time += dt;
 		}
 	}
 }

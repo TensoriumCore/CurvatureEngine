@@ -21,22 +21,22 @@ void Grid::initializeData_Minkowski()
             {
                 Cell2D &cell = globalGrid[i][j][k];
 
-                cell.alpha = 1.0;
-                cell.beta[0] = 0.0;
-                cell.beta[1] = 0.0;
-                cell.beta[2] = 0.0;
+                cell.gauge.alpha = 1.0;
+                cell.gauge.beta[0] = 0.0;
+                cell.gauge.beta[1] = 0.0;
+                cell.gauge.beta[2] = 0.0;
 
                 for(int a=0; a<3; a++)
                 {
                     for(int b=0; b<3; b++)
                     {
-                        cell.gamma[a][b] = (a == b) ? 1.0 : 0.0;
+                        cell.geom.gamma[a][b] = (a == b) ? 1.0 : 0.0;
                     }
                 }
 
                 for(int a=0; a<3; a++){
                     for(int b=0; b<3; b++){
-                        cell.K[a][b] = 0.0;
+                        cell.curv.K[a][b] = 0.0;
                     }
                 }
             }
@@ -51,13 +51,13 @@ void Grid::initializeData_Minkowski()
             for(int test_k=0; test_k<3; test_k++)
             {
                 Cell2D &cell = globalGrid[test_i][test_j][test_k];
-                printf("Point (%d,%d,%d): alpha=%f, gamma=\n", test_i, test_j, test_k, cell.alpha);
+                printf("Point (%d,%d,%d): alpha=%f, geom.gamma=\n", test_i, test_j, test_k, cell.gauge.alpha);
                 for(int a=0; a<3; a++)
                 {
                     printf("  ");
                     for(int b=0; b<3; b++)
                     {
-                        printf("%f ", cell.gamma[a][b]);
+                        printf("%f ", cell.geom.gamma[a][b]);
                     }
                     printf("\n");
                 }

@@ -15,10 +15,10 @@ static void print_matrix_2D(const char* name, const double mat[3][3])
 }
 
 /*
- * This function compute the partial derivative of the Christoffel symbols at each point of the 3D grid
+ * This function compute the partial derivative of the conn.Christoffel symbols at each point of the 3D grid
  * @param i , j , k the index of the cell
  * @param dim the dimension of the partial derivative
- * @param partialGamma the output array of the partial derivative of the Christoffel tensor
+ * @param partialGamma the output array of the partial derivative of the conn.Christoffel tensor
  * @param d the step size
  * @return void
  *
@@ -53,8 +53,8 @@ void GridTensor::compute_partial_christoffel(Grid &grid_obj, int i, int j, int k
     for (int kk = 0; kk < 3; kk++) {
         for (int aa = 0; aa < 3; aa++) {
             for (int bb = 0; bb < 3; bb++) {
-                double Gamma_p = grid_obj.getCell(ip1, jp1, kp1).Christoffel[kk][aa][bb];
-                double Gamma_m = grid_obj.getCell(im1, jm1, km1).Christoffel[kk][aa][bb];
+                double Gamma_p = grid_obj.getCell(ip1, jp1, kp1).conn.Christoffel[kk][aa][bb];
+                double Gamma_m = grid_obj.getCell(im1, jm1, km1).conn.Christoffel[kk][aa][bb];
 
                 partialGamma[dim][kk][aa][bb] = (Gamma_p - Gamma_m) / (2.0 * d);
             }
@@ -70,11 +70,11 @@ void GridTensor::compute_partial_christoffel(Grid &grid_obj, int i, int j, int k
  *	@return void
  *
  *	The Ricci tensor is computed using the formula:
- *	R_{ab} = \partial_k \grid_obj.getCell(i, j, k).Christoffel^k_{ab} - \partial_b \grid_obj.getCell(i, j, k).Christoffel^k_{ak} + \grid_obj.getCell(i, j, k).Christoffel^l_{ab} \grid_obj.getCell(i, j, k).Christoffel^k_{lk} - \grid_obj.getCell(i, j, k).Christoffel^l_{ak} \grid_obj.getCell(i, j, k).Christoffel^k_{bl}
- *	where \grid_obj.getCell(i, j, k).Christoffel^k_{ab} is the Christoffel symbol
+ *	R_{ab} = \partial_k \grid_obj.getCell(i, j, k).conn.Christoffel^k_{ab} - \partial_b \grid_obj.getCell(i, j, k).conn.Christoffel^k_{ak} + \grid_obj.getCell(i, j, k).conn.Christoffel^l_{ab} \grid_obj.getCell(i, j, k).conn.Christoffel^k_{lk} - \grid_obj.getCell(i, j, k).conn.Christoffel^l_{ak} \grid_obj.getCell(i, j, k).conn.Christoffel^k_{bl}
+ *	where \grid_obj.getCell(i, j, k).conn.Christoffel^k_{ab} is the conn.Christoffel symbol
  *	\partial_k is the partial derivative
  *	
- *	We use the partial derivative of the Christoffel symbols to compute the Ricci tensor
+ *	We use the partial derivative of the conn.Christoffel symbols to compute the Ricci tensor
  *	for the Hamiltonian constraint and the momentum constraint
  *	This tensor is used to compute the Ricci scalar and extrinsic curvature tensor in the ADM formalism
  * */
@@ -82,7 +82,7 @@ void GridTensor::compute_partial_christoffel(Grid &grid_obj, int i, int j, int k
 
 void Grid::compute_ricci_3D_conformal(Grid &grid_obj, int i, int j, int k, double Ricci[3][3]) {
     GridTensor gridTensor;
-    /* gridTensor.compute_christoffel_3D(grid_obj, i, j, k, grid_obj.getCell(i, j, k).Christoffel); */
+    /* gridTensor.compute_christoffel_3D(grid_obj, i, j, k, grid_obj.getCell(i, j, k).conn.Christoffel); */
 
     double partialGamma[3][3][3][3] = {};
 	Log logger;
@@ -100,8 +100,8 @@ void Grid::compute_ricci_3D_conformal(Grid &grid_obj, int i, int j, int k, doubl
 
 			for (int k = 0; k < 3; k++) {
 				for (int l = 0; l < 3; l++) {
-					term3 += grid_obj.getCell(i, j, k).Christoffel[k][a][b] * grid_obj.getCell(i, j, k).Christoffel[l][l][k]; // Correcte
-					term4 += grid_obj.getCell(i, j, k).Christoffel[k][a][l] * grid_obj.getCell(i, j, k).Christoffel[l][b][k]; // Correcte
+					term3 += grid_obj.getCell(i, j, k).conn.Christoffel[k][a][b] * grid_obj.getCell(i, j, k).conn.Christoffel[l][l][k]; // Correcte
+					term4 += grid_obj.getCell(i, j, k).conn.Christoffel[k][a][l] * grid_obj.getCell(i, j, k).conn.Christoffel[l][b][k]; // Correcte
 				}
 			}
 
@@ -138,14 +138,14 @@ void GridTensor::compute_ricci_conformal_factor(Grid &grid_obj, int i, int j, in
             double term1 = 0.0, term2 = 0.0;
             for (int m = 0; m < 3; ++m) {
                 for (int n = 0; n < 3; ++n) {
-                    term1 += cell.tildgamma_inv[m][n] * ddChi[m][n]; // Δχ
-                    term2 += cell.tildgamma_inv[m][n] * dChi[m] * dChi[n]; // |∇χ|^2
+                    term1 += cell.geom.tildgamma_inv[m][n] * ddChi[m][n]; // Δχ
+                    term2 += cell.geom.tildgamma_inv[m][n] * dChi[m] * dChi[n]; // |∇χ|^2
                 }
             }
 
             RicciChi[a][b] =
-                0.5 * invChi * (ddChi[a][b] + cell.tilde_gamma[a][b] * term1)
-              - 0.25 * invChi2 * (dChi[a] * dChi[b] + cell.tilde_gamma[a][b] * term2);
+                0.5 * invChi * (ddChi[a][b] + cell.geom.tilde_gamma[a][b] * term1)
+              - 0.25 * invChi2 * (dChi[a] * dChi[b] + cell.geom.tilde_gamma[a][b] * term2);
         }
     }
 }
@@ -160,7 +160,7 @@ void GridTensor::compute_ricci_BSSN(Grid &grid_obj, int i, int j, int k, double 
             Ricci[a][b] = RicciTilde[a][b] + RicciChi[a][b];
 	for (int a = 0; a < 3; a++) 
 		for (int b = 0; b < 3; b++) 
-			grid_obj.getCell(i, j, k).Ricci[a][b] = Ricci[a][b];
+			grid_obj.getCell(i, j, k).geom.Ricci[a][b] = Ricci[a][b];
 	/* #pragma omp critical */
 	/* { */
 	/* 	print_matrix_2D("Ricci", Ricci); */

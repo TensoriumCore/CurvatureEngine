@@ -13,10 +13,10 @@ double Grid::computeMaxSpeed() {
         for (int j = 1; j < NY - 1; j++) {
             for (int k = 1; k < NZ - 1; k++) {
                 Cell2D &cell = globalGrid[i][j][k];
-                double betaNorm = std::sqrt(cell.beta[0]*cell.beta[0] +
-                                            cell.beta[1]*cell.beta[1] +
-                                            cell.beta[2]*cell.beta[2]);
-                double localSpeed = std::fabs(cell.alpha) + betaNorm;
+                double betaNorm = std::sqrt(cell.gauge.beta[0]*cell.gauge.beta[0] +
+                                            cell.gauge.beta[1]*cell.gauge.beta[1] +
+                                            cell.gauge.beta[2]*cell.gauge.beta[2]);
+                double localSpeed = std::fabs(cell.gauge.alpha) + betaNorm;
                 if (localSpeed > maxSpeed) {
                     maxSpeed = localSpeed;
                 }

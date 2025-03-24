@@ -16,6 +16,63 @@ inline double kerrSchildRadius(double x, double y, double z, double a)
     return std::sqrt(term);
 }
 
+void Grid::injectTTWave(Cell2D &cell, double x, double y, double z, double t){
+	constexpr double A      = 1.6; 
+	constexpr double lambda = 3.0; 
+	constexpr double r0     = 2.0;
+	constexpr double sigma  = 0.6; 
+	constexpr double omega  = 2.0 * M_PI / lambda;
+	
+	double r = std::sqrt(x * x + y * y + z * z);
+	if (r < 1e-14) return; 
+
+	double theta = std::acos(z / r);
+	double phi   = std::atan2(y, x);
+
+	double envelope = std::exp(-((r - r0) * (r - r0)) / (sigma * sigma));
+	double phase    = omega * t - 2.0 * phi; 
+
+	double h_plus   = A / r * std::cos(phase) * envelope;
+	double h_cross  = A / r * std::sin(phase) * envelope;
+
+	double sin_theta = std::sin(theta), cos_theta = std::cos(theta);
+	double sin_phi   = std::sin(phi),   cos_phi   = std::cos(phi);
+
+	Vector3 e_theta = {
+		cos_theta * cos_phi,
+		cos_theta * sin_phi,
+		-sin_theta
+	};
+
+	Vector3 e_phi = {
+		-sin_phi,
+		cos_phi,
+		0.0
+	};
+
+	Matrix3x3 h_cartesian = {0};
+
+	for (int i = 0; i < 3; ++i)
+		for (int j = 0; j < 3; ++j) {
+			h_cartesian[i][j] += h_plus * (e_theta[i] * e_theta[j] - e_phi[i] * e_phi[j]);
+			h_cartesian[i][j] += h_cross * (e_theta[i] * e_phi[j] + e_phi[i] * e_theta[j]);
+		}
+
+	for (int i = 0; i < 3; ++i)
+		for (int j = 0; j < 3; ++j)
+			cell.geom.tilde_gamma[i][j] += h_cartesian[i][j];
+
+	double dh_plus_dt  = -omega * A / r * std::sin(phase) * envelope;
+	double dh_cross_dt = -omega * A / r * std::cos(phase) * envelope;
+
+	for (int i = 0; i < 3; ++i)
+		for (int j = 0; j < 3; ++j) {
+			double dh_ij_dt = dh_plus_dt * (e_theta[i] * e_theta[j] - e_phi[i] * e_phi[j])
+				+ dh_cross_dt * (e_theta[i] * e_phi[j] + e_phi[i] * e_theta[j]);
+			cell.atilde.Atilde[i][j] += -0.5 / cell.gauge.alpha * dh_ij_dt;
+		}
+}
+
 void Grid::initializeKerrData(Grid &grid_obj) {
     double a = 0.9999;
     double L = 9.0; 
@@ -53,79 +110,54 @@ void Grid::initializeKerrData(Grid &grid_obj) {
 
                 Cell2D &cell = globalGrid[i][j][k];
 
-                cell.gamma[0][0] = 1.0 + 2.0 * H * lx * lx;
-                cell.gamma[0][1] = 2.0 * H * lx * ly;
-                cell.gamma[0][2] = 2.0 * H * lx * lz;
-                cell.gamma[1][1] = 1.0 + 2.0 * H * ly * ly;
-                cell.gamma[1][2] = 2.0 * H * ly * lz;
-                cell.gamma[2][2] = 1.0 + 2.0 * H * lz * lz;
-                cell.gamma[1][0] = cell.gamma[0][1];
-                cell.gamma[2][0] = cell.gamma[0][2];
-                cell.gamma[2][1] = cell.gamma[1][2];
+                cell.geom.gamma[0][0] = 1.0 + 2.0 * H * lx * lx;
+                cell.geom.gamma[0][1] = 2.0 * H * lx * ly;
+                cell.geom.gamma[0][2] = 2.0 * H * lx * lz;
+                cell.geom.gamma[1][1] = 1.0 + 2.0 * H * ly * ly;
+                cell.geom.gamma[1][2] = 2.0 * H * ly * lz;
+                cell.geom.gamma[2][2] = 1.0 + 2.0 * H * lz * lz;
+                cell.geom.gamma[1][0] = cell.geom.gamma[0][1];
+                cell.geom.gamma[2][0] = cell.geom.gamma[0][2];
+                cell.geom.gamma[2][1] = cell.geom.gamma[1][2];
 
-                matrix.inverse_3x3(cell.gamma, cell.gamma_inv);
+                matrix.inverse_3x3(cell.geom.gamma, cell.geom.gamma_inv);
 
 				double det_gamma = std::cbrt(
-						cell.gamma[0][0] * cell.gamma[1][1] * cell.gamma[2][2]
-						- cell.gamma[0][0] * cell.gamma[1][2] * cell.gamma[2][1]
-						- cell.gamma[1][1] * cell.gamma[0][2] * cell.gamma[2][0]
-						- cell.gamma[2][2] * cell.gamma[0][1] * cell.gamma[1][0]
+						cell.geom.gamma[0][0] * cell.geom.gamma[1][1] * cell.geom.gamma[2][2]
+						- cell.geom.gamma[0][0] * cell.geom.gamma[1][2] * cell.geom.gamma[2][1]
+						- cell.geom.gamma[1][1] * cell.geom.gamma[0][2] * cell.geom.gamma[2][0]
+						- cell.geom.gamma[2][2] * cell.geom.gamma[0][1] * cell.geom.gamma[1][0]
 						);
 				cell.chi = 1.0 / det_gamma;
 
 				for (int a = 0; a < 3; a++) {
 					for (int b = 0; b < 3; b++) {
-						cell.tilde_gamma[a][b] = cell.chi * cell.gamma[a][b];
+						cell.geom.tilde_gamma[a][b] = cell.chi * cell.geom.gamma[a][b];
 					}
 				}
-
-				/* double A = 0.2; */
-				/* double lambda = 3.0; */
-				/* double r0 = 3.0; */
-				/* double sigma = 0.6; */
-				/* double omega = 2.0 * M_PI / lambda; */
-				/* double r_cyl = std::sqrt(y*y + z*z); */
-				/* double phi = std::atan2(y, z); */
-				/* double K = omega; */
-				/* double phase = 2.0 * phi;  */
-				/* double envelope = std::exp(-((rKS - r0) * (rKS - r0)) / (sigma * sigma)); */
-				/* double h_plus = A / rKS * std::cos(phase) * envelope; */
-				/* double h_cross = A / rKS * std::sin(phase) * envelope; */
-				/*  */
-				/* cell.tilde_gamma[0][0] += h_plus; */
-				/* cell.tilde_gamma[0][1] += h_cross; */
-				/* cell.tilde_gamma[1][0] += h_cross; */
-				/* cell.tilde_gamma[1][1] -= h_plus; */
-
-				/* double dh_dt = -omega * A / rKS * std::sin(phase) * envelope; */
-				/* cell.Atilde[0][0] += -0.5 / cell.alpha * dh_dt; */
-				/* cell.Atilde[0][1] += -0.5 / cell.alpha * dh_dt; */
-				/* cell.Atilde[1][0] += -0.5 / cell.alpha * dh_dt; */
-				/* cell.Atilde[1][1] +=  0.5 / cell.alpha * dh_dt; */
-				/*  */
 
 				Matrix3x3 tilde_gamma_std;
 				Matrix3x3 tilde_gamma_inv_std;
 
 				for (int a = 0; a < 3; ++a)
 					for (int b = 0; b < 3; ++b)
-						tilde_gamma_std[a][b] = cell.tilde_gamma[a][b];
+						tilde_gamma_std[a][b] = cell.geom.tilde_gamma[a][b];
 
 				matrix.inverse_3x3(tilde_gamma_std, tilde_gamma_inv_std);
 
 				for (int a = 0; a < 3; ++a)
 					for (int b = 0; b < 3; ++b)
-						cell.tildgamma_inv[a][b] = tilde_gamma_inv_std[a][b];
+						cell.geom.tildgamma_inv[a][b] = tilde_gamma_inv_std[a][b];
 
 
-				cell.alpha = 1.0 / std::sqrt(1.0 + 2.0 * H);
-				cell.beta[0] = 2.0 * H * lx;
-				cell.beta[1] = 2.0 * H * ly;
-				cell.beta[2] = 2.0 * H * lz;
+				cell.gauge.alpha = 1.0 / std::sqrt(1.0 + 2.0 * H);
+				cell.gauge.beta[0] = 2.0 * H * lx;
+				cell.gauge.beta[1] = 2.0 * H * ly;
+				cell.gauge.beta[2] = 2.0 * H * lz;
 
 				for (int a_idx = 0; a_idx < 3; a_idx++) {
 					for (int b_idx = 0; b_idx < 3; b_idx++) {
-						cell.K[a_idx][b_idx] = 0.0;
+						cell.curv.K[a_idx][b_idx] = 0.0;
 					}
 				}
 			}
@@ -142,7 +174,7 @@ void Grid::initializeKerrData(Grid &grid_obj) {
 				/* 	printf("Atilde_{ij} =\n"); */
 				/* 	for (int a = 0; a < 3; ++a) { */
 				/* 		for (int b = 0; b < 3; ++b) { */
-				/* 			printf("  %.5e", cell.Atilde[a][b]); */
+				/* 			printf("  %.5e", cell.atilde.Atilde[a][b]); */
 				/* 		} */
 				/* 		printf("\n"); */
 				/* 	} */
@@ -150,20 +182,20 @@ void Grid::initializeKerrData(Grid &grid_obj) {
 				double trace_Atilde = 0.0;
 				for (int a = 0; a < 3; ++a) {
 					for (int b = 0; b < 3; ++b) {
-						trace_Atilde += globalGrid[1][1][1].tildgamma_inv[a][b] * globalGrid[1][1][1].Atilde[a][b];
+						trace_Atilde += globalGrid[1][1][1].geom.tildgamma_inv[a][b] * globalGrid[1][1][1].atilde.Atilde[a][b];
 					}
 				}
                 double Ktrace = 0.0;
                 for (int a = 0; a < 3; a++) {
                     for (int b = 0; b < 3; b++) {
-                        Ktrace += globalGrid[i][j][k].gamma_inv[a][b] * globalGrid[i][j][k].K[a][b];
+                        Ktrace += globalGrid[i][j][k].geom.gamma_inv[a][b] * globalGrid[i][j][k].curv.K[a][b];
                     }
                 }
 
 				for (int a = 0; a < 3; a++) {
 					for (int b = 0; b < 3; b++) {
-						globalGrid[i][j][k].Atilde[a][b] = cell.chi * (globalGrid[i][j][k].K[a][b] 
-								- (1.0 / 3.0) * Ktrace * globalGrid[i][j][k].gamma[a][b]);
+						globalGrid[i][j][k].atilde.Atilde[a][b] = cell.chi * (globalGrid[i][j][k].curv.K[a][b] 
+								- (1.0 / 3.0) * Ktrace * globalGrid[i][j][k].geom.gamma[a][b]);
 					}
 				}
 
@@ -174,7 +206,7 @@ void Grid::initializeKerrData(Grid &grid_obj) {
 	for (int p = 0; p < 3; p++) {
 		printf("  ");
 		for (int q = 0; q < 3; q++) {
-			printf("%e ", globalGrid[1][1][1].K[p][q]);
+			printf("%e ", globalGrid[1][1][1].curv.K[p][q]);
 		}
 		printf("\n");
 	}
@@ -182,7 +214,7 @@ void Grid::initializeKerrData(Grid &grid_obj) {
 	for (int p = 0; p < 3; p++) {
 		printf("  ");
 		for (int q = 0; q < 3; q++) {
-			printf("%e ", globalGrid[1][1][1].gamma[p][q]);
+			printf("%e ", globalGrid[1][1][1].geom.gamma[p][q]);
 		}
 		printf("\n");
 	}
@@ -190,7 +222,7 @@ void Grid::initializeKerrData(Grid &grid_obj) {
 	for (int p = 0; p < 3; p++) {
 		printf("  ");
 		for (int q = 0; q < 3; q++) {
-			printf("%e ", globalGrid[1][1][1].gamma_inv[p][q]);
+			printf("%e ", globalGrid[1][1][1].geom.gamma_inv[p][q]);
 		}
 		printf("\n");
 	}
@@ -198,7 +230,7 @@ void Grid::initializeKerrData(Grid &grid_obj) {
 	for (int p = 0; p < 3; p++) {
 		printf("  ");
 		for (int q = 0; q < 3; q++) {
-			printf("%e ", globalGrid[1][1][1].tilde_gamma[p][q]);
+			printf("%e ", globalGrid[1][1][1].geom.tilde_gamma[p][q]);
 		}
 		printf("\n");
 	}
@@ -206,14 +238,14 @@ void Grid::initializeKerrData(Grid &grid_obj) {
 	for (int p = 0; p < 3; p++) {
 		printf("  ");
 		for (int q = 0; q < 3; q++) {
-			printf("%e ", globalGrid[1][1][1].tildgamma_inv[p][q]);
+			printf("%e ", globalGrid[1][1][1].geom.tildgamma_inv[p][q]);
 		}
 		printf("\n");
 	}
 
 	printf("chi near (1,1,1) = %e\n", globalGrid[1][1][1].chi);
 
-	printf("alpha_1_1_1 = %e\n", globalGrid[1][1][1].alpha);
+	printf("alpha_1_1_1 = %e\n", globalGrid[1][1][1].gauge.alpha);
 
 	double test_radii[] = {0.5, 1.0, 2.0, 5.0, 10.0};
 	for (double test_r : test_radii) {

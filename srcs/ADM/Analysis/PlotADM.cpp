@@ -28,9 +28,9 @@ void export_gamma_slice(Grid &grid_obj, int j, double time) {
             const Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
 
             file << x << "," << z << ","
-                 << cell.tilde_gamma[0][0] << "," << cell.tilde_gamma[0][1] << "," << cell.tilde_gamma[0][2] << ","
-                 << cell.tilde_gamma[1][0] << "," << cell.tilde_gamma[1][1] << "," << cell.tilde_gamma[1][2] << ","
-                 << cell.tilde_gamma[2][0] << "," << cell.tilde_gamma[2][1] << "," << cell.tilde_gamma[2][2] << "\n";
+                 << cell.geom.tilde_gamma[0][0] << "," << cell.geom.tilde_gamma[0][1] << "," << cell.geom.tilde_gamma[0][2] << ","
+                 << cell.geom.tilde_gamma[1][0] << "," << cell.geom.tilde_gamma[1][1] << "," << cell.geom.tilde_gamma[1][2] << ","
+                 << cell.geom.tilde_gamma[2][0] << "," << cell.geom.tilde_gamma[2][1] << "," << cell.geom.tilde_gamma[2][2] << "\n";
         }
     }
 
@@ -63,7 +63,7 @@ void Grid::export_chi_slice(Grid &grid_obj, double time) {
 void export_tilde_gamma_3D(Grid &grid_obj) {
     std::ofstream file("Output/tilde_gamma_full.vtk");
     file << "# vtk DataFile Version 2.0\n";
-    file << "Conformal metric tilde_gamma\n";
+    file << "Conformal metric geom.tilde_gamma\n";
     file << "ASCII\n";
     file << "DATASET STRUCTURED_POINTS\n";
 
@@ -82,15 +82,15 @@ void export_tilde_gamma_3D(Grid &grid_obj) {
     file << "SPACING " << dx << " " << dy << " " << dz << "\n";
 
     file << "POINT_DATA " << (NX * NY * NZ) << "\n";
-    file << "TENSORS tilde_gamma float\n";
+    file << "TENSORS geom.tilde_gamma float\n";
 
     for (int i = 0; i < NX; i++) {
         for (int j = 0; j < NY; j++) {
             for (int k = 0; k < NZ; k++) {
                 Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
-                file << cell.tilde_gamma[0][0] << " " << cell.tilde_gamma[0][1] << " " << cell.tilde_gamma[0][2] << "\n";
-                file << cell.tilde_gamma[1][0] << " " << cell.tilde_gamma[1][1] << " " << cell.tilde_gamma[1][2] << "\n";
-                file << cell.tilde_gamma[2][0] << " " << cell.tilde_gamma[2][1] << " " << cell.tilde_gamma[2][2] << "\n\n";
+                file << cell.geom.tilde_gamma[0][0] << " " << cell.geom.tilde_gamma[0][1] << " " << cell.geom.tilde_gamma[0][2] << "\n";
+                file << cell.geom.tilde_gamma[1][0] << " " << cell.geom.tilde_gamma[1][1] << " " << cell.geom.tilde_gamma[1][2] << "\n";
+                file << cell.geom.tilde_gamma[2][0] << " " << cell.geom.tilde_gamma[2][1] << " " << cell.geom.tilde_gamma[2][2] << "\n\n";
             }
         }
     }
@@ -101,24 +101,24 @@ void export_tilde_gamma_3D(Grid &grid_obj) {
     for (int i = 0; i < NX; i++)
         for (int j = 0; j < NY; j++)
             for (int k = 0; k < NZ; k++)
-                file << grid_obj.getCell(i, j, k).tilde_gamma[0][0] << "\n";
+                file << grid_obj.getCell(i, j, k).geom.tilde_gamma[0][0] << "\n";
 
     file << "SCALARS tilde_gamma_11 float 1\n";
     file << "LOOKUP_TABLE default\n";
     for (int i = 0; i < NX; i++)
         for (int j = 0; j < NY; j++)
             for (int k = 0; k < NZ; k++)
-                file << grid_obj.getCell(i, j, k).tilde_gamma[1][1] << "\n";
+                file << grid_obj.getCell(i, j, k).geom.tilde_gamma[1][1] << "\n";
 
     file << "SCALARS tilde_gamma_22 float 1\n";
     file << "LOOKUP_TABLE default\n";
     for (int i = 0; i < NX; i++)
         for (int j = 0; j < NY; j++)
             for (int k = 0; k < NZ; k++)
-                file << grid_obj.getCell(i, j, k).tilde_gamma[2][2] << "\n";
+                file << grid_obj.getCell(i, j, k).geom.tilde_gamma[2][2] << "\n";
 
     file.close();
-    std::cout << "✅ Fichier VTK de la métrique conforme tilde_gamma sauvegardé : tilde_gamma_full.vtk\n";
+    std::cout << "✅ Fichier VTK de la métrique conforme geom.tilde_gamma sauvegardé : tilde_gamma_full.vtk\n";
 }
 
 /* void export_constraints(std::string filename) { */
@@ -161,13 +161,13 @@ void export_K_slice(Grid &grid_obj, int j) {
             Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
 
             file << x << "," << z << ","
-                 << cell.K[0][0] << "," << cell.K[0][1] << "," << cell.K[0][2] << ","
-                 << cell.K[1][0] << "," << cell.K[1][1] << "," << cell.K[1][2] << ","
-                 << cell.K[2][0] << "," << cell.K[2][1] << "," << cell.K[2][2] << "\n";
+                 << cell.atilde.Atilde[0][0] << "," << cell.atilde.Atilde[0][1] << "," << cell.atilde.Atilde[0][2] << ","
+                 << cell.atilde.Atilde[1][0] << "," << cell.atilde.Atilde[1][1] << "," << cell.atilde.Atilde[1][2] << ","
+                 << cell.atilde.Atilde[2][0] << "," << cell.atilde.Atilde[2][1] << "," << cell.atilde.Atilde[2][2] << "\n";
         }
     }
     file.close();
-    std::cout << "K slice saved to K_slice.csv\n";
+    std::cout << "curv.K slice saved to K_slice.csv\n";
 }
 
 double r_e_plus(double theta, double a) {
@@ -181,7 +181,7 @@ double r_e_minus(double theta, double a) {
 void export_K_3D(Grid &grid_obj) {
     std::ofstream file("Output/K_full.vtk");
     file << "# vtk DataFile Version 2.0\n";
-    file << "K extrinsic curvature\n";
+    file << "curv.K extrinsic curvature\n";
     file << "ASCII\n";
     file << "DATASET STRUCTURED_POINTS\n";
 
@@ -205,9 +205,9 @@ void export_K_3D(Grid &grid_obj) {
         for (int j = 0; j < NY; j++) {
             for (int k = 0; k < NZ; k++) {
                 Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
-                file << cell.K[0][0] << " " << cell.K[0][1] << " " << cell.K[0][2] << "\n";
-                file << cell.K[1][0] << " " << cell.K[1][1] << " " << cell.K[1][2] << "\n";
-                file << cell.K[2][0] << " " << cell.K[2][1] << " " << cell.K[2][2] << "\n\n";
+                file << cell.curv.K[0][0] << " " << cell.curv.K[0][1] << " " << cell.curv.K[0][2] << "\n";
+                file << cell.curv.K[1][0] << " " << cell.curv.K[1][1] << " " << cell.curv.K[1][2] << "\n";
+                file << cell.curv.K[2][0] << " " << cell.curv.K[2][1] << " " << cell.curv.K[2][2] << "\n\n";
             }
         }
     }
@@ -216,9 +216,9 @@ void export_K_3D(Grid &grid_obj) {
         for (int j = 0; j < NY; j++) {
             for (int k = 0; k < NZ; k++) {
                 Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
-                file << cell.dt_Atilde[0][0] << " " << cell.dt_Atilde[0][1] << " " << cell.dt_Atilde[0][2] << "\n";
-                file << cell.dt_Atilde[1][0] << " " << cell.dt_Atilde[1][1] << " " << cell.dt_Atilde[1][2] << "\n";
-                file << cell.dt_Atilde[2][0] << " " << cell.dt_Atilde[2][1] << " " << cell.dt_Atilde[2][2] << "\n\n";
+                file << cell.atilde.dt_Atilde[0][0] << " " << cell.atilde.dt_Atilde[0][1] << " " << cell.atilde.dt_Atilde[0][2] << "\n";
+                file << cell.atilde.dt_Atilde[1][0] << " " << cell.atilde.dt_Atilde[1][1] << " " << cell.atilde.dt_Atilde[1][2] << "\n";
+                file << cell.atilde.dt_Atilde[2][0] << " " << cell.atilde.dt_Atilde[2][1] << " " << cell.atilde.dt_Atilde[2][2] << "\n\n";
             }
         }
     }    double r_H = M + sqrt(M * M - a * a); 
@@ -273,7 +273,7 @@ void export_K_3D(Grid &grid_obj) {
 		for (int j = 0; j < NY; j++) {
 			for (int k = 0; k < NZ; k++) {
 				Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
-				file << (cell.rho > 1e-10 ? 1.0 : 0.0) << "\n";
+				file << (cell.matter.rho > 1e-10 ? 1.0 : 0.0) << "\n";
 			}
 		}
 	}
@@ -284,7 +284,8 @@ void export_K_3D(Grid &grid_obj) {
 		for (int j = 0; j < NY; j++) {
 			for (int k = 0; k < NZ; k++) {
 				Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
-				file << sqrt(cell.vx * cell.vx + cell.vy * cell.vy + cell.vz * cell.vz) << "\n";
+				file << sqrt(cell.matter.vx * cell.matter.vx + cell.matter.vy * \
+						cell.matter.vy + cell.matter.vz * cell.matter.vz) << "\n";
 			}
 		}
 	}
@@ -295,7 +296,7 @@ void export_K_3D(Grid &grid_obj) {
 		for (int j = 0; j < NY; j++) {
 			for (int k = 0; k < NZ; k++) {
 				auto &cell = grid_obj.getCell(i, j, k);
-				file << cell.alpha << "\n";
+				file << cell.gauge.alpha << "\n";
 			}
 		}
 	}
@@ -304,13 +305,13 @@ for (int i = 0; i < NX; i++) {
     for (int j = 0; j < NY; j++) {
         for (int k = 0; k < NZ; k++) {
             auto &cell = grid_obj.getCell(i, j, k);
-            file << cell.beta[0] << " " << cell.beta[1] << " " << cell.beta[2] << "\n";
+            file << cell.gauge.beta[0] << " " << cell.gauge.beta[1] << " " << cell.gauge.beta[2] << "\n";
         }
     }
 }
 
     file.close();
-    std::cout << "K 3D VTK file with Kerr surfaces saved to K_full.vtk\n";
+    std::cout << "curv.K 3D VTK file with Kerr surfaces saved to K_full.vtk\n";
 }
 
 
@@ -324,7 +325,7 @@ void export_alpha_slice(Grid &grid_obj, int j) {
             double z = -9.0 + k * (18.0 / (NZ - 1));
 
             Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
-            file << x << "," << z << "," << cell.alpha << "\n";
+            file << x << "," << z << "," << cell.gauge.alpha << "\n";
         }
     }
     file.close();
@@ -347,7 +348,7 @@ void export_gauge_slice(Grid &grid_obj, int j) {
             grid_obj.compute_gauge_derivatives(grid_obj, i, j, k, d_alpha_dt, d_beta_dt);
 
             file << x << "," << z << "," 
-                 << cell.alpha << "," << cell.beta[0] << "," << cell.beta[1] << "," << cell.beta[2] << ","
+                 << cell.gauge.alpha << "," << cell.gauge.beta[0] << "," << cell.gauge.beta[1] << "," << cell.gauge.beta[2] << ","
                  << d_alpha_dt << "," << d_beta_dt[0] << "," << d_beta_dt[1] << "," << d_beta_dt[2] << "\n";
         }
     }
@@ -415,7 +416,7 @@ void Grid::export_fluid_slice(int j_slice) {
         return;
     }
 
-    file << "x,z,rho,p,vx,vy,vz\n";
+    file << "x,z,rho,p,matter.vx,vy,vz\n";
 
     for (int i = 0; i < NX; i++) {
         for (int k = 0; k < NZ; k++) {
@@ -424,8 +425,8 @@ void Grid::export_fluid_slice(int j_slice) {
 
             Cell2D &cell = globalGrid[i][j_slice][k];
             file << x << "," << z << ","
-                 << cell.rho << "," << cell.p << ","
-                 << cell.vx << "," << cell.vy << "," << cell.vz
+                 << cell.matter.rho << "," << cell.matter.p << ","
+                 << cell.matter.vx << "," << cell.matter.vy << "," << cell.matter.vz
                  << "\n";
         }
     }
@@ -458,7 +459,7 @@ void Grid::export_energy_momentum_tensor_slice(int slice_y) {
             file << i << "," << k;
             for (int a = 0; a < 4; a++) {
                 for (int b = 0; b < 4; b++) {
-                    file << "," << cell.T[a][b];
+                    file << "," << cell.matter.T[a][b];
                 }
             }
             file << "\n";

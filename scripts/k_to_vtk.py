@@ -30,22 +30,22 @@ k8_ctf = GetColorTransferFunction('K_8_diagonal')
 k8_ctf.ApplyPreset('Hot Desaturated', True)
 k8_ctf.RescaleTransferFunction(-0.2, 0.2)
 
-
-calc_dKt8 = Calculator(Input=reader)
-calc_dKt8.ResultArrayName = "dKt_8_diagonal"
-calc_dKt8.Function = "dKt_8"
-cont_dKt8 = Contour(Input=calc_dKt8)
-cont_dKt8.ContourBy = ['POINTS', 'dKt_8_diagonal']
-cont_dKt8.Isosurfaces = [-0.1, 0.0, 0.1, 0.2]
-Show(cont_dKt8, rv)
-cont_dKt8Rep = GetDisplayProperties(cont_dKt8, view=rv)
-cont_dKt8Rep.Representation = "Wireframe"
-ColorBy(cont_dKt8Rep, ('POINTS', 'dKt_8_diagonal'))
-cont_dKt8Rep.SetScalarBarVisibility(rv, True)
-cont_dKt8Rep.Opacity = 0.1
-dKt8_ctf = GetColorTransferFunction('dKt_8_diagonal')
-dKt8_ctf.ApplyPreset('Cool to Warm', True)
-dKt8_ctf.RescaleTransferFunction(-0.2, 0.2)
+#
+# calc_dKt8 = Calculator(Input=reader)
+# calc_dKt8.ResultArrayName = "dKt_8_diagonal"
+# calc_dKt8.Function = "dKt_8"
+# cont_dKt8 = Contour(Input=calc_dKt8)
+# cont_dKt8.ContourBy = ['POINTS', 'dKt_8_diagonal']
+# cont_dKt8.Isosurfaces = [-0.1, 0.0, 0.1, 0.2]
+# Show(cont_dKt8, rv)
+# cont_dKt8Rep = GetDisplayProperties(cont_dKt8, view=rv)
+# cont_dKt8Rep.Representation = "Wireframe"
+# ColorBy(cont_dKt8Rep, ('POINTS', 'dKt_8_diagonal'))
+# cont_dKt8Rep.SetScalarBarVisibility(rv, True)
+# cont_dKt8Rep.Opacity = 0.1
+# dKt8_ctf = GetColorTransferFunction('dKt_8_diagonal')
+# dKt8_ctf.ApplyPreset('Cool to Warm', True)
+# dKt8_ctf.RescaleTransferFunction(-0.2, 0.2)
 
 # calc_dkt4 = Calculator(Input=reader)
 # calc_dkt4.ResultArrayName = "dKt_4_diagonal"
@@ -63,21 +63,21 @@ dKt8_ctf.RescaleTransferFunction(-0.2, 0.2)
 # dkt4_ctf.ApplyPreset('Hot Desaturated', True)
 # dkt4_ctf.RescaleTransferFunction(-0.2, 0.2)
 
-# calc_dkt0 = Calculator(Input=reader)
-# calc_dkt0.ResultArrayName = "dKt_0_diagonal"
-# calc_dkt0.Function = "dKt_0"
-# cont_dkt0 = Contour(Input=calc_dkt0)
-# cont_dkt0.ContourBy = ['POINTS', 'dKt_0_diagonal']
-# cont_dkt0.Isosurfaces = [-0.1, 0.0, 0.1, 0.2]
-# Show(cont_dkt0, rv)
-# cont_dkt0Rep = GetDisplayProperties(cont_dkt0, view=rv)
-# cont_dkt0Rep.Representation = "Wireframe"
-# ColorBy(cont_dkt0Rep, ('POINTS', 'dKt_0_diagonal'))
-# cont_dkt0Rep.SetScalarBarVisibility(rv, True)
-# cont_dkt0Rep.Opacity = 0.1
-# dkt0_ctf = GetColorTransferFunction('dKt_0_diagonal')
-# dkt0_ctf.ApplyPreset('Cool to Warm', True)
-# dkt0_ctf.RescaleTransferFunction(-0.2, 0.2)
+calc_dkt0 = Calculator(Input=reader)
+calc_dkt0.ResultArrayName = "dKt_0_diagonal"
+calc_dkt0.Function = "dKt_0"
+cont_dkt0 = Contour(Input=calc_dkt0)
+cont_dkt0.ContourBy = ['POINTS', 'dKt_0_diagonal']
+cont_dkt0.Isosurfaces = [-0.1, 0.0, 0.1, 0.2]
+Show(cont_dkt0, rv)
+cont_dkt0Rep = GetDisplayProperties(cont_dkt0, view=rv)
+cont_dkt0Rep.Representation = "Wireframe"
+ColorBy(cont_dkt0Rep, ('POINTS', 'dKt_0_diagonal'))
+cont_dkt0Rep.SetScalarBarVisibility(rv, True)
+cont_dkt0Rep.Opacity = 0.1
+dkt0_ctf = GetColorTransferFunction('dKt_0_diagonal')
+dkt0_ctf.ApplyPreset('Cool to Warm', True)
+dkt0_ctf.RescaleTransferFunction(-0.2, 0.2)
 # # #
 contHorizon = Contour(Input=reader)
 contHorizon.ContourBy = ['POINTS', 'Horizon']

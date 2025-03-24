@@ -6,9 +6,9 @@
 constexpr double DX = 0.09;
 constexpr double DY = 0.09;
 constexpr double DZ = 0.09;
-#define NX 128
-#define NY 128
-#define NZ 128
+#define NX 148
+#define NY 148
+#define NZ 148
 #define GHOST 2  
 #define NX_TOTAL (NX + 2*GHOST) 
 #define NY_TOTAL (NY + 2*GHOST)
@@ -23,55 +23,84 @@ using Tensor4D  = std::array<std::array<std::array<std::array<double, DIM3>, DIM
 using Christoffel3D = std::array<std::array<std::array<double, DIM3>, DIM3>, DIM3>;
 using Riemann3D = std::array<std::array<std::array<std::array<double, DIM3>, DIM3>, DIM3>, DIM3>;
 
+struct alignas(32) Geometry {
+    Matrix3x3 gamma;
+    Matrix3x3 gamma_inv;
+    Matrix3x3 Ricci;
+    Matrix3x3 gamma0;
+    double tilde_gamma[3][3];
+    double tilde_gamma0[3][3];
+    double tildgamma_inv[3][3];
+    double dt_tilde_gamma[3][3];
+    double dt_tildeGamma[3];
+};
+struct alignas(32) Connection {
+	Tensor3D Gamma3;
+	double tildeGamma[3];
+	double Christoffel[3][3][3];
+};
+
+struct alignas(32) ExtrinsicCurvature {
+    Matrix3x3 K;
+    Matrix3x3 K0;
+    double K_trace;
+    double dt_K_trace;
+    double H;
+    double dKt[3][3];
+};
+
+struct alignas(32) AtildeVars {
+    double Atilde[3][3];
+    double Atilde0[3][3];
+    double dt_Atilde[3][3];
+    double AtildeStage[4][3][3];
+};
+
+struct alignas(32) Gauge {
+    double alpha;
+    double alpha0;
+    double alphaStage[4];
+    Vector3 dalpha_dx;
+
+    double beta[3];
+    double beta0[3];
+    double betaStage[4][3];
+    double Bstage[4][3];
+};
+
+struct Matter {
+    double rho;
+    double momentum[3];
+    double hamiltonian;
+    double p;
+    double vx, vy, vz;
+    double T[4][4];
+};
+
+
 class Grid {
     public:
 
 		std::vector<double> dgammaX[3][3];
 		std::vector<double> dgammaY[3][3];
 		std::vector<double> dgammaZ[3][3];
-		struct Cell2D {
-			Matrix3x3 gamma;     
-			Matrix3x3 gamma_inv; 
-			Tensor3D Gamma3;    
-			Matrix3x3 K;        
-			Matrix3x3 Ricci;    
-			double dt_Atilde[3][3];
-			double K_trace;
-			double H; 
-			double dt_K_trace;
-			double dt_chi;
-			double AtildeStage[4][3][3];
-			double dt_tilde_gamma[3][3];
-			double tilde_gamma[3][3];
-			double tilde_gamma0[3][3];
-			double tildgamma_inv[3][3];
-			double dt_tildeGamma[3];
+		double time = 0.0;
+		struct alignas(32) Cell2D {
+			Geometry geom;
+			Connection conn;
+			ExtrinsicCurvature curv;
+			AtildeVars atilde;
+			Gauge gauge;
+			Matter matter;
+			double t;
+			double ADMmass;
 			double chi;
-			double momentum[3];
-			double hamiltonian;
-			double alpha;        
-			double tildeGamma[3];
-			double Atilde[3][3];
-			double Atilde0[3][3];
-			double beta[3];
-			Vector3 dalpha_dx;    
-			double alphaStage[4];
-			double betaStage[4][3];
-			double Bstage[4][3];
-			double rho;          
-			double dgt[3][3]; 
-			double dKt[3][3];  
-			double gamma0[3][3];
-			double K0[3][3];
-			double alpha0;
-			double beta0[3];
-			double gammaStage[4][3][3]; 
-			double Christoffel[3][3][3];
-			double KStage[4][3][3];   
-			double vx, vy, vz;
-			double p;
-			double T[4][4];
+			double dt_chi;
+			double gammaStage[4][3][3];
+			double KStage[4][3][3];
+			double dgt[3][3];
 		};
+		double compute_ADM_mass(); 
 		void logger_evolve(Grid &grid_obj, double dt, int nstep);
 		void compute_spectral_derivatives_for_gamma() ;
 		void compute_energy_momentum_evolution(int i, int j, int k, double dt);
@@ -129,7 +158,8 @@ class Grid {
 		double computeTraceK(Grid &grid, int i, int j, int k);
 		double christoffelTerm(Grid &grid, int i, int j, int k, int i_comp);
 		void compute_gauge_derivatives(Grid &grid_obj, int i, int j, int k, double &d_alpha_dt, double d_beta_dt[3]);
-		
+		void export_1D_tilde_gamma_xx(int j_fixed, int k_fixed, double time);	
+		void injectTTWave(Cell2D &cell, double x, double y, double z, double t);
 		Cell2D& getCell(int i, int j, int k) {
 			return globalGrid[i][j][k];
 		}
@@ -138,7 +168,6 @@ class Grid {
 		std::vector<std::vector<std::vector<Grid::Cell2D>>> globalGrid;
 
 };
-
 
 double partialX_alpha(Grid &grid_obj, int i, int j, int k);
 double partialY_alpha(Grid &grid_obj, int i, int j, int k);

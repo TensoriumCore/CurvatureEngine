@@ -7,32 +7,6 @@ void Grid::initialize_grid() {
     hamiltonianGrid.resize(NX, std::vector<std::vector<double>>(NY, std::vector<double>(NZ, 0.0)));
 }
 
-void Grid::export_constraints(std::string filename) {
-    std::ofstream file(filename);
-    file << "x,y,z,Hamiltonian,Momentum_x,Momentum_y,Momentum_z\n";
-
-    for (int i = 0; i < NX; i++) {
-        for (int j = 0; j < NY; j++) {
-            for (int k = 0; k < NZ; k++) {
-                double x = -9.0 + i * (18.0 / (NX - 1));
-                double y = -9.0 + j * (18.0 / (NY - 1));
-                double z = -9.0 + k * (18.0 / (NZ - 1));
-
-                double hamiltonian = hamiltonianGrid[i][j][k];
-                double momentum[3] = {0.0, 0.0, 0.0};
-                compute_constraints(*this, i, j, k, hamiltonian, momentum);
-
-                file << x << "," << y << "," << z << ","
-                     << hamiltonian << ","
-                     << momentum[0] << "," << momentum[1] << "," << momentum[2] << "\n";
-            }
-        }
-    }
-
-    file.close();
-    std::cout << "✅ Contraintes exportées dans " << filename << std::endl;
-}
-
 double Grid::KUpAt(Grid &grid, int ip, int jp, int kp, int j_up, int i_low)
 {
     if(ip<0 || ip>=NX || jp<0 || jp>=NY || kp<0 || kp>=NZ) {
@@ -43,13 +17,13 @@ double Grid::KUpAt(Grid &grid, int ip, int jp, int kp, int j_up, int i_low)
     double gtmp[3][3];
     for(int a=0; a<3; a++){
         for(int b=0; b<3; b++){
-            gtmp[a][b] = cell.gamma[a][b];
+            gtmp[a][b] = cell.geom.gamma[a][b];
         }
     }
 
     double val = 0.0;
     for(int c=0; c<3; c++){
-        val += cell.gamma_inv[j_up][c] * cell.K[c][i_low];
+        val += cell.geom.gamma_inv[j_up][c] * cell.curv.K[c][i_low];
     }
     return val;
 }
@@ -89,16 +63,17 @@ double Grid::christoffelTerm(Grid &grid, int i, int j, int k, int i_comp)
     double KupLocal[3][3];
     {
         double tmpG[3][3];
+#pragma omp simd
         for(int a=0; a<3; a++){
             for(int b=0; b<3; b++){
-                tmpG[a][b] = cell.gamma[a][b];
+                tmpG[a][b] = cell.geom.gamma[a][b];
             }
         }
         for(int aa=0; aa<3; aa++){
             for(int bb=0; bb<3; bb++){
                 double sum=0.0;
                 for(int cc=0; cc<3; cc++){
-                    sum += cell.gamma_inv[aa][cc]*cell.K[cc][bb];
+                    sum += cell.geom.gamma_inv[aa][cc]*cell.curv.K[cc][bb];
                 }
                 KupLocal[aa][bb] = sum;
             }
@@ -107,8 +82,8 @@ double Grid::christoffelTerm(Grid &grid, int i, int j, int k, int i_comp)
     double sum1=0.0, sum2=0.0;
     for(int j_=0; j_<3; j_++){
         for(int m=0; m<3; m++){
-            sum1 += cell.Christoffel[m][j_][j_] * KupLocal[m][i_comp];
-            sum2 += cell.Christoffel[m][j_][i_comp] * KupLocal[j_][m];
+            sum1 += cell.conn.Christoffel[m][j_][j_] * KupLocal[m][i_comp];
+            sum2 += cell.conn.Christoffel[m][j_][i_comp] * KupLocal[j_][m];
         }
     }
     return sum1 - sum2;
@@ -121,13 +96,13 @@ double Grid::computeTraceK(Grid &grid, int i, int j, int k)
     double gTmp[3][3];
     for(int a=0; a<3; a++){
         for(int b=0; b<3; b++){
-            gTmp[a][b] = cell.gamma[a][b];
+            gTmp[a][b] = cell.geom.gamma[a][b];
         }
     }
     double trace = 0.0;
     for(int a=0; a<3; a++){
         for(int b=0; b<3; b++){
-            trace += cell.gamma_inv[a][b]*cell.K[a][b];
+            trace += cell.geom.gamma_inv[a][b]*cell.curv.K[a][b];
         }
     }
     return trace;
@@ -177,13 +152,13 @@ double Grid::compute_ricci_scalar(Grid &grid, int i, int j, int k)
 	double gTmp[3][3];
 	for(int a=0; a<3; a++){
 		for(int b=0; b<3; b++){
-			gTmp[a][b] = cell.gamma[a][b];
+			gTmp[a][b] = cell.geom.gamma[a][b];
 		}
 	}
 	double R = 0.0;
 	for(int a=0; a<3; a++){
 		for(int b=0; b<3; b++){
-			R += cell.gamma_inv[a][b]*cell.Ricci[a][b];
+			R += cell.geom.gamma_inv[a][b]*cell.geom.Ricci[a][b];
 		}
 	}
 	return R;
@@ -195,13 +170,13 @@ void Grid::compute_constraints(Grid &grid_obj, int i, int j, int k, double &hami
     double gammaLocal[3][3];
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
-            gammaLocal[a][b] = cell.gamma[a][b];
+            gammaLocal[a][b] = cell.geom.gamma[a][b];
         }
     }
     double R = 0.0;
     /* for (int a = 0; a < 3; a++) { */
     /*     for (int b = 0; b < 3; b++) { */
-    /*         R += cell.gamma_inv[a][b] * cell.Ricci[a][b]; */
+    /*         R += cell.geom.gamma_inv[a][b] * cell.geom.Ricci[a][b]; */
     /*     } */
     /* } */
 	R = compute_ricci_scalar(grid_obj, i, j, k);
@@ -211,7 +186,7 @@ void Grid::compute_constraints(Grid &grid_obj, int i, int j, int k, double &hami
 		for (int j = 0; j < 3; j++) {
 			for (int k = 0; k < 3; k++) {
 				for (int l = 0; l < 3; l++) {
-					KK += cell.K[i][j] * cell.gamma_inv[i][k] * cell.gamma_inv[j][l] * cell.K[k][l];
+					KK += cell.curv.K[i][j] * cell.geom.gamma_inv[i][k] * cell.geom.gamma_inv[j][l] * cell.curv.K[k][l];
 				}
 			}
 		}
@@ -220,14 +195,9 @@ void Grid::compute_constraints(Grid &grid_obj, int i, int j, int k, double &hami
 	Log log_obj;
     hamiltonian = R + Ktrace * Ktrace - KK;
     hamiltonianGrid[i][j][k] = hamiltonian;
-	cell.hamiltonian = hamiltonian;
+	cell.matter.hamiltonian = hamiltonian;
 	for(int i_comp=0; i_comp<3; i_comp++){
 		momentum[i_comp] = compute_momentum_i(grid_obj, i, j, k, i_comp);
-		cell.momentum[i_comp] = momentum[i_comp];
-#pragma omp critical
-		{
-		/* log_obj.log_value("momentum", momentum[i_comp], i, j, k, i_comp); */
-		/* log_obj.log_value("hamiltonian", hamiltonian, i, j, k); */
-		}
+		cell.matter.momentum[i_comp] = momentum[i_comp];
 	}
 }
