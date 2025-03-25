@@ -1,6 +1,5 @@
 #include <Geodesics.h>
 
-
 std::vector<std::vector<std::vector<double>>> hamiltonianGrid;
 void Grid::initialize_grid() {
     globalGrid.resize(NX, std::vector<std::vector<Cell2D>>(NY, std::vector<Cell2D>(NZ)));
