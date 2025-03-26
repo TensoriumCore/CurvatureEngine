@@ -5,7 +5,7 @@ CC = clang++
 CFLAGS = -g -std=c++17 -O3\
          -mavx2 -mfma -march=native -mtune=native \
          -funroll-loops -fvectorize -ffp-contract=fast \
-         -freciprocal-math -ffast-math -fstrict-aliasing \
+         -freciprocal-math  -fstrict-aliasing \
          -fomit-frame-pointer -flto=full -mprefer-vector-width=256 -fopenmp \
          -I$(INC_DIR)
 
