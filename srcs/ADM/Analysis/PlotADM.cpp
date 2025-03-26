@@ -28,9 +28,9 @@ void export_gamma_slice(Grid &grid_obj, int j, double time) {
             const Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
 
             file << x << "," << z << ","
-                 << cell.geom.tilde_gamma[0][0] << "," << cell.geom.tilde_gamma[0][1] << "," << cell.geom.tilde_gamma[0][2] << ","
-                 << cell.geom.tilde_gamma[1][0] << "," << cell.geom.tilde_gamma[1][1] << "," << cell.geom.tilde_gamma[1][2] << ","
-                 << cell.geom.tilde_gamma[2][0] << "," << cell.geom.tilde_gamma[2][1] << "," << cell.geom.tilde_gamma[2][2] << "\n";
+                 << cell.geom.dt_tilde_gamma[0][0] << "," << cell.geom.dt_tilde_gamma[0][1] << "," << cell.geom.dt_tilde_gamma[0][2] << ","
+                 << cell.geom.dt_tilde_gamma[1][0] << "," << cell.geom.dt_tilde_gamma[1][1] << "," << cell.geom.dt_tilde_gamma[1][2] << ","
+                 << cell.geom.dt_tilde_gamma[2][0] << "," << cell.geom.dt_tilde_gamma[2][1] << "," << cell.geom.dt_tilde_gamma[2][2] << "\n";
         }
     }
 
@@ -63,7 +63,7 @@ void Grid::export_chi_slice(Grid &grid_obj, double time) {
 void export_tilde_gamma_3D(Grid &grid_obj) {
     std::ofstream file("Output/tilde_gamma_full.vtk");
     file << "# vtk DataFile Version 2.0\n";
-    file << "Conformal metric geom.tilde_gamma\n";
+    file << "Conformal metric geom.dt_tilde_gamma\n";
     file << "ASCII\n";
     file << "DATASET STRUCTURED_POINTS\n";
 
@@ -82,15 +82,15 @@ void export_tilde_gamma_3D(Grid &grid_obj) {
     file << "SPACING " << dx << " " << dy << " " << dz << "\n";
 
     file << "POINT_DATA " << (NX * NY * NZ) << "\n";
-    file << "TENSORS geom.tilde_gamma float\n";
+    file << "TENSORS geom.dt_tilde_gamma float\n";
 
     for (int i = 0; i < NX; i++) {
         for (int j = 0; j < NY; j++) {
             for (int k = 0; k < NZ; k++) {
                 Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
-                file << cell.geom.tilde_gamma[0][0] << " " << cell.geom.tilde_gamma[0][1] << " " << cell.geom.tilde_gamma[0][2] << "\n";
-                file << cell.geom.tilde_gamma[1][0] << " " << cell.geom.tilde_gamma[1][1] << " " << cell.geom.tilde_gamma[1][2] << "\n";
-                file << cell.geom.tilde_gamma[2][0] << " " << cell.geom.tilde_gamma[2][1] << " " << cell.geom.tilde_gamma[2][2] << "\n\n";
+                file << cell.geom.dt_tilde_gamma[0][0] << " " << cell.geom.dt_tilde_gamma[0][1] << " " << cell.geom.dt_tilde_gamma[0][2] << "\n";
+                file << cell.geom.dt_tilde_gamma[1][0] << " " << cell.geom.dt_tilde_gamma[1][1] << " " << cell.geom.dt_tilde_gamma[1][2] << "\n";
+                file << cell.geom.dt_tilde_gamma[2][0] << " " << cell.geom.dt_tilde_gamma[2][1] << " " << cell.geom.dt_tilde_gamma[2][2] << "\n\n";
             }
         }
     }
@@ -101,24 +101,24 @@ void export_tilde_gamma_3D(Grid &grid_obj) {
     for (int i = 0; i < NX; i++)
         for (int j = 0; j < NY; j++)
             for (int k = 0; k < NZ; k++)
-                file << grid_obj.getCell(i, j, k).geom.tilde_gamma[0][0] << "\n";
+                file << grid_obj.getCell(i, j, k).geom.dt_tilde_gamma[0][0] << "\n";
 
     file << "SCALARS tilde_gamma_11 float 1\n";
     file << "LOOKUP_TABLE default\n";
     for (int i = 0; i < NX; i++)
         for (int j = 0; j < NY; j++)
             for (int k = 0; k < NZ; k++)
-                file << grid_obj.getCell(i, j, k).geom.tilde_gamma[1][1] << "\n";
+                file << grid_obj.getCell(i, j, k).geom.dt_tilde_gamma[1][1] << "\n";
 
     file << "SCALARS tilde_gamma_22 float 1\n";
     file << "LOOKUP_TABLE default\n";
     for (int i = 0; i < NX; i++)
         for (int j = 0; j < NY; j++)
             for (int k = 0; k < NZ; k++)
-                file << grid_obj.getCell(i, j, k).geom.tilde_gamma[2][2] << "\n";
+                file << grid_obj.getCell(i, j, k).geom.dt_tilde_gamma[2][2] << "\n";
 
     file.close();
-    std::cout << "✅ Fichier VTK de la métrique conforme geom.tilde_gamma sauvegardé : tilde_gamma_full.vtk\n";
+    std::cout << "✅ Fichier VTK de la métrique conforme geom.dt_tilde_gamma sauvegardé : tilde_gamma_full.vtk\n";
 }
 
 /* void export_constraints(std::string filename) { */
@@ -205,9 +205,9 @@ void export_K_3D(Grid &grid_obj) {
         for (int j = 0; j < NY; j++) {
             for (int k = 0; k < NZ; k++) {
                 Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
-                file << cell.curv.K[0][0] << " " << cell.curv.K[0][1] << " " << cell.curv.K[0][2] << "\n";
-                file << cell.curv.K[1][0] << " " << cell.curv.K[1][1] << " " << cell.curv.K[1][2] << "\n";
-                file << cell.curv.K[2][0] << " " << cell.curv.K[2][1] << " " << cell.curv.K[2][2] << "\n\n";
+                file << cell.atilde.Atilde[0][0] << " " << cell.atilde.Atilde[0][1] << " " << cell.atilde.Atilde[0][2] << "\n";
+                file << cell.atilde.Atilde[1][0] << " " << cell.atilde.Atilde[1][1] << " " << cell.atilde.Atilde[1][2] << "\n";
+                file << cell.atilde.Atilde[2][0] << " " << cell.atilde.Atilde[2][1] << " " << cell.atilde.Atilde[2][2] << "\n\n";
             }
         }
     }

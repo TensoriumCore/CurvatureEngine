@@ -74,23 +74,34 @@ void Grid::injectTTWave(Cell2D &cell, double x, double y, double z, double t){
 }
 
 void Grid::initializeKerrData(Grid &grid_obj) {
-    double a = 0.9999;
+    double m1 = 1.0;
+    double a1 = 0.932;
+    double x1 = -2.5, y1 = 0.0, z1 = 0.0;  
+
+    double m2 = 1.0;
+    double a2 = 0.9999;
+    double x2 =  2.0, y2 = 0.0, z2 = 0.0; 
+
     double L = 9.0; 
     double x_min = -L, x_max =  L;
     double y_min = -L, y_max =  L;
     double z_min = -L, z_max =  L;
+	double dxBH = x2 - x1;
+	double dyBH = y2 - y1;
+	double dzBH = z2 - z1;
+	double r12  = std::sqrt(dxBH*dxBH + dyBH*dyBH + dzBH*dzBH);
 
+    double v_orb = std::sqrt((m1 + m2) / r12);
     double dx = (x_max - x_min) / (NX - 1);
     double dy = (y_max - y_min) / (NY - 1);
     double dz = (z_max - z_min) / (NZ - 1);
-
+	double P = 0.7;
     GridTensor gridtensor;
     Matrix matrix;   
-    std::vector<std::array<double, 3>> horizonPoints;
 
     globalGrid.resize(NX, std::vector<std::vector<Cell2D>>(NY, std::vector<Cell2D>(NZ)));
 
-#pragma omp parallel for collapse(3) schedule(dynamic)
+    #pragma omp parallel for collapse(3) schedule(dynamic)
     for (int i = 0; i < NX; i++) {
         for (int j = 0; j < NY; j++) {
             for (int k = 0; k < NZ; k++) {
@@ -98,15 +109,40 @@ void Grid::initializeKerrData(Grid &grid_obj) {
                 double y = y_min + j * dy;
                 double z = z_min + k * dz;
 
-                double rKS = kerrSchildRadius(x, y, z, a);
-                double cosTheta = (rKS > 1e-14) ? z / rKS : 0.0;
-                double denomKS = (rKS * rKS) + (a * a * cosTheta * cosTheta);
-                double H = (rKS > 1e-14 && denomKS > 1e-14) ? (M * rKS) / denomKS : 0.0;
+                double dx1 = x - x1;
+                double dy1 = y - y1;
+                double dz1 = z - z1;
+                double rKS1 = kerrSchildRadius(dx1, dy1, dz1, a1);
+                double cosTheta1 = (rKS1 > 1e-14) ? dz1 / rKS1 : 0.0;
+                double denomKS1 = (rKS1 * rKS1) + (a1 * a1 * cosTheta1 * cosTheta1);
+                double H1 = (rKS1 > 1e-14 && denomKS1 > 1e-14) ? (m1 * rKS1) / denomKS1 : 0.0;
+                double denomVec1 = (rKS1 * rKS1) + (a1 * a1);
+                double lx1 = (denomVec1 > 1e-14) ? (rKS1 * dx1 + a1 * dy1) / denomVec1 : 0.0;
+                double ly1 = (denomVec1 > 1e-14) ? (rKS1 * dy1 - a1 * dx1) / denomVec1 : 0.0;
+                double lz1 = (rKS1 > 1e-14) ? dz1 / rKS1 : 0.0;
 
-                double denomVec = (rKS * rKS) + (a * a);
-                double lx = (denomVec > 1e-14) ? (rKS * x + a * y) / denomVec : 0.0;
-                double ly = (denomVec > 1e-14) ? (rKS * y - a * x) / denomVec : 0.0;
-                double lz = (rKS > 1e-14) ? z / rKS : 0.0;
+                double dx2 = x - x2;
+                double dy2 = y - y2;
+                double dz2 = z - z2;
+                double rKS2 = kerrSchildRadius(dx2, dy2, dz2, a2);
+                double cosTheta2 = (rKS2 > 1e-14) ? dz2 / rKS2 : 0.0;
+                double denomKS2 = (rKS2 * rKS2) + (a2 * a2 * cosTheta2 * cosTheta2);
+                double H2 = (rKS2 > 1e-14 && denomKS2 > 1e-14) ? (m2 * rKS2) / denomKS2 : 0.0;
+                double denomVec2 = (rKS2 * rKS2) + (a2 * a2);
+                double lx2 = (denomVec2 > 1e-14) ? (rKS2 * dx2 + a2 * dy2) / denomVec2 : 0.0;
+                double ly2 = (denomVec2 > 1e-14) ? (rKS2 * dy2 - a2 * dx2) / denomVec2 : 0.0;
+                double lz2 = (rKS2 > 1e-14) ? dz2 / rKS2 : 0.0;
+
+                double H = H1 + H2;
+                double lx = lx1 + lx2;
+                double ly = ly1 + ly2;
+                double lz = lz1 + lz2;
+                double norm_l = std::sqrt(lx*lx + ly*ly + lz*lz);
+                if (norm_l > 1e-14) {
+                    lx /= norm_l;
+                    ly /= norm_l;
+                    lz /= norm_l;
+                }
 
                 Cell2D &cell = globalGrid[i][j][k];
 
@@ -122,136 +158,93 @@ void Grid::initializeKerrData(Grid &grid_obj) {
 
                 matrix.inverse_3x3(cell.geom.gamma, cell.geom.gamma_inv);
 
-				double det_gamma = std::cbrt(
-						cell.geom.gamma[0][0] * cell.geom.gamma[1][1] * cell.geom.gamma[2][2]
-						- cell.geom.gamma[0][0] * cell.geom.gamma[1][2] * cell.geom.gamma[2][1]
-						- cell.geom.gamma[1][1] * cell.geom.gamma[0][2] * cell.geom.gamma[2][0]
-						- cell.geom.gamma[2][2] * cell.geom.gamma[0][1] * cell.geom.gamma[1][0]
-						);
-				cell.chi = 1.0 / det_gamma;
+                double det_gamma = std::cbrt(
+                        cell.geom.gamma[0][0] * cell.geom.gamma[1][1] * cell.geom.gamma[2][2]
+                      - cell.geom.gamma[0][0] * cell.geom.gamma[1][2] * cell.geom.gamma[2][1]
+                      - cell.geom.gamma[1][1] * cell.geom.gamma[0][2] * cell.geom.gamma[2][0]
+                      - cell.geom.gamma[2][2] * cell.geom.gamma[0][1] * cell.geom.gamma[1][0]
+                );
+                cell.chi = 1.0 / det_gamma;
 
-				for (int a = 0; a < 3; a++) {
-					for (int b = 0; b < 3; b++) {
-						cell.geom.tilde_gamma[a][b] = cell.chi * cell.geom.gamma[a][b];
-					}
-				}
+                for (int a = 0; a < 3; a++) {
+                    for (int b = 0; b < 3; b++) {
+                        cell.geom.tilde_gamma[a][b] = cell.chi * cell.geom.gamma[a][b];
+                    }
+                }
 
-				Matrix3x3 tilde_gamma_std;
-				Matrix3x3 tilde_gamma_inv_std;
+                Matrix3x3 tilde_gamma_std;
+                Matrix3x3 tilde_gamma_inv_std;
+                for (int a = 0; a < 3; a++)
+                    for (int b = 0; b < 3; b++)
+                        tilde_gamma_std[a][b] = cell.geom.tilde_gamma[a][b];
+                matrix.inverse_3x3(tilde_gamma_std, tilde_gamma_inv_std);
+                for (int a = 0; a < 3; a++)
+                    for (int b = 0; b < 3; b++)
+                        cell.geom.tildgamma_inv[a][b] = tilde_gamma_inv_std[a][b];
 
-				for (int a = 0; a < 3; ++a)
-					for (int b = 0; b < 3; ++b)
-						tilde_gamma_std[a][b] = cell.geom.tilde_gamma[a][b];
+                cell.gauge.alpha = 1.0 / std::sqrt(1.0 + 2.0 * H);
+                cell.gauge.beta[0] = 2.0 * H * lx;
+                cell.gauge.beta[1] = 2.0 * H * ly;
+                cell.gauge.beta[2] = 2.0 * H * lz;
 
-				matrix.inverse_3x3(tilde_gamma_std, tilde_gamma_inv_std);
+                for (int a_idx = 0; a_idx < 3; a_idx++) {
+                    for (int b_idx = 0; b_idx < 3; b_idx++) {
+                        cell.curv.K[a_idx][b_idx] = 0.0;
+                    }
+                }
 
-				for (int a = 0; a < 3; ++a)
-					for (int b = 0; b < 3; ++b)
-						cell.geom.tildgamma_inv[a][b] = tilde_gamma_inv_std[a][b];
+					cell.gauge.beta[0] += 0.0;
+					cell.gauge.beta[1] += v_orb;
+					cell.gauge.beta[2] += 0.0;	
+            }
+        }
+    }
 
-
-				cell.gauge.alpha = 1.0 / std::sqrt(1.0 + 2.0 * H);
-				cell.gauge.beta[0] = 2.0 * H * lx;
-				cell.gauge.beta[1] = 2.0 * H * ly;
-				cell.gauge.beta[2] = 2.0 * H * lz;
-
-				for (int a_idx = 0; a_idx < 3; a_idx++) {
-					for (int b_idx = 0; b_idx < 3; b_idx++) {
-						cell.curv.K[a_idx][b_idx] = 0.0;
-					}
-				}
-			}
-		}
-	}
-
-	for (int i = 1; i < NX - 1; i++) {
-		for (int j = 1; j < NY - 1; j++) {
-			for (int k = 1; k < NZ - 1; k++) {
-				gridtensor.compute_extrinsic_curvature(*this, i, j, k, dx, dy, dz);
-				gridtensor.compute_Atilde(*this, i, j, k);
-				Cell2D &cell = globalGrid[i][j][k];
-				/* if (i == NX/2 && j == NY/2 && k == NZ/2) { */
-				/* 	printf("Atilde_{ij} =\n"); */
-				/* 	for (int a = 0; a < 3; ++a) { */
-				/* 		for (int b = 0; b < 3; ++b) { */
-				/* 			printf("  %.5e", cell.atilde.Atilde[a][b]); */
-				/* 		} */
-				/* 		printf("\n"); */
-				/* 	} */
-				/* } */
-				double trace_Atilde = 0.0;
-				for (int a = 0; a < 3; ++a) {
-					for (int b = 0; b < 3; ++b) {
-						trace_Atilde += globalGrid[1][1][1].geom.tildgamma_inv[a][b] * globalGrid[1][1][1].atilde.Atilde[a][b];
-					}
-				}
+    for (int i = 1; i < NX - 1; i++) {
+        for (int j = 1; j < NY - 1; j++) {
+            for (int k = 1; k < NZ - 1; k++) {
+                gridtensor.compute_extrinsic_curvature(*this, i, j, k, dx, dy, dz);
+                gridtensor.compute_Atilde(*this, i, j, k);
+                Cell2D &cell = globalGrid[i][j][k];
                 double Ktrace = 0.0;
                 for (int a = 0; a < 3; a++) {
                     for (int b = 0; b < 3; b++) {
                         Ktrace += globalGrid[i][j][k].geom.gamma_inv[a][b] * globalGrid[i][j][k].curv.K[a][b];
                     }
                 }
-
-				for (int a = 0; a < 3; a++) {
-					for (int b = 0; b < 3; b++) {
-						globalGrid[i][j][k].atilde.Atilde[a][b] = cell.chi * (globalGrid[i][j][k].curv.K[a][b] 
-								- (1.0 / 3.0) * Ktrace * globalGrid[i][j][k].geom.gamma[a][b]);
-					}
-				}
-
+                for (int a = 0; a < 3; a++) {
+                    for (int b = 0; b < 3; b++) {
+                        globalGrid[i][j][k].atilde.Atilde[a][b] = cell.chi *
+                            (globalGrid[i][j][k].curv.K[a][b] - (1.0 / 3.0) * Ktrace * globalGrid[i][j][k].geom.gamma[a][b]);
+                    }
+                }
             }
         }
-	}
-	printf("K_{ij} near (1,1,1) = \n");
-	for (int p = 0; p < 3; p++) {
-		printf("  ");
-		for (int q = 0; q < 3; q++) {
-			printf("%e ", globalGrid[1][1][1].curv.K[p][q]);
-		}
-		printf("\n");
-	}
-	printf("Gamma_{ij} near (1,1,1) = \n");
-	for (int p = 0; p < 3; p++) {
-		printf("  ");
-		for (int q = 0; q < 3; q++) {
-			printf("%e ", globalGrid[1][1][1].geom.gamma[p][q]);
-		}
-		printf("\n");
-	}
-	printf("Gamma_inv_{ij} near (1,1,1) = \n");
-	for (int p = 0; p < 3; p++) {
-		printf("  ");
-		for (int q = 0; q < 3; q++) {
-			printf("%e ", globalGrid[1][1][1].geom.gamma_inv[p][q]);
-		}
-		printf("\n");
-	}
-	printf("Gamma_tile_{ij} near (1,1,1) = \n");
-	for (int p = 0; p < 3; p++) {
-		printf("  ");
-		for (int q = 0; q < 3; q++) {
-			printf("%e ", globalGrid[1][1][1].geom.tilde_gamma[p][q]);
-		}
-		printf("\n");
-	}
-	printf("Gamma_tilde_inv_{ij} near (1,1,1) = \n");
-	for (int p = 0; p < 3; p++) {
-		printf("  ");
-		for (int q = 0; q < 3; q++) {
-			printf("%e ", globalGrid[1][1][1].geom.tildgamma_inv[p][q]);
-		}
-		printf("\n");
-	}
+    }
 
-	printf("chi near (1,1,1) = %e\n", globalGrid[1][1][1].chi);
-
-	printf("alpha_1_1_1 = %e\n", globalGrid[1][1][1].gauge.alpha);
-
-	double test_radii[] = {0.5, 1.0, 2.0, 5.0, 10.0};
-	for (double test_r : test_radii) {
-		double H_test = M / test_r;  
-		double alpha_test = 1.0 / std::sqrt(1.0 + 2.0 * H_test);
-		printf("Eq plane r = %f : H = %e, alpha = %e (Schw approx)\n", 
-				test_r, H_test, alpha_test);
-	}
+    printf("K_{ij} near (1,1,1) = \n");
+    for (int p = 0; p < 3; p++) {
+        printf("  ");
+        for (int q = 0; q < 3; q++) {
+            printf("%e ", globalGrid[1][1][1].curv.K[p][q]);
+        }
+        printf("\n");
+    }
+    printf("Gamma_{ij} near (1,1,1) = \n");
+    for (int p = 0; p < 3; p++) {
+        printf("  ");
+        for (int q = 0; q < 3; q++) {
+            printf("%e ", globalGrid[1][1][1].geom.gamma[p][q]);
+        }
+        printf("\n");
+    }
+    printf("chi near (1,1,1) = %e\n", globalGrid[1][1][1].chi);
+    printf("alpha_1_1_1 = %e\n", globalGrid[1][1][1].gauge.alpha);
+    
+    double test_radii[] = {0.5, 1.0, 2.0, 5.0, 10.0};
+    for (double test_r : test_radii) {
+        double H_test = M / test_r;  
+        double alpha_test = 1.0 / std::sqrt(1.0 + 2.0 * H_test);
+        printf("Eq plane r = %f : H = %e, alpha = %e (Schw approx)\n", test_r, H_test, alpha_test);
+    }
 }

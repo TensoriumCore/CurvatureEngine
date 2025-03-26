@@ -83,7 +83,6 @@ void GridTensor::compute_dt_tildeGamma(Grid &grid_obj, int i, int j, int k, doub
 				tildeGamma_Atilde += gammaInv[j_comp][k_comp] * Atilde[j_comp][k_comp];
 			}
 		}
-
 		for (int j_comp = 0; j_comp < 3; j_comp++) {
 
 			const auto &cellP = grid_obj.getCell(iP, j, k);
@@ -131,7 +130,7 @@ void GridTensor::compute_tildeGamma(Grid &grid_obj, int i, int j, int k, double 
 	 * where \Gamma^i_{jk} is the christoffel symbol
 	 * Then we contract the tensor conexion using the invert of the metric gamma_ij --> \tilde_gamma^{ij}
 	 * */
-
+#pragma omp simd
     for (int i_comp = 0; i_comp < 3; i_comp++) { 
         for (int j_comp = 0; j_comp < 3; j_comp++) {
             for (int k_comp = 0; k_comp < 3; k_comp++) {

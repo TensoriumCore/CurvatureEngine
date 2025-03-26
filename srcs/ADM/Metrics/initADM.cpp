@@ -4,7 +4,7 @@
 
 void Grid::allocateGlobalGrid(){
     printf("Allocating global grid\n");
-
+	globalGrid.reserve(NX);
     globalGrid.resize(NX);
     for(int i = 0; i < NX; i++){
         globalGrid[i].resize(NY);
@@ -28,10 +28,6 @@ void Grid::allocateGlobalGrid(){
 		}
 	}
 }
-
-
-
-
 
 
 /* void Grid::initializeData() { */
