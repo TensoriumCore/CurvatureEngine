@@ -22,6 +22,7 @@ void Grid::compute_time_derivatives(Grid &grid_obj, int i, int j, int k)
             partialBeta[dim][comp] = partial_m(grid_obj, i, j, k, dim,
                 [&](const Grid::Cell2D &c) { return c.gauge.beta[comp]; }
             );
+			cell.gauge.dt_beta[comp] = partialBeta[dim][comp];
         }
     }
 
@@ -30,6 +31,7 @@ void Grid::compute_time_derivatives(Grid &grid_obj, int i, int j, int k)
         partialAlpha[dim] = partial_m(grid_obj, i, j, k, dim,
             [&](const Grid::Cell2D &c) { return c.gauge.alpha; }
         );
+		cell.gauge.dt_alpha = partialAlpha[dim];
     }
 
     double d2Alpha[3][3];
@@ -79,6 +81,7 @@ void Grid::compute_time_derivatives(Grid &grid_obj, int i, int j, int k)
             }
 
             cell.geom.dt_tilde_gamma[a][b] = -2.0 * alpha * cell.atilde.Atilde[a][b] + adv + shift;
+			cell.dgt[a][b] = cell.geom.dt_tilde_gamma[a][b];
         }
     }
     for (int a = 0; a < 3; ++a) {

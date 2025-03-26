@@ -349,7 +349,7 @@ void export_gauge_slice(Grid &grid_obj, int j) {
 
             file << x << "," << z << "," 
                  << cell.gauge.alpha << "," << cell.gauge.beta[0] << "," << cell.gauge.beta[1] << "," << cell.gauge.beta[2] << ","
-                 << d_alpha_dt << "," << d_beta_dt[0] << "," << d_beta_dt[1] << "," << d_beta_dt[2] << "\n";
+                 << cell.gauge.dt_alpha << "," << cell.gauge.dt_beta[0] << "," << cell.gauge.dt_beta[1] << "," << cell.gauge.dt_beta[2] << "\n";
         }
     }
 

@@ -75,8 +75,8 @@ void Grid::injectTTWave(Cell2D &cell, double x, double y, double z, double t){
 
 void Grid::initializeKerrData(Grid &grid_obj) {
     double m1 = 1.0;
-    double a1 = 0.932;
-    double x1 = -2.5, y1 = 0.0, z1 = 0.0;  
+    double a1 = 0.9999;
+    double x1 = -2.0, y1 = 0.0, z1 = 0.0;  
 
     double m2 = 1.0;
     double a2 = 0.9999;
@@ -86,16 +86,22 @@ void Grid::initializeKerrData(Grid &grid_obj) {
     double x_min = -L, x_max =  L;
     double y_min = -L, y_max =  L;
     double z_min = -L, z_max =  L;
-	double dxBH = x2 - x1;
-	double dyBH = y2 - y1;
-	double dzBH = z2 - z1;
-	double r12  = std::sqrt(dxBH*dxBH + dyBH*dyBH + dzBH*dzBH);
+    
+    double dxBH = x2 - x1;
+    double dyBH = y2 - y1;
+    double dzBH = z2 - z1;
+    double r12  = std::sqrt(dxBH*dxBH + dyBH*dyBH + dzBH*dzBH);
 
     double v_orb = std::sqrt((m1 + m2) / r12);
+    
     double dx = (x_max - x_min) / (NX - 1);
     double dy = (y_max - y_min) / (NY - 1);
     double dz = (z_max - z_min) / (NZ - 1);
-	double P = 0.7;
+    
+    double P = 0.7;
+    
+    double smoothing_radius = 1.0;
+    
     GridTensor gridtensor;
     Matrix matrix;   
 
@@ -187,15 +193,17 @@ void Grid::initializeKerrData(Grid &grid_obj) {
                 cell.gauge.beta[1] = 2.0 * H * ly;
                 cell.gauge.beta[2] = 2.0 * H * lz;
 
-                for (int a_idx = 0; a_idx < 3; a_idx++) {
-                    for (int b_idx = 0; b_idx < 3; b_idx++) {
-                        cell.curv.K[a_idx][b_idx] = 0.0;
+                double dist1 = std::sqrt(dx1*dx1 + dy1*dy1 + dz1*dz1);
+                double dist2 = std::sqrt(dx2*dx2 + dy2*dy2 + dz2*dz2);
+                double boost_factor1 = std::exp(- (dist1/smoothing_radius) * (dist1/smoothing_radius));
+                double boost_factor2 = std::exp(- (dist2/smoothing_radius) * (dist2/smoothing_radius));
+                cell.gauge.beta[1] += boost_factor1 * v_orb - boost_factor2 * v_orb;
+
+                for (int a = 0; a < 3; a++) {
+                    for (int b = 0; b < 3; b++) {
+                        cell.curv.K[a][b] = 0.0;
                     }
                 }
-
-					cell.gauge.beta[0] += 0.0;
-					cell.gauge.beta[1] += v_orb;
-					cell.gauge.beta[2] += 0.0;	
             }
         }
     }
@@ -204,18 +212,51 @@ void Grid::initializeKerrData(Grid &grid_obj) {
         for (int j = 1; j < NY - 1; j++) {
             for (int k = 1; k < NZ - 1; k++) {
                 gridtensor.compute_extrinsic_curvature(*this, i, j, k, dx, dy, dz);
-                gridtensor.compute_Atilde(*this, i, j, k);
+
                 Cell2D &cell = globalGrid[i][j][k];
+                double x = x_min + i * dx;
+                double y = y_min + j * dy;
+                double z = z_min + k * dz;
+
+                double r1 = std::sqrt((x - x1)*(x - x1) + (y - y1)*(y - y1) + (z - z1)*(z - z1));
+                double momentum_factor1 = (r1 > 1e-14) ? (3.0 * P / (2.0 * r1 * r1)) * std::exp(- (r1/smoothing_radius)*(r1/smoothing_radius)) : 0.0;
+                double n1x = (r1 > 1e-14) ? (x - x1)/r1 : 0.0;
+                double n1y = (r1 > 1e-14) ? (y - y1)/r1 : 0.0;
+                double n1z = (r1 > 1e-14) ? (z - z1)/r1 : 0.0;
+                double P1[3] = {0.0, P, 0.0};
+                double dot1 = P1[0]*n1x + P1[1]*n1y + P1[2]*n1z;
+
+                double r2 = std::sqrt((x - x2)*(x - x2) + (y - y2)*(y - y2) + (z - z2)*(z - z2));
+                double momentum_factor2 = (r2 > 1e-14) ? (3.0 * P / (2.0 * r2 * r2)) * std::exp(- (r2/smoothing_radius)*(r2/smoothing_radius)) : 0.0;
+                double n2x = (r2 > 1e-14) ? (x - x2)/r2 : 0.0;
+                double n2y = (r2 > 1e-14) ? (y - y2)/r2 : 0.0;
+                double n2z = (r2 > 1e-14) ? (z - z2)/r2 : 0.0;
+                double P2[3] = {0.0, -P, 0.0};
+                double dot2 = P2[0]*n2x + P2[1]*n2y + P2[2]*n2z;
+
+                for (int a = 0; a < 3; a++) {
+                    for (int b = 0; b < 3; b++) {
+                        double delta = (a == b) ? 1.0 : 0.0;
+                        double n1[3] = {n1x, n1y, n1z};
+                        double n2[3] = {n2x, n2y, n2z};
+                        double K_boost1 = momentum_factor1 * ( P1[a]*n1[b] + P1[b]*n1[a] - (delta - n1[a]*n1[b]) * dot1 );
+                        double K_boost2 = momentum_factor2 * ( P2[a]*n2[b] + P2[b]*n2[a] - (delta - n2[a]*n2[b]) * dot2 );
+                        cell.curv.K[a][b] += (K_boost1 + K_boost2);
+                    }
+                }
+
+                gridtensor.compute_Atilde(*this, i, j, k);
+                Cell2D &cell_inner = globalGrid[i][j][k];
                 double Ktrace = 0.0;
                 for (int a = 0; a < 3; a++) {
                     for (int b = 0; b < 3; b++) {
-                        Ktrace += globalGrid[i][j][k].geom.gamma_inv[a][b] * globalGrid[i][j][k].curv.K[a][b];
+                        Ktrace += cell_inner.geom.gamma_inv[a][b] * cell_inner.curv.K[a][b];
                     }
                 }
                 for (int a = 0; a < 3; a++) {
                     for (int b = 0; b < 3; b++) {
-                        globalGrid[i][j][k].atilde.Atilde[a][b] = cell.chi *
-                            (globalGrid[i][j][k].curv.K[a][b] - (1.0 / 3.0) * Ktrace * globalGrid[i][j][k].geom.gamma[a][b]);
+                        cell_inner.atilde.Atilde[a][b] = cell_inner.chi *
+                            (cell_inner.curv.K[a][b] - (1.0 / 3.0) * Ktrace * cell_inner.geom.gamma[a][b]);
                     }
                 }
             }

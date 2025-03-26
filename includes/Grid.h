@@ -66,6 +66,8 @@ struct alignas(32) Gauge {
     double beta0[3];
     double betaStage[4][3];
     double Bstage[4][3];
+	double dt_beta[3];
+	double dt_alpha;
 };
 
 struct Matter {
