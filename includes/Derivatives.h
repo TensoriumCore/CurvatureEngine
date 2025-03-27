@@ -7,16 +7,23 @@ inline double safe_dx(double dx) {
     return (dx > 1e-12) ? dx : 1e-12;  // Évite les divisions instables
 }
 
-	template <class T>
+
+
+template <class T>
+__attribute__((always_inline))
 inline double fourth_order_diff(const T &plus2, const T &plus1, 
-                         const T &minus1, const T &minus2, double dx)
+                                const T &minus1, const T &minus2, double dx)
 {
-	dx = safe_dx(dx);
-    return (-plus2 + 8.0*plus1 - 8.0*minus1 + minus2) / (12.0*dx);
+    dx = safe_dx(dx);
+    double t1 = std::fma(8.0, plus1, -plus2);   
+    double t2 = std::fma(-8.0, minus1, minus2); 
+    double numerator = t1 + t2;
+    return numerator / (12.0 * dx);
 }
 
 
 template <class T>
+__attribute__((always_inline))
 inline double second_order_diff(const T &plus1, const T &minus1, double dx)
 {
     return (plus1 - minus1)/(2.0*dx);

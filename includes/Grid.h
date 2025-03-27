@@ -102,7 +102,8 @@ class Grid {
 			double KStage[4][3][3];
 			double dgt[3][3];
 		};
-		double compute_ADM_mass(); 
+		double compute_ADM_mass();
+		void inject_BowenYork_Atilde(Grid &grid_obj, const Vector3 &P, const Vector3 &Coor);
 		void logger_evolve(Grid &grid_obj, double dt, int nstep);
 		void compute_spectral_derivatives_for_gamma() ;
 		void compute_energy_momentum_evolution(int i, int j, int k, double dt);
@@ -152,6 +153,7 @@ class Grid {
 		void allocateGlobalGrid();
 		void initializeData_Minkowski();
 		void initializeKerrData(Grid &grid_obj);
+		void initializeBinaryKerrData(Grid &grid_obj);
 		void compute_ricci_3D_conformal(Grid &grid_obj, int i, int j, int k, double Ricci[3][3]);
 		double partialX_KUp(Grid &grid, int i, int j, int k, int j_up, int i_low);
 		double partialY_KUp(Grid &grid, int i, int j, int k, int j_up, int i_low);
@@ -162,6 +164,7 @@ class Grid {
 		void compute_gauge_derivatives(Grid &grid_obj, int i, int j, int k, double &d_alpha_dt, double d_beta_dt[3]);
 		void export_1D_tilde_gamma_xx(int j_fixed, int k_fixed, double time);	
 		void injectTTWave(Cell2D &cell, double x, double y, double z, double t);
+		void initializeFishboneMoncriefTorus(double r_in, double r_max, double rho_max, double l_torus, double Gamma);
 		Cell2D& getCell(int i, int j, int k) {
 			return globalGrid[i][j][k];
 		}

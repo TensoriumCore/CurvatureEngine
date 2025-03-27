@@ -15,6 +15,12 @@ void Grid::logger_evolve(Grid &grid_obj, double dt, int nstep)
 		printf("	  %e %e %e\n", cell.atilde.dt_Atilde[i][0], \
 								   cell.atilde.dt_Atilde[i][1], 
 								   cell.atilde.dt_Atilde[i][2]);
+	/* printf("T_uv:\n"); */
+	/* for (int i = 0; i < 4; i++) */
+	/* 	printf("	  %e %e %e %e\n", cell.matter.T[i][0], \ */
+	/* 							   cell.matter.T[i][1],  */
+	/* 							   cell.matter.T[i][2], */
+	/* 							   cell.matter.T[i][3]); */
 	printf("Chi: %e\n", cell.dt_chi);
 	compute_ADM_mass();
 	printf("=============================================\n");
@@ -33,6 +39,8 @@ void Grid::export_1D_tilde_gamma_xx(int j_fixed, int k_fixed, double time) {
 
 	out.close();
 }
+
+
 
 
 void Grid::evolve(Grid &grid_obj, double dtInitial, int nSteps) {
@@ -66,6 +74,11 @@ void Grid::evolve(Grid &grid_obj, double dtInitial, int nSteps) {
 
             forEachCell([&](int i, int j, int k) {
                 compute_time_derivatives(grid_obj, i, j, k);
+                /* update_fluid_velocity(i, j, k, dt); */
+                /* compute_fluid_derivatives(i, j, k); */
+                /* update_energy_momentum_tensor(i, j, k); */
+                /* compute_energy_momentum_evolution(i, j, k, dt); */
+
                 double d_alpha_dt, d_beta_dt[3];
                 compute_gauge_derivatives(grid_obj, i, j, k, d_alpha_dt, d_beta_dt);
                 compute_constraints(grid_obj, i, j, k, hamiltonian, momentum);
@@ -78,6 +91,11 @@ void Grid::evolve(Grid &grid_obj, double dtInitial, int nSteps) {
 
             forEachCell([&](int i, int j, int k) {
                 compute_time_derivatives(grid_obj, i, j, k);
+                /* update_fluid_velocity(i, j, k, dt); */
+                /* compute_fluid_derivatives(i, j, k); */
+                /* update_energy_momentum_tensor(i, j, k); */
+                /* compute_energy_momentum_evolution(i, j, k, dt); */
+
                 double d_alpha_dt, d_beta_dt[3];
                 compute_gauge_derivatives(grid_obj, i, j, k, d_alpha_dt, d_beta_dt);
                 storeStage(globalGrid[i][j][k], 1, d_alpha_dt, d_beta_dt);
@@ -89,6 +107,11 @@ void Grid::evolve(Grid &grid_obj, double dtInitial, int nSteps) {
 
             forEachCell([&](int i, int j, int k) {
                 compute_time_derivatives(grid_obj, i, j, k);
+                /* update_fluid_velocity(i, j, k, dt); */
+                /* compute_fluid_derivatives(i, j, k); */
+                /* update_energy_momentum_tensor(i, j, k); */
+                /* compute_energy_momentum_evolution(i, j, k, dt); */
+
                 double d_alpha_dt, d_beta_dt[3];
                 compute_gauge_derivatives(grid_obj, i, j, k, d_alpha_dt, d_beta_dt);
                 compute_constraints(grid_obj, i, j, k, hamiltonian, momentum);
@@ -101,6 +124,11 @@ void Grid::evolve(Grid &grid_obj, double dtInitial, int nSteps) {
 
             forEachCell([&](int i, int j, int k) {
                 compute_time_derivatives(grid_obj, i, j, k);
+                /* update_fluid_velocity(i, j, k, dt); */
+                /* compute_fluid_derivatives(i, j, k); */
+                /* update_energy_momentum_tensor(i, j, k); */
+                /* compute_energy_momentum_evolution(i, j, k, dt); */
+
                 double d_alpha_dt, d_beta_dt[3];
                 compute_gauge_derivatives(grid_obj, i, j, k, d_alpha_dt, d_beta_dt);
                 compute_constraints(grid_obj, i, j, k, hamiltonian, momentum);
@@ -110,23 +138,21 @@ void Grid::evolve(Grid &grid_obj, double dtInitial, int nSteps) {
             forEachCell([&](int i, int j, int k) {
                 combineStages(globalGrid[i][j][k], dt);
             });
+        }
 
 #pragma omp single nowait
-            {
-                logger_evolve(grid_obj, dt, step);
-                export_chi_slice(grid_obj, step * dt);
-                if (step == nSteps - 1) {
-                    printf("Exporting slices\n");
-                    export_K_slice(grid_obj, NY / 2);
-                    export_gauge_slice(grid_obj, NY / 2);
-                    gridTensor.export_christoffel_slice(grid_obj, NY / 2);
-                    export_alpha_slice(grid_obj, NY / 2);
-                    export_K_3D(grid_obj);
-                    export_tilde_gamma_3D(grid_obj);
-                    /* export_constraints("Output/constraints_N128.csv"); */
-                }
+        {
+            logger_evolve(grid_obj, dt, step);
+            if (step == nSteps - 1) {
+                printf("Exporting slices\n");
+                export_K_slice(grid_obj, NX / 2);
+                export_gauge_slice(grid_obj, NY / 2);
+                gridTensor.export_christoffel_slice(grid_obj, NY / 2);
+                export_alpha_slice(grid_obj, NY / 2);
+                export_K_3D(grid_obj);
             }
-            grid_obj.time += dt;
-        } // fin de la région parallèle
+        }
+
+        grid_obj.time += dt;
     }
 }

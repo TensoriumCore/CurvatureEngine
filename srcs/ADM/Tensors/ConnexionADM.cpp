@@ -113,14 +113,14 @@ void GridTensor::compute_tildeGamma(Grid &grid_obj, int i, int j, int k, double 
     double christof[3][3][3];
     Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
 
-    for (int a = 0; a < 3; a++) {
-        for (int b = 0; b < 3; b++) {
-            gammaInv[a][b] = cell.geom.tildgamma_inv[a][b];
-            for (int c = 0; c < 3; c++) {
-                christof[a][b][c] = cell.conn.Christoffel[a][b][c];
-            }
-        }
-    }
+    /* for (int a = 0; a < 3; a++) { */
+    /*     for (int b = 0; b < 3; b++) { */
+    /*         gammaInv[a][b] = cell.geom.tildgamma_inv[a][b]; */
+    /*         for (int c = 0; c < 3; c++) { */
+    /*             christof[a][b][c] = cell.conn.Christoffel[a][b][c]; */
+    /*         } */
+    /*     } */
+    /* } */
 
     std::fill_n(tildeGamma, 3, 0.0);
 
@@ -130,16 +130,16 @@ void GridTensor::compute_tildeGamma(Grid &grid_obj, int i, int j, int k, double 
 	 * where \Gamma^i_{jk} is the christoffel symbol
 	 * Then we contract the tensor conexion using the invert of the metric gamma_ij --> \tilde_gamma^{ij}
 	 * */
-#pragma omp simd
+#pragma omp simd collapse(3)
     for (int i_comp = 0; i_comp < 3; i_comp++) { 
         for (int j_comp = 0; j_comp < 3; j_comp++) {
             for (int k_comp = 0; k_comp < 3; k_comp++) {
-                tildeGamma[i_comp] += gammaInv[j_comp][k_comp] * christof[i_comp][j_comp][k_comp];
+                tildeGamma[i_comp] += cell.geom.tildgamma_inv[j_comp][k_comp] * cell.conn.Christoffel[i_comp][j_comp][k_comp];
             }
         }
     }
 	for (int i_comp = 0; i_comp < 3; i_comp++) {
-		tildeGamma[i_comp] = cell.conn.tildeGamma[i_comp];
+		cell.conn.tildeGamma[i_comp] = tildeGamma[i_comp];
 	}
 }
 
@@ -163,17 +163,7 @@ void print_matrix_2D(const char *name, double matrix[3][3]) {
 void GridTensor::compute_christoffel_3D(Grid &grid_obj, int i, int j, int k, double christof[3][3][3]) {
     const auto& cell = grid_obj.getCell(i, j, k);
 
-    double invg[3][3], g[3][3];
-
-    for (int a = 0; a < 3; a++) {
-        for (int b = 0; b < 3; b++) {
-            invg[a][b] = cell.geom.tildgamma_inv[a][b];
-            g[a][b] = cell.geom.tilde_gamma[a][b];
-        }
-    }
-
     double dgamma[3][3][3];
-
     auto get_g = [&](int ii, int jj, int kk, int a, int b) -> double {
         return grid_obj.getCell(ii, jj, kk).geom.tilde_gamma[a][b];
     };
@@ -237,14 +227,14 @@ void GridTensor::compute_christoffel_3D(Grid &grid_obj, int i, int j, int k, dou
             }
         }
     }
-#pragma omp simd
+#pragma omp simd collapse(3)
     for (int kk = 0; kk < 3; kk++) {
         for (int aa = 0; aa < 3; aa++) {
             for (int bb = 0; bb < 3; bb++) {
                 double sum = 0.0;
                 for (int ll = 0; ll < 3; ll++) {
                     double tmp = dgamma[aa][ll][bb] + dgamma[bb][ll][aa] - dgamma[ll][aa][bb];
-                    sum += invg[kk][ll] * tmp;
+                    sum += cell.geom.tildgamma_inv[kk][ll] * tmp;
                 }
                 christof[kk][aa][bb] = 0.5 * sum;
                 grid_obj.getCell(i, j, k).conn.Christoffel[kk][aa][bb] = christof[kk][aa][bb];
