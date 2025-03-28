@@ -1,5 +1,4 @@
 # CurvatureEngine
-![Screenshot from 2025-03-14 15-11-45](https://github.com/user-attachments/assets/80ba68d9-274f-4561-b2b2-d4784f70b66c)
 
 ## Overview
 This project is a high-performance computational framework for solving geodesic equations and curvature tensors in General Relativity. It includes tools for computing Christoffel symbols, Ricci tensors, Riemann curvature tensors, and the evolution of spacetime using the ADM/BSSN formalism. The code supports multiple metrics, including Schwarzschild and Minkowski, and provides efficient numerical solvers.
