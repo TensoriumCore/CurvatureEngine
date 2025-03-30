@@ -165,6 +165,8 @@ class Grid {
 		void export_1D_tilde_gamma_xx(int j_fixed, int k_fixed, double time);	
 		void injectTTWave(Cell2D &cell, double x, double y, double z, double t);
 		void initializeFishboneMoncriefTorus(double r_in, double r_max, double rho_max, double l_torus, double Gamma);
+		void solve_lichnerowicz(int max_iter, double tol, double dx, double dy, double dz);
+		void export_BH_positions(double time, const std::string& filename);
 		Cell2D& getCell(int i, int j, int k) {
 			return globalGrid[i][j][k];
 		}

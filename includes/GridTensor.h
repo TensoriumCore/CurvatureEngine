@@ -34,6 +34,8 @@ class BSSNevolve {
 		~BSSNevolve() = default;
 		friend class Grid;
 		void compute_dt_chi(Grid &grid_obj, int i, int j, int k, double &dt_chi);
+		void compute_dt_tilde_gamma(Grid &grid_obj, int i, int j, int k, double dt_tg[3][3]);
+
 	protected:
 
 };

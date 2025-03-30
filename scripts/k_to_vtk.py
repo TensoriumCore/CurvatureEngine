@@ -46,7 +46,7 @@ cont_dKt8Rep.Opacity = 0.1
 dKt8_ctf = GetColorTransferFunction('dKt_8_diagonal')
 dKt8_ctf.ApplyPreset('Cool to Warm', True)
 dKt8_ctf.RescaleTransferFunction(-0.2, 0.2)
-
+#
 # calc_dkt4 = Calculator(Input=reader)
 # calc_dkt4.ResultArrayName = "dKt_4_diagonal"
 # calc_dkt4.Function = "dKt_4"

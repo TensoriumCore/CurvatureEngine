@@ -16,7 +16,7 @@ void export_gamma_slice(Grid &grid_obj, int j, double time) {
          << "gamma_10,gamma_11,gamma_12,"
          << "gamma_20,gamma_21,gamma_22\n";
 
-    double L = 9.0;
+    double L = 18.0;
     double dx = (2.0 * L) / (NX - 1);
     double dz = (2.0 * L) / (NZ - 1);
 
@@ -44,8 +44,8 @@ void Grid::export_chi_slice(Grid &grid_obj, double time) {
     char filename[256];
     sprintf(filename, "Output/chi_slice_t%.3f.dat", time);
     file.open(filename);
-	double L = 9.0;
-    int z_mid = NZ / 2; // Coupe au plan z = 0
+	double L = 18.0;
+    int z_mid = NY / 2; 
 
     for (int i = 0; i < NX; ++i) {
         for (int j = 0; j < NY; ++j) {
@@ -69,15 +69,15 @@ void export_tilde_gamma_3D(Grid &grid_obj) {
 
     file << "DIMENSIONS " << NX << " " << NY << " " << NZ << "\n";
     
-    double x0 = -9.0;
-    double y0 = -9.0;
-    double z0 = -9.0;
+    double x0 = -18.0;
+    double y0 = -18.0;
+    double z0 = -18.0;
     
     file << "ORIGIN " << x0 << " " << y0 << " " << z0 << "\n";
 
-    double dx = 18.0 / (NX - 1);
-    double dy = 18.0 / (NY - 1);
-    double dz = 18.0 / (NZ - 1);
+    double dx = 36.0 / (NX - 1);
+    double dy = 36.0 / (NY - 1);
+    double dz = 36.0 / (NZ - 1);
     
     file << "SPACING " << dx << " " << dy << " " << dz << "\n";
 
@@ -95,7 +95,6 @@ void export_tilde_gamma_3D(Grid &grid_obj) {
         }
     }
 
-    // Ajout des composantes diagonales comme scalaires
     file << "SCALARS tilde_gamma_00 float 1\n";
     file << "LOOKUP_TABLE default\n";
     for (int i = 0; i < NX; i++)
@@ -121,32 +120,6 @@ void export_tilde_gamma_3D(Grid &grid_obj) {
     std::cout << "✅ Fichier VTK de la métrique conforme geom.dt_tilde_gamma sauvegardé : tilde_gamma_full.vtk\n";
 }
 
-/* void export_constraints(std::string filename) { */
-/*     std::ofstream file(filename); */
-/*     file << "x,y,z,Hamiltonian,Momentum_x,Momentum_y,Momentum_z\n"; */
-/*  */
-/*     for (int i = 0; i < NX; i++) { */
-/*         for (int j = 0; j < NY; j++) { */
-/*             for (int k = 0; k < NZ; k++) { */
-/*                 double x = -9.0 + i * (18.0 / (NX - 1)); */
-/*                 double y = -9.0 + j * (18.0 / (NY - 1)); */
-/*                 double z = -9.0 + k * (18.0 / (NZ - 1)); */
-/*  */
-/*                 double hamiltonian = hamiltonianGrid[i][j][k]; */
-/*                 double momentum[3] = {0.0, 0.0, 0.0}; */
-/*                 compute_constraints(*this, i, j, k, hamiltonian, momentum); */
-/*  */
-/*                 file << x << "," << y << "," << z << "," */
-/*                      << hamiltonian << "," */
-/*                      << momentum[0] << "," << momentum[1] << "," << momentum[2] << "\n"; */
-/*             } */
-/*         } */
-/*     } */
-/*  */
-/*     file.close(); */
-/*     std::cout << "✅ Contraintes exportées dans " << filename << std::endl; */
-/* } */
-
 
 void export_K_slice(Grid &grid_obj, int j) {
     std::ofstream file("Output/K_slice.csv");
@@ -155,15 +128,15 @@ void export_K_slice(Grid &grid_obj, int j) {
 
     for (int i = 0; i < NX; i++) {
         for (int k = 0; k < NZ; k++) {
-            double x = -9.0 + i * (18.0 / (NX - 1));
-            double z = -9.0 + k * (18.0 / (NZ - 1));
+            double x = -18.0 + i * (36.0 / (NX - 1));
+            double z = -18.0 + k * (36.0 / (NZ - 1));
 
             Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
 
             file << x << "," << z << ","
-                 << cell.atilde.Atilde[0][0] << "," << cell.atilde.Atilde[0][1] << "," << cell.atilde.Atilde[0][2] << ","
-                 << cell.atilde.Atilde[1][0] << "," << cell.atilde.Atilde[1][1] << "," << cell.atilde.Atilde[1][2] << ","
-                 << cell.atilde.Atilde[2][0] << "," << cell.atilde.Atilde[2][1] << "," << cell.atilde.Atilde[2][2] << "\n";
+                 << cell.atilde.dt_Atilde[0][0] << "," << cell.atilde.dt_Atilde[0][1] << "," << cell.atilde.dt_Atilde[0][2] << ","
+                 << cell.atilde.dt_Atilde[1][0] << "," << cell.atilde.dt_Atilde[1][1] << "," << cell.atilde.dt_Atilde[1][2] << ","
+                 << cell.atilde.dt_Atilde[2][0] << "," << cell.atilde.dt_Atilde[2][1] << "," << cell.atilde.dt_Atilde[2][2] << "\n";
         }
     }
     file.close();
@@ -187,15 +160,15 @@ void export_K_3D(Grid &grid_obj) {
 
     file << "DIMENSIONS " << NX << " " << NY << " " << NZ << "\n";
 
-    double x0 = -9.0;
-    double y0 = -9.0;
-    double z0 = -9.0;
+    double x0 = -18.0;
+    double y0 = -18.0;
+    double z0 = -18.0;
     double a = 0.9999;  
     file << "ORIGIN " << x0 << " " << y0 << " " << z0 << "\n";
 
-    double dx = 18.0 / (NX - 1);
-    double dy = 18.0 / (NY - 1);
-    double dz = 18.0 / (NZ - 1);
+    double dx = 36.0 / (NX - 1);
+    double dy = 36.0 / (NY - 1);
+    double dz = 36.0 / (NZ - 1);
     file << "SPACING " << dx << " " << dy << " " << dz << "\n";
 
     file << "POINT_DATA " << (NX * NY * NZ) << "\n";
@@ -321,8 +294,8 @@ void export_alpha_slice(Grid &grid_obj, int j) {
     file << "x,z,alpha\n";
     for(int i = 0; i < NX; i++) {
         for(int k = 0; k < NZ; k++) {
-            double x = -9.0 + i * (18.0 / (NX - 1));
-            double z = -9.0 + k * (18.0 / (NZ - 1));
+            double x = -18.0 + i * (36.0 / (NX - 1));
+            double z = -18.0 + k * (36.0 / (NZ - 1));
 
             Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
             file << x << "," << z << "," << cell.gauge.alpha << "\n";
@@ -340,8 +313,8 @@ void export_gauge_slice(Grid &grid_obj, int j) {
 
     for (int i = 0; i < NX; i++) {
         for (int k = 0; k < NZ; k++) {
-            double x = -9.0 + i * (18.0 / (NX - 1));
-            double z = -9.0 + k * (18.0 / (NZ - 1));
+            double x = -18.0 + i * (36.0 / (NX - 1));
+            double z = -18.0 + k * (36.0 / (NZ - 1));
 
             Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
             double d_alpha_dt, d_beta_dt[3];
@@ -362,7 +335,7 @@ void export_gauge_slice(Grid &grid_obj, int j) {
 
 void GridTensor::export_christoffel_slice(Grid &grid_obj, int j) {
     std::ofstream file("Output/christoffel_slice.csv");
-	double L = 9.0;
+	double L = 18.0;
     double x_min = -L, x_max = L;
     double y_min = -L, y_max = L;
     double z_min = -L, z_max = L;

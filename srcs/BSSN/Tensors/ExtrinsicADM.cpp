@@ -12,7 +12,6 @@
 void GridTensor::compute_extrinsic_curvature(Grid &grid_obj, int i, int j, int k,
                                              double dx, double dy, double dz) {
     Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
-
     double partialBeta[3][3];
     partialBeta[0][0] = (grid_obj.getCell(i+1, j, k).gauge.beta[0] - grid_obj.getCell(i-1, j, k).gauge.beta[0]) / (2.0 * dx);
     partialBeta[0][1] = (grid_obj.getCell(i, j+1, k).gauge.beta[0] - grid_obj.getCell(i, j-1, k).gauge.beta[0]) / (2.0 * dy);
@@ -26,7 +25,7 @@ void GridTensor::compute_extrinsic_curvature(Grid &grid_obj, int i, int j, int k
     partialBeta[2][1] = (grid_obj.getCell(i, j+1, k).gauge.beta[2] - grid_obj.getCell(i, j-1, k).gauge.beta[2]) / (2.0 * dy);
     partialBeta[2][2] = (grid_obj.getCell(i, j, k+1).gauge.beta[2] - grid_obj.getCell(i, j, k-1).gauge.beta[2]) / (2.0 * dz);
 
-    /* compute_christoffel_3D(grid_obj, i, j, k, cell.conn.Christoffel); */
+    compute_christoffel_3D(grid_obj, i, j, k, cell.conn.Christoffel);
 
     double GammaBeta[3][3] = {0.0};
     for (int i_idx = 0; i_idx < 3; ++i_idx) {
