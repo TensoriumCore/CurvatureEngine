@@ -24,16 +24,6 @@ void Grid::calculate_ricci_3d_from_riemann(const Riemann3D& Riemann, Matrix3x3& 
 }
 
 
-void Grid::print_ricci_tensor(const Matrix3x3& R3) {
-    printf("\nRicci tensor:\n");
-    for (int i = 0; i < DIM3; i++) {
-        for (int j = 0; j < DIM3; j++) {
-            printf("%12.6f\t", R3[i][j]);
-        }
-        printf("\n");
-    }
-}
-
 
 
 void compute_partial_christoffel_3D(
@@ -113,6 +103,5 @@ void Grid::compute_ricci_3d(
         }
     }
 
-    print_ricci_tensor(R3);
 }
 

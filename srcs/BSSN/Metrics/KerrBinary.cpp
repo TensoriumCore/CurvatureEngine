@@ -150,7 +150,6 @@ void Grid::initializeBinaryKerrData(Grid &grid_obj) {
                     ly /= norm_l;
                     lz /= norm_l;
                 }
-
                 Cell2D &cell = globalGrid[i][j][k];
 
                 cell.geom.gamma[0][0] = 1.0 + 2.0 * H * lx * lx;

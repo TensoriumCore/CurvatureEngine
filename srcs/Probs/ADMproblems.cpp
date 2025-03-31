@@ -5,7 +5,7 @@ int grid_setup() {
 	
 	grid_obj.allocateGlobalGrid();
 	grid_obj.initializeBinaryKerrData(grid_obj);
-	grid_obj.evolve(grid_obj, 0.0000001, 100);
+	grid_obj.evolve(grid_obj, 0.0000001, 10);
 	printf("end of compute\n");
     return 0;
 }

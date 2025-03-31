@@ -112,17 +112,8 @@ class Grid {
 		void export_fluid_slice(int j_slice);
 		void initializeKerrData();
 		void export_energy_momentum_tensor_slice(int slice_y);
-		void update_fluid_velocity(int i, int j, int k, double dt);
-		void compute_fluid_derivatives(int i, int j, int k);
 		void initialize_grid();
 		void evolve(Grid &grid_obj, double dtinitital, int nSteps);
-		void extract_3p1(const Matrix4x4& g,
-				const Matrix4x4& g_inv,  
-				double* alpha,
-				Vector3& beta_cov,
-				Vector3& beta_con,
-				Matrix3x3& gamma,
-				Matrix3x3& gamma_inv);
 		void export_constraints(std::string filename);
 		void initializeData(); 
 		void compute_ricci_3d(
@@ -130,7 +121,6 @@ class Grid {
 				const Vector3& X,       
 				const Tensor3D& Gamma3, 
 				Matrix3x3& R3);
-		void print_ricci_tensor(const Matrix3x3& R3);
 		void calculate_christoffel_3D(const Vector3& X, Tensor3D& Gamma3, 
 				const Matrix3x3& gamma, Matrix3x3 gamma_inv) ;
 		void compute_ricci_3d(
@@ -141,10 +131,8 @@ class Grid {
 		void copyInitialState(Cell2D &cell);
 		void updateIntermediateState(Cell2D &cell, double dtCoeff, int stageIndex);
 		void storeStage(Cell2D &cell, int stage, double d_alpha_dt, double d_beta_dt[3]) ;
-		Matrix3x3 compute_beta_gradient(int i, int j);
 		void combineStages(Cell2D &cell, double dt);
 		void initialize_grid(int Nr, int Ntheta, double r_min, double r_max, double theta_min, double theta_max);
-		void export_vtk(const std::string& filename);
 		double computeMaxSpeed();
 		double computeCFL_dt(double CFL);
 		void compute_constraints(Grid &grid_obj, int i, int j, int k, double &hamiltonian, double momentum[3]);
@@ -162,7 +150,6 @@ class Grid {
 		double computeTraceK(Grid &grid, int i, int j, int k);
 		double christoffelTerm(Grid &grid, int i, int j, int k, int i_comp);
 		void compute_gauge_derivatives(Grid &grid_obj, int i, int j, int k, double &d_alpha_dt, double d_beta_dt[3]);
-		void export_1D_tilde_gamma_xx(int j_fixed, int k_fixed, double time);	
 		void injectTTWave(Cell2D &cell, double x, double y, double z, double t);
 		void initializeFishboneMoncriefTorus(double r_in, double r_max, double rho_max, double l_torus, double Gamma);
 		void solve_lichnerowicz(int max_iter, double tol, double dx, double dy, double dz);
@@ -197,3 +184,4 @@ void export_gauge_slice(Grid &grid_obj, int j);
 void export_K_slice(Grid &grid_obj, int j);
 void export_gamma_slice(Grid &grid_obj, int j, double time);
 void export_tilde_gamma_3D(Grid &grid_obj);
+double compute_momentum_i(Grid &grid, int i, int j, int k, int i_comp);

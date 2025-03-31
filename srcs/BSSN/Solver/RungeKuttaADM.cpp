@@ -35,7 +35,15 @@ void Grid::evolve(Grid &grid_obj, double dtInitial, int nSteps) {
     double dt = dtInitial;
     double hamiltonian;
     double momentum[3];
+	double L = 24.0;
+    double x_min = -L, x_max = L;
+    double y_min = -L, y_max = L;
+    double z_min = -L, z_max = L;
 
+
+    double dx = (x_max - x_min) / (NX - 1);
+    double dy = (y_max - y_min) / (NY - 1);
+    double dz = (z_max - z_min) / (NZ - 1);
     for (int step = 0; step < nSteps; step++) {
         dt = computeCFL_dt(CFL);
         apply_boundary_conditions(grid_obj);
@@ -47,6 +55,10 @@ void Grid::evolve(Grid &grid_obj, double dtInitial, int nSteps) {
                 for (int i = 1; i < NX - 1; i++) {
                     for (int j = 1; j < NY - 1; j++) {
                         for (int k = 1; k < NZ - 1; k++) {
+							double x = x_min + i*DX;
+                            double y = y_min + j*DY;
+                            double z = z_min + k*DZ;
+                            injectTTWave(globalGrid[i][j][k], x, y, z, grid_obj.time);
                             func(i, j, k);
                         }
                     }
