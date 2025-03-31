@@ -1,4 +1,3 @@
-#include "GridTensor.h"
 #include <Geodesics.h>
 
 /** 
@@ -138,9 +137,9 @@ void GridTensor::compute_tildeGamma(Grid &grid_obj, int i, int j, int k, double 
             }
         }
     }
-	for (int i_comp = 0; i_comp < 3; i_comp++) {
-		cell.conn.tildeGamma[i_comp] = tildeGamma[i_comp];
-	}
+    cell.conn.tildeGamma[0] = tildeGamma[0];
+    cell.conn.tildeGamma[1] = tildeGamma[1];
+    cell.conn.tildeGamma[2] = tildeGamma[2];
 }
 
 /** this function compute the conn.Christoffel symbols at each point of the 3D grid
@@ -186,9 +185,15 @@ void GridTensor::compute_christoffel_3D(Grid &grid_obj, int i, int j, int k, dou
                     DX
                 );
             } else if (i == 0) {
-                dgamma[0][a][b] = (get_g(i+1,j,k,a,b) - get_g(i,j,k,a,b)) / DX;
+				dgamma[0][a][b] = second_order_diff(
+					get_g(i+1,j,k,a,b), get_g(i,j,k,a,b),
+					DX
+				);
             } else {
-                dgamma[0][a][b] = (get_g(i,j,k,a,b) - get_g(i-1,j,k,a,b)) / DX;
+                dgamma[0][a][b] = second_order_diff(
+					get_g(i,j,k,a,b), get_g(i-1,j,k,a,b),
+					DX
+				);
             }
 
             // ∂_y
@@ -204,11 +209,16 @@ void GridTensor::compute_christoffel_3D(Grid &grid_obj, int i, int j, int k, dou
                     DY
                 );
             } else if (j == 0) {
-                dgamma[1][a][b] = (get_g(i,j+1,k,a,b) - get_g(i,j,k,a,b)) / DY;
+                dgamma[1][a][b] = second_order_diff(
+					get_g(i,j+1,k,a,b), get_g(i,j,k,a,b),
+					DY
+				); 
             } else {
-                dgamma[1][a][b] = (get_g(i,j,k,a,b) - get_g(i,j-1,k,a,b)) / DY;
-            }
-
+                dgamma[1][a][b] = second_order_diff(
+					get_g(i,j,k,a,b), get_g(i,j-1,k,a,b),
+					DY
+				);
+			}
             if (in_z) {
                 dgamma[2][a][b] = fourth_order_diff(
                     get_g(i,j,k+2,a,b), get_g(i,j,k+1,a,b),
@@ -221,10 +231,16 @@ void GridTensor::compute_christoffel_3D(Grid &grid_obj, int i, int j, int k, dou
                     DZ
                 );
             } else if (k == 0) {
-                dgamma[2][a][b] = (get_g(i,j,k+1,a,b) - get_g(i,j,k,a,b)) / DZ;
+                dgamma[2][a][b] = second_order_diff( 
+					get_g(i,j,k+1,a,b), get_g(i,j,k,a,b),
+					DZ
+				);
             } else {
-                dgamma[2][a][b] = (get_g(i,j,k,a,b) - get_g(i,j,k-1,a,b)) / DZ;
-            }
+                dgamma[2][a][b] = second_order_diff(
+					get_g(i,j,k,a,b), get_g(i,j,k-1,a,b), 
+					DZ
+				);
+			}
         }
     }
 #pragma omp simd collapse(3)

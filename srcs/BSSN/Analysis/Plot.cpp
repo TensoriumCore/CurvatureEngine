@@ -357,13 +357,13 @@ void GridTensor::export_christoffel_slice(Grid &grid_obj, int j) {
             double x = x_min + i_idx * dx;
             double z = z_min + k_idx * dz;            
             double christof[3][3][3];
-            compute_christoffel_3D(grid_obj, i_idx, j, k_idx, christof);
-            
+			Grid::Cell2D &cell = grid_obj.getCell(i_idx, j, k_idx);
+
             file << x << "," << z;
             for (int i = 0; i < 3; i++) {
                 for (int k = 0; k < 3; k++) {
                     for (int l = 0; l < 3; l++) {
-                        file << "," << christof[i][k][l];
+                        file << "," << cell.conn.Christoffel[i][k][l];
                     }
                 }
             }

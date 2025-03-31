@@ -26,21 +26,27 @@ void Grid::compute_time_derivatives(Grid &grid_obj, int i, int j, int k)
         }
     }
 
-    double partialAlpha[3];
-    for (int dim = 0; dim < 3; ++dim) {
-        partialAlpha[dim] = partial_m(grid_obj, i, j, k, dim,
-            [&](const Grid::Cell2D &c) { return c.gauge.alpha; }
-        );
-		cell.gauge.dt_alpha = partialAlpha[dim];
-    }
+
+	double partialAlpha[3];
+	for (int dim = 0; dim < 3; ++dim) {
+		partialAlpha[dim] = partial_m(grid_obj, i, j, k, dim,
+				[&](const Grid::Cell2D &c) { return c.gauge.alpha; }
+				);
+	}
+
+	double f_alpha = 1.0; 
+	cell.gauge.dt_alpha = -alpha * alpha * f_alpha * cell.curv.K_trace;
+	for (int m = 0; m < 3; ++m) {
+		cell.gauge.dt_alpha += beta[m] * partialAlpha[m];
+	}
+
 
     double d2Alpha[3][3];
     for (int m2 = 0; m2 < 3; ++m2) {
         for (int n2 = 0; n2 < 3; ++n2) {
-            d2Alpha[m2][n2] = second_partial_alpha(grid_obj, i, j, k, m2, n2);
-        }
+			d2Alpha[m2][n2] = second_partial_alpha(grid_obj, i, j, k, m2, n2);
+		}
     }
-
     double partialKtrace[3];
     for (int dim = 0; dim < 3; ++dim) {
         partialKtrace[dim] = partial_m(grid_obj, i, j, k, dim,
@@ -80,7 +86,18 @@ void Grid::compute_time_derivatives(Grid &grid_obj, int i, int j, int k)
                 shift += cell.geom.tilde_gamma[b][m] * partialBeta[m][a];
             }
 
-            cell.geom.dt_tilde_gamma[a][b] = -2.0 * alpha * cell.atilde.Atilde[a][b] + adv + shift;
+			double div_beta = 0.0;
+			for (int m = 0; m < 3; ++m) {
+				div_beta += partialBeta[m][m]; 
+				for (int l = 0; l < 3; ++l) {
+					div_beta += Gamma[m][m][l] * beta[l];  
+				}
+			}
+
+			cell.geom.dt_tilde_gamma[a][b] = -2.0 * alpha * cell.atilde.Atilde[a][b] 
+				+ adv 
+				+ shift 
+				- (2.0/3.0) * cell.geom.tilde_gamma[a][b] * div_beta;
 			cell.dgt[a][b] = cell.geom.dt_tilde_gamma[a][b];
         }
     }
@@ -163,23 +180,28 @@ void Grid::compute_time_derivatives(Grid &grid_obj, int i, int j, int k)
         }
     }
 
-    double Atilde_squared = 0.0;
-#pragma omp parallel for collapse(4) reduction(+:Atilde_squared)
-    for (int a1 = 0; a1 < 3; ++a1) {
-        for (int b1 = 0; b1 < 3; ++b1) {
-            for (int c1 = 0; c1 < 3; ++c1) {
-                for (int d1 = 0; d1 < 3; ++d1) {
-                    Atilde_squared +=
-                        cell.geom.tildgamma_inv[a1][c1] *
-                        cell.geom.tildgamma_inv[b1][d1] *
-                        cell.atilde.Atilde[a1][b1] *
-                        cell.atilde.Atilde[c1][d1];
-                }
-            }
-        }
-    }
+	double Atilde_raised[3][3] = {0.0};
+#pragma omp parallel for collapse(2) 
+	for (int i = 0; i < 3; ++i) {
+		for (int j = 0; j < 3; ++j) {
+			for (int k = 0; k < 3; ++k) {
+				for (int l = 0; l < 3; ++l) {
+					Atilde_raised[i][j] += cell.geom.tildgamma_inv[i][k]
+						* cell.geom.tildgamma_inv[j][l]
+						* cell.atilde.Atilde[k][l];
+				}
+			}
+		}
+	}
 
-    double total_R_scalar = 0.0;
+	double Atilde_squared = 0.0;
+#pragma omp simd reduction(+:Atilde_squared)  
+	for (int i = 0; i < 3; ++i) {
+		for (int j = 0; j < 3; ++j) {
+			Atilde_squared += cell.atilde.Atilde[i][j] * Atilde_raised[i][j];
+		}
+	}
+	double total_R_scalar = 0.0;
 #pragma omp simd reduction(+:total_R_scalar)
     for (int a1 = 0; a1 < 3; ++a1) {
         for (int b1 = 0; b1 < 3; ++b1) {

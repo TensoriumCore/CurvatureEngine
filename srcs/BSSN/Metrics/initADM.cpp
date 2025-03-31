@@ -1,32 +1,31 @@
-#include "GridTensor.h"
 #include <Geodesics.h>
 
+void Grid::allocateGlobalGrid() {
+    printf("Allocating optimized grid\n");
 
-void Grid::allocateGlobalGrid(){
-    printf("Allocating global grid\n");
-	globalGrid.reserve(NX);
     globalGrid.resize(NX);
-    for(int i = 0; i < NX; i++){
+    #pragma omp parallel for
+    for (int i = 0; i < NX; i++) {
         globalGrid[i].resize(NY);
-        for(int j = 0; j < NY; j++){
-            globalGrid[i][j].resize(NZ);
+        for (int j = 0; j < NY; j++) {
+            globalGrid[i][j].assign(NZ, Cell2D());
         }
     }
-    #pragma omp parallel for collapse(3)
-    for(int i = 0; i < NX; i++){
-        for(int j = 0; j < NY; j++){
-            for(int k = 0; k < NZ; k++){
-                globalGrid[i][j][k] = Cell2D(); 
-            }
+
+    const size_t total_cells = NX * NY * NZ;
+    for (int a = 0; a < 3; a++) {
+        for (int b = 0; b < 3; b++) {
+            dgammaX[a][b].clear();
+            dgammaX[a][b].reserve(total_cells);  
+            dgammaX[a][b].resize(total_cells, 0.0);
+
+            dgammaY[a][b].clear();
+            dgammaY[a][b].resize(total_cells, 0.0);
+            
+            dgammaZ[a][b].clear();
+            dgammaZ[a][b].resize(total_cells, 0.0);
         }
     }
-	for (int a = 0; a < 3; a++) {
-		for (int b = 0; b < 3; b++) {
-			dgammaX[a][b].resize(NX*NY*NZ);
-			dgammaY[a][b].resize(NX*NY*NZ);
-			dgammaZ[a][b].resize(NX*NY*NZ);
-		}
-	}
 }
 
 

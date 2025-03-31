@@ -78,8 +78,8 @@ void Grid::initializeBinaryKerrData(Grid &grid_obj) {
     double m1 = 1.0, a1 = 0.935;
     double m2 = 1.0, a2 = 0.935;
 
-    double x1 = -10.0, y1 = 0.0, z1 = 0.0; 
-    double x2 =  10.0, y2 = 0.0, z2 = 0.0; 
+    double x1 = 0.0, y1 = -3.0, z1 = 0.0; 
+    double x2 = 0.0, y2 = 3.0, z2 = 0.0; 
 
     double L = 24.0;
     double x_min = -L, x_max = L;
@@ -194,14 +194,11 @@ void Grid::initializeBinaryKerrData(Grid &grid_obj) {
 	for (int i = 1; i < NX - 1; i++) {
 		for (int j = 1; j < NY - 1; j++) {
 			for (int k = 1; k < NZ - 1; k++) {
-				double dt_tg[3][3]; 
-
-				bssn.compute_dt_tilde_gamma(*this, i, j, k, dt_tg);
-
-				for (int a = 0; a < 3; ++a)
-					for (int b = 0; b < 3; ++b)
-						globalGrid[i][j][k].dgt[a][b] = dt_tg[a][b];
-
+				for (int a = 0; a < 3; ++a) {
+					for (int b = 0; b < 3; ++b) {
+						globalGrid[i][j][k].dgt[a][b] = 0.0;  // dt_tilde_gamma = 0
+					}
+				}		
 				gridtensor.compute_extrinsic_curvature(*this, i, j, k, dx, dy, dz);
 				gridtensor.compute_Atilde(*this, i, j, k);
 

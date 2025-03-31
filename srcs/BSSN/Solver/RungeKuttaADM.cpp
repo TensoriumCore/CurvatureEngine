@@ -110,10 +110,10 @@ void Grid::evolve(Grid &grid_obj, double dtInitial, int nSteps) {
             logger_evolve(grid_obj, dt, step);
 			if (step == nSteps - 1) {
                 printf("Exporting slices\n");
-                export_K_slice(grid_obj, NY / 2);
-                export_gauge_slice(grid_obj, NY / 2);
-                gridTensor.export_christoffel_slice(grid_obj, NY / 2);
-                export_alpha_slice(grid_obj, NY / 2);
+                export_K_slice(grid_obj, NX/ 2);
+                export_gauge_slice(grid_obj, NX / 2);
+                gridTensor.export_christoffel_slice(grid_obj, NX / 2);
+                export_alpha_slice(grid_obj, NX / 2);
                 export_K_3D(grid_obj);
             }
         }

@@ -12,12 +12,6 @@ void Grid::compute_gauge_derivatives(Grid &grid_obj, int i, int j, int k, double
 			gammaInv[a][b] = cell.geom.gamma_inv[a][b];	
         }
     }
-    bool ok = invert_3x3(gammaLocal, gammaInv);
-    if (!ok) {
-        d_alpha_dt = 0.0;
-        for (int m = 0; m < 3; m++) d_beta_dt[m] = 0.0;
-        return;
-	}
 
     double Ktrace = 0.0;
     for (int a = 0; a < 3; a++) {
@@ -26,8 +20,7 @@ void Grid::compute_gauge_derivatives(Grid &grid_obj, int i, int j, int k, double
 		}
     }
 
-    double lambda = 1.0 / (1.0 + 2.0 * Ktrace * Ktrace);
-    d_alpha_dt = -2.0 * cell.gauge.alpha * Ktrace * lambda;
+    d_alpha_dt = -2.0 * cell.gauge.alpha * Ktrace ;
 
     double eta = 2.0 / (1.0 + std::fabs(Ktrace));
     double d_Gamma_dt[3] = {0.0, 0.0, 0.0}; 
@@ -38,6 +31,10 @@ void Grid::compute_gauge_derivatives(Grid &grid_obj, int i, int j, int k, double
 
     for (int m = 0; m < 3; m++) {
         d_beta_dt[m] = 3.0 / 4.0 * d_Gamma_dt[m] - eta * cell.gauge.beta[m];
+	}
+	cell.gauge.dt_alpha = d_alpha_dt;
+	for (int m = 0; m < 3; m++) {
+		cell.gauge.dt_beta[m] = d_beta_dt[m];
 	}
 }
 

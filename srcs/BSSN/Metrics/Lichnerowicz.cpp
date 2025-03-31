@@ -21,22 +21,23 @@ void Grid::solve_lichnerowicz(int max_iter, double tol, double dx, double dy, do
                                 + inv_dz2*(psi[i][j][k+1] + psi[i][j][k-1] - 2.0*psi[i][j][k]);
 
                     Cell2D &cell = globalGrid[i][j][k];
-                    double A2 = 0.0;
-                    for (int a = 0; a < 3; ++a) {
-                        for (int b = 0; b < 3; ++b) {
-                            double temp = 0.0;
-                            for (int c = 0; c < 3; ++c) {
-                                temp += cell.geom.tildgamma_inv[a][c] * cell.atilde.Atilde[c][b];
-                            }
-                            A2 += temp * cell.atilde.Atilde[a][b];
-                        }
-                    }
+					double A2 = 0.0;
+					for (int a = 0; a < 3; ++a) {
+						for (int b = 0; b < 3; ++b) {
+							for (int c = 0; c < 3; ++c) {
+								for (int d = 0; d < 3; ++d) {
+									A2 += cell.geom.tildgamma_inv[a][c] * cell.geom.tildgamma_inv[b][d] 
+										* cell.atilde.Atilde[c][d] * cell.atilde.Atilde[a][b];
+								}
+							}
+						}
+					}
 
                     double psi7 = std::pow(std::max(psi[i][j][k], 1e-8), 7.0);
                     double rhs = (1.0/8.0) * A2 / psi7;
 
                     double new_psi = psi[i][j][k] + 0.5 * (lap - rhs) * factor;
-                    new_psi = std::max(new_psi, 0.1); // Garantit ψ > 0
+                    new_psi = std::max(new_psi, 0.1); 
 
                     max_diff = std::max(max_diff, std::abs(new_psi - psi[i][j][k]));
                     psi[i][j][k] = new_psi;
