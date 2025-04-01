@@ -3,12 +3,12 @@
 #include <Geodesics.h>
 
 #define DIM3 3
-constexpr double DX = 0.09;
-constexpr double DY = 0.09;
-constexpr double DZ = 0.09;
-#define NX 148
-#define NY 148
-#define NZ 148
+constexpr double DX = 0.08;
+constexpr double DY = 0.08;
+constexpr double DZ = 0.08;
+#define NX 128
+#define NY 128
+#define NZ 128
 #define GHOST 2  
 #define NX_TOTAL (NX + 2*GHOST) 
 #define NY_TOTAL (NY + 2*GHOST)
@@ -34,6 +34,7 @@ struct alignas(32) Geometry {
     double dt_tilde_gamma[3][3];
     double dt_tildeGamma[3];
 };
+
 struct alignas(32) Connection {
 	Tensor3D Gamma3;
 	double tildeGamma[3];
@@ -102,19 +103,16 @@ class Grid {
 			double KStage[4][3][3];
 			double dgt[3][3];
 		};
-		double compute_ADM_mass();
+		void appendConstraintL2ToCSV(const std::string& filename, double time) const;
 		void inject_BowenYork_Atilde(Grid &grid_obj, const Vector3 &P, const Vector3 &Coor);
 		void logger_evolve(Grid &grid_obj, double dt, int nstep);
 		void compute_spectral_derivatives_for_gamma() ;
 		void compute_energy_momentum_evolution(int i, int j, int k, double dt);
 		void update_energy_momentum_tensor(int i, int j, int k);
 		double compute_ricci_scalar(Grid &grid, int i, int j, int k);
-		void export_fluid_slice(int j_slice);
 		void initializeKerrData();
-		void export_energy_momentum_tensor_slice(int slice_y);
 		void initialize_grid();
 		void evolve(Grid &grid_obj, double dtinitital, int nSteps);
-		void export_constraints(std::string filename);
 		void initializeData(); 
 		void compute_ricci_3d(
 				Grid& grid_obj,  
@@ -153,11 +151,10 @@ class Grid {
 		void injectTTWave(Cell2D &cell, double x, double y, double z, double t);
 		void initializeFishboneMoncriefTorus(double r_in, double r_max, double rho_max, double l_torus, double Gamma);
 		void solve_lichnerowicz(int max_iter, double tol, double dx, double dy, double dz);
-		void export_BH_positions(double time, const std::string& filename);
 		Cell2D& getCell(int i, int j, int k) {
 			return globalGrid[i][j][k];
 		}
-
+		void export_Atildedt_slide(Grid &grid_obj, double time);
 	private:
 		std::vector<std::vector<std::vector<Grid::Cell2D>>> globalGrid;
 

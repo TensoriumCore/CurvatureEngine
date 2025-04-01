@@ -5,24 +5,20 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from glob import glob
 
-# === Paramètres ===
-data_folder = "."  # dossier où tu lances le script
+data_folder = "." 
 file_pattern = os.path.join(data_folder, "chi_slice_t*.dat")
 
-# === Chargement des fichiers valides ===
 files = glob(file_pattern)
 files = [f for f in files if re.search(r"t([\d\.]+)\.dat$", f)]
 files = sorted(files, key=lambda f: float(re.search(r"t([\d\.]+)\.dat$", f).group(1)))
 
 print(f"[INFO] Found {len(files)} chi slices.")
 
-# === Chargement du premier fichier pour la grille ===
 data0 = np.loadtxt(files[0])
 N = int(np.sqrt(data0.shape[0]))
 X = data0[:, 0].reshape(N, N)
 Y = data0[:, 1].reshape(N, N)
 
-# === Figure Matplotlib ===
 fig, ax = plt.subplots()
 cmap = plt.get_cmap("plasma")
 chi_data = data0[:, 2].reshape(N, N)
@@ -34,7 +30,6 @@ ax.set_title("chi evolution")
 ax.set_xlabel("x")
 ax.set_ylabel("y")
 
-# === Animation: fonction de mise à jour ===
 def update(frame_idx):
     data = np.loadtxt(files[frame_idx])
     chi = data[:, 2].reshape(N, N)

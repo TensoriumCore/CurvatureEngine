@@ -15,18 +15,12 @@ void Grid::logger_evolve(Grid &grid_obj, double dt, int nstep)
 		printf("	  %e %e %e\n", cell.atilde.dt_Atilde[i][0], \
 								   cell.atilde.dt_Atilde[i][1], 
 								   cell.atilde.dt_Atilde[i][2]);
-	/* printf("T_uv:\n"); */
-	/* for (int i = 0; i < 4; i++) */
-	/* 	printf("	  %e %e %e %e\n", cell.matter.T[i][0], \ */
-	/* 							   cell.matter.T[i][1],  */
-	/* 							   cell.matter.T[i][2], */
-	/* 							   cell.matter.T[i][3]); */
 	printf("Chi: %e\n", cell.dt_chi);
-	/* compute_ADM_mass(); */
 	printf("=============================================\n");
 	printf("\n\n");
-	
 }
+
+
 
 void Grid::evolve(Grid &grid_obj, double dtInitial, int nSteps) {
     initialize_grid();
@@ -35,7 +29,7 @@ void Grid::evolve(Grid &grid_obj, double dtInitial, int nSteps) {
     double dt = dtInitial;
     double hamiltonian;
     double momentum[3];
-	double L = 24.0;
+	double L = 9.0;
     double x_min = -L, x_max = L;
     double y_min = -L, y_max = L;
     double z_min = -L, z_max = L;
@@ -120,12 +114,14 @@ void Grid::evolve(Grid &grid_obj, double dtInitial, int nSteps) {
 #pragma omp single nowait
         {
             logger_evolve(grid_obj, dt, step);
+			double current_time = step * dt;
+			export_gamma_slice(grid_obj, NY / 2, dt);
+			grid_obj.appendConstraintL2ToCSV("constraints_evolution.csv", current_time);
 			if (step == nSteps - 1) {
                 printf("Exporting slices\n");
-                export_K_slice(grid_obj, NX/ 2);
-                export_gauge_slice(grid_obj, NX / 2);
+                export_K_slice(grid_obj, NY / 2);
+                export_gauge_slice(grid_obj, NY / 2);
                 gridTensor.export_christoffel_slice(grid_obj, NX / 2);
-                export_alpha_slice(grid_obj, NX / 2);
                 export_K_3D(grid_obj);
             }
         }

@@ -78,8 +78,8 @@ void Grid::initializeBinaryKerrData(Grid &grid_obj) {
     double m1 = 1.0, a1 = 0.935;
     double m2 = 1.0, a2 = 0.935;
 
-    double x1 = 0.0, y1 = -3.0, z1 = 0.0; 
-    double x2 = 0.0, y2 = 3.0, z2 = 0.0; 
+    double x1 = 0.0, y1 = -4.0, z1 = 0.0; 
+    double x2 = 0.0, y2 = 4.0, z2 = 0.0; 
 
     double L = 24.0;
     double x_min = -L, x_max = L;
