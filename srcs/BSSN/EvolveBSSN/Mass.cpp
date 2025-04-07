@@ -1,13 +1,13 @@
 /* #include <Geodesics.h> */
 /*  */
-/* double Grid::compute_ADM_mass() { */
-/*     double mass = 0.0; */
+/* float Grid::compute_ADM_mass() { */
+/*     float mass = 0.0; */
 /*  */
 /*     int i_faces[] = {1, NX - 2}; */
 /*     int j_faces[] = {1, NY - 2}; */
 /*     int k_faces[] = {1, NZ - 2}; */
 /*  */
-/*     double inv_16pi = 1.0 / (16.0 * M_PI); */
+/*     float inv_16pi = 1.0 / (16.0 * M_PI); */
 /*  */
 /* 	printf("gamma_xx at (NX-2, NY/2, NZ/2): %e\n", globalGrid[NX-2][NY/2][NZ/2].geom.gamma[0][0]); */
 /*     for (int f = 0; f < 2; f++) { */
@@ -19,11 +19,11 @@
 /*                 Cell2D &cell     = globalGrid[i][j][k]; */
 /*                 Cell2D &cell_adj = globalGrid[i + sign][j][k]; */
 /*  */
-/*                 double dgamma_xx_dx = (cell.geom.gamma[0][0] - cell_adj.geom.gamma[0][0]) / DX; */
-/*                 double dgamma_yy_dx = (cell.geom.gamma[1][1] - cell_adj.geom.gamma[1][1]) / DX; */
-/*                 double dgamma_zz_dx = (cell.geom.gamma[2][2] - cell_adj.geom.gamma[2][2]) / DX; */
+/*                 float dgamma_xx_dx = (cell.geom.gamma[0][0] - cell_adj.geom.gamma[0][0]) / DX; */
+/*                 float dgamma_yy_dx = (cell.geom.gamma[1][1] - cell_adj.geom.gamma[1][1]) / DX; */
+/*                 float dgamma_zz_dx = (cell.geom.gamma[2][2] - cell_adj.geom.gamma[2][2]) / DX; */
 /*  */
-/*                 double flux = dgamma_xx_dx - (dgamma_yy_dx + dgamma_zz_dx); */
+/*                 float flux = dgamma_xx_dx - (dgamma_yy_dx + dgamma_zz_dx); */
 /*                 mass += flux * DY * DZ; */
 /*             } */
 /*         } */
@@ -38,11 +38,11 @@
 /*                 Cell2D &cell     = globalGrid[i][j][k]; */
 /*                 Cell2D &cell_adj = globalGrid[i][j + sign][k]; */
 /*  */
-/*                 double dgamma_yy_dy = (cell.geom.gamma[1][1] - cell_adj.geom.gamma[1][1]) / DY; */
-/*                 double dgamma_xx_dy = (cell.geom.gamma[0][0] - cell_adj.geom.gamma[0][0]) / DY; */
-/*                 double dgamma_zz_dy = (cell.geom.gamma[2][2] - cell_adj.geom.gamma[2][2]) / DY; */
+/*                 float dgamma_yy_dy = (cell.geom.gamma[1][1] - cell_adj.geom.gamma[1][1]) / DY; */
+/*                 float dgamma_xx_dy = (cell.geom.gamma[0][0] - cell_adj.geom.gamma[0][0]) / DY; */
+/*                 float dgamma_zz_dy = (cell.geom.gamma[2][2] - cell_adj.geom.gamma[2][2]) / DY; */
 /*  */
-/*                 double flux = dgamma_yy_dy - (dgamma_xx_dy + dgamma_zz_dy); */
+/*                 float flux = dgamma_yy_dy - (dgamma_xx_dy + dgamma_zz_dy); */
 /*                 mass += flux * DX * DZ; */
 /*             } */
 /*         } */
@@ -57,11 +57,11 @@
 /*                 Cell2D &cell     = globalGrid[i][j][k]; */
 /*                 Cell2D &cell_adj = globalGrid[i][j][k + sign]; */
 /*  */
-/*                 double dgamma_zz_dz = (cell.geom.gamma[2][2] - cell_adj.geom.gamma[2][2]) / DZ; */
-/*                 double dgamma_xx_dz = (cell.geom.gamma[0][0] - cell_adj.geom.gamma[0][0]) / DZ; */
-/*                 double dgamma_yy_dz = (cell.geom.gamma[1][1] - cell_adj.geom.gamma[1][1]) / DZ; */
+/*                 float dgamma_zz_dz = (cell.geom.gamma[2][2] - cell_adj.geom.gamma[2][2]) / DZ; */
+/*                 float dgamma_xx_dz = (cell.geom.gamma[0][0] - cell_adj.geom.gamma[0][0]) / DZ; */
+/*                 float dgamma_yy_dz = (cell.geom.gamma[1][1] - cell_adj.geom.gamma[1][1]) / DZ; */
 /*  */
-/*                 double flux = dgamma_zz_dz - (dgamma_xx_dz + dgamma_yy_dz); */
+/*                 float flux = dgamma_zz_dz - (dgamma_xx_dz + dgamma_yy_dz); */
 /*                 mass += flux * DX * DY; */
 /*             } */
 /*         } */

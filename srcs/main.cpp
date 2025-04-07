@@ -1,8 +1,8 @@
 #include <Geodesics.h>
 
-double (*geodesic_points)[5] = NULL;
+float (*geodesic_points)[5] = NULL;
 int num_points = 0;
-double a = 0.935;
+float a = 0.935;
 
 int main(int argc, char **argv)
 {

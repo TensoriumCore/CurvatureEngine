@@ -1,12 +1,12 @@
 #include <Geodesics.h>
 
-void Metric::verify_metric(const std::array<std::array<double, NDIM>, NDIM>& g,
-				const std::array<std::array<double, NDIM>, NDIM>& g_inv){
+void Metric::verify_metric(const std::array<std::array<float, NDIM>, NDIM>& g,
+				const std::array<std::array<float, NDIM>, NDIM>& g_inv){
 	
 	Matrix matrix_obj;
     int i, j, k;
-    double identity[NDIM][NDIM] = {0};
-    double delta; 
+    float identity[NDIM][NDIM] = {0};
+    float delta; 
 
     for (i = 0; i < NDIM; i++) {
         for (j = 0; j < NDIM; j++) {

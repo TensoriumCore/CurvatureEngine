@@ -33,10 +33,10 @@
 #define DELTA3 1e-4
 
 
-using Matrix2x2 = std::array<std::array<double, 2>, 2>;
-using Matrix3x3 = std::array<std::array<double, 3>, 3>;
-using Matrix4x4 = std::array<std::array<double, 4>, 4>;
-using MatrixNDIM = std::array<std::array<double, NDIM>, NDIM>;
+using Matrix2x2 = std::array<std::array<float, 2>, 2>;
+using Matrix3x3 = std::array<std::array<float, 3>, 3>;
+using Matrix4x4 = std::array<std::array<float, 4>, 4>;
+using MatrixNDIM = std::array<std::array<float, NDIM>, NDIM>;
 
 
 #include <Tensor.h>
@@ -49,8 +49,8 @@ using MatrixNDIM = std::array<std::array<double, NDIM>, NDIM>;
 #include <Log.h>
 
 typedef struct {
-    double x, y, z;
-    double lambda;
+    float x, y, z;
+    float lambda;
 } GeodesicPoint;
 
 #ifdef  AVX2
@@ -95,15 +95,15 @@ typedef struct {
 
 
 void write_vtk_file(const char *filename);
-void store_geodesic_point(double x[4], double lambda);
-void geodesic_AVX(__m256d x[4], __m256d v[4], double lambda_max,\
+void store_geodesic_point(float x[4], float lambda);
+void geodesic_AVX(__m256d x[4], __m256d v[4], float lambda_max,\
 				  __m256d christoffel[4][4][4], __m256d step_size);
-void store_geodesic_point_AVX(__m256d x[4], double lambda);
+void store_geodesic_point_AVX(__m256d x[4], float lambda);
 
-double calculate_impact_parameter(double p_t, double p_phi, double g_tt, double g_tphi, double g_phiphi);
-double calculate_emission_angle(double p_r, double p_phi, double g_rr, double g_phiphi);
-double b_critique_kerr(double a, int sense);
-int  compute_photon_properties(double g[4][4], double p[4]);
+float calculate_impact_parameter(float p_t, float p_phi, float g_tt, float g_tphi, float g_phiphi);
+float calculate_emission_angle(float p_r, float p_phi, float g_rr, float g_phiphi);
+float b_critique_kerr(float a, int sense);
+int  compute_photon_properties(float g[4][4], float p[4]);
 
 /* Problem specific functions */
 
@@ -114,14 +114,14 @@ int Metric_prob();
 int grid_setup(); 
 void generate_blackhole_image();
 void generate_blackhole_shadow();
-void evolveADM(Grid::Cell2D& cell, int i, int j, double dt, 
-               const std::vector<std::vector<double>>& alpha_grid,
-               double r_min, double theta_min, double dr, double dtheta,
+void evolveADM(Grid::Cell2D& cell, int i, int j, float dt, 
+               const std::vector<std::vector<float>>& alpha_grid,
+               float r_min, float theta_min, float dr, float dtheta,
                std::ofstream& file, int step);
 void calc_gamma_ij_2D(
     int i, int j,
-    double r_min, double dr,
-    double theta_min, double dtheta,
+    float r_min, float dr,
+    float theta_min, float dtheta,
     Metric &metric_obj,
     Matrix3x3 &gamma3, Matrix3x3 &gamma3_inv);
 void calc_gamma_ij(const Vector3& X3D, Matrix3x3& gamma3, Matrix3x3& gamma3_inv);

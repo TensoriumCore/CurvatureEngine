@@ -4,7 +4,7 @@
 /*     Derivatives deriv; */
 /* 	for (int a = 0; a < 3; a++) { */
 /*         for (int b = 0; b < 3; b++) { */
-/*             std::vector<double> gamma_ab(NX*NY*NZ), dgammaX_ab(NX*NY*NZ), dgammaY_ab(NX*NY*NZ), dgammaZ_ab(NX*NY*NZ); */
+/*             std::vector<float> gamma_ab(NX*NY*NZ), dgammaX_ab(NX*NY*NZ), dgammaY_ab(NX*NY*NZ), dgammaZ_ab(NX*NY*NZ); */
 /* 	 */
 /*             for (int ix = 0; ix < NX; ix++) { */
 /*                 for (int iy = 0; iy < NY; iy++) { */

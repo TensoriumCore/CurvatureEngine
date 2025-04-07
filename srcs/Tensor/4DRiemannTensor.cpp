@@ -2,13 +2,13 @@
 
 
 
-void Tensor::calculate_Gamma_at_offset(const std::array<double, NDIM>& X, int direction, 
-                                         double offset, double delta,
+void Tensor::calculate_Gamma_at_offset(const std::array<float, NDIM>& X, int direction, 
+                                         float offset, float delta,
                                          Tensor::MatrixNDIM& gcov, 
                                          Tensor::MatrixNDIM& gcon, 
                                          Tensor::Christoffel3D& Gamma_slice, 
                                          const char* metric_type) {
-    std::array<double, NDIM> X_offset = X;
+    std::array<float, NDIM> X_offset = X;
     X_offset[direction] += offset;
     Tensor::Christoffel3D tempGamma{};
     Connexion connexion;
@@ -25,15 +25,15 @@ void Tensor::calculate_Gamma_at_offset(const std::array<double, NDIM>& X, int di
 }
 
 
-double Tensor::richardson_derivative(
+float Tensor::richardson_derivative(
     const Tensor3D& Gamma_plus_h, 
     const Tensor3D& Gamma_minus_h,
     const Tensor3D& Gamma_plus_half_h,
     const Tensor3D& Gamma_minus_half_h,
-    int rho, int mu, int nu, double h) 
+    int rho, int mu, int nu, float h) 
 {
-    double diff_h = (Gamma_plus_h[rho][mu][nu] - Gamma_minus_h[rho][mu][nu]) / (2 * h);
-    double diff_half_h = (Gamma_plus_half_h[rho][mu][nu] - Gamma_minus_half_h[rho][mu][nu]) / h;
+    float diff_h = (Gamma_plus_h[rho][mu][nu] - Gamma_minus_h[rho][mu][nu]) / (2 * h);
+    float diff_half_h = (Gamma_plus_half_h[rho][mu][nu] - Gamma_minus_half_h[rho][mu][nu]) / h;
     return (4 * diff_half_h - diff_h) / 3;
 }
 
@@ -43,21 +43,21 @@ void Tensor::calculate_riemann(const Christoffel3D& Gamma,
 				const Christoffel4D& Gamma_plus_half_h, 
 				const Christoffel4D& Gamma_minus_half_h,
 				Riemann4D& Riemann, 
-				double h) {
+				float h) {
     for (int rho = 0; rho < NDIM; rho++) {
         for (int sigma = 0; sigma < NDIM; sigma++) {
             for (int mu = 0; mu < NDIM; mu++) {
                 for (int nu = 0; nu < NDIM; nu++) {
-                    double dGamma_mu = richardson_derivative(
+                    float dGamma_mu = richardson_derivative(
                         Gamma_plus_h[mu], Gamma_minus_h[mu], 
                         Gamma_plus_half_h[mu], Gamma_minus_half_h[mu], 
                         rho, nu, sigma, h);
-                    double dGamma_nu = richardson_derivative(
+                    float dGamma_nu = richardson_derivative(
                         Gamma_plus_h[nu], Gamma_minus_h[nu],
                         Gamma_plus_half_h[nu], Gamma_minus_half_h[nu],
                         rho, mu, sigma, h);
 
-                    double Gamma_terms = 0.0;
+                    float Gamma_terms = 0.0;
                     for (int lambda = 0; lambda < NDIM; lambda++) {
                         Gamma_terms += Gamma[rho][mu][lambda] * Gamma[lambda][nu][sigma]
                                      - Gamma[rho][nu][lambda] * Gamma[lambda][mu][sigma];
@@ -68,7 +68,7 @@ void Tensor::calculate_riemann(const Christoffel3D& Gamma,
             }
         }
     }
-	double Kretschmann_scalar = 0.0;
+	float Kretschmann_scalar = 0.0;
     for (int rho = 0; rho < NDIM; rho++) {
         for (int sigma = 0; sigma < NDIM; sigma++) {
             for (int mu = 0; mu < NDIM; mu++) {

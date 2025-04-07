@@ -30,13 +30,13 @@ void Grid::allocateGlobalGrid() {
 
 
 /* void Grid::initializeData() { */
-/*     double L = 4.0;  */
-/*     double x_min = -L, x_max = L; */
-/*     double y_min = -L, y_max = L; */
-/*     double z_min = -L, z_max = L; */
-/*     double dx = (x_max - x_min) / (NX - 1); */
-/*     double dy = (y_max - y_min) / (NY - 1); */
-/*     double dz = (z_max - z_min) / (NZ - 1); */
+/*     float L = 4.0;  */
+/*     float x_min = -L, x_max = L; */
+/*     float y_min = -L, y_max = L; */
+/*     float z_min = -L, z_max = L; */
+/*     float dx = (x_max - x_min) / (NX - 1); */
+/*     float dy = (y_max - y_min) / (NY - 1); */
+/*     float dz = (z_max - z_min) / (NZ - 1); */
 /*     Matrix matrix; */
 /*  */
 /*     globalGrid.resize(NX); */
@@ -51,13 +51,13 @@ void Grid::allocateGlobalGrid() {
 /*     for (int i = 0; i < NX; i++) { */
 /*         for (int j = 0; j < NY; j++) { */
 /*             for (int k = 0; k < NZ; k++) { */
-/*                 double x = x_min + i * dx; */
-/*                 double y = y_min + j * dy; */
-/*                 double z = z_min + k * dz; */
-/*                 double r = sqrt(x * x + y * y + z * z); */
+/*                 float x = x_min + i * dx; */
+/*                 float y = y_min + j * dy; */
+/*                 float z = z_min + k * dz; */
+/*                 float r = sqrt(x * x + y * y + z * z); */
 /*  */
 /*                 Cell2D cell; */
-/*                 double Phi = 1.0 + 0.5 * M / r; */
+/*                 float Phi = 1.0 + 0.5 * M / r; */
 /*                 cell.gauge.alpha = (1.0 - M / (2 * r)) / (1.0 + M / (2 * r)); */
 /*                  */
 /*                 for (int a = 0; a < 3; a++) { */
@@ -83,10 +83,10 @@ void Grid::allocateGlobalGrid() {
 /*             } */
 /*         } */
 /*     } */
-/* 	double test_radii[] = {0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 128.0}; */
-/* 	for (double test_r : test_radii) { */
-/* 		double Phi_test = 1.0 + 0.5 * M / test_r; */
-/* 		double alpha_test = (1.0 - M / (2 * test_r)) / (1.0 + M / (2 * test_r)); */
+/* 	float test_radii[] = {0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 128.0}; */
+/* 	for (float test_r : test_radii) { */
+/* 		float Phi_test = 1.0 + 0.5 * M / test_r; */
+/* 		float alpha_test = (1.0 - M / (2 * test_r)) / (1.0 + M / (2 * test_r)); */
 /* 		printf("r = %f : Phi^4 = %e, alpha = %e\n", test_r, pow(Phi_test, 4), alpha_test); */
 /* 	} */
 /*  */
@@ -111,7 +111,7 @@ void Grid::allocateGlobalGrid() {
 /* 	Cell2D &cell_far = globalGrid[i_far][j_center][k_center]; */
 /*  */
 /*  */
-/* 	double rho_horizon = M / 2.0;   */
+/* 	float rho_horizon = M / 2.0;   */
 /* 	int i_horizon = static_cast<int>((rho_horizon - x_min) / dx); */
 /* 	Cell2D &cell_horizon = globalGrid[i_horizon][j_center][k_center]; */
 /*  */

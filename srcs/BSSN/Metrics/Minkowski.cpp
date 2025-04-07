@@ -4,19 +4,19 @@ void Grid::initializeData_Minkowski()
 {
     printf("\n=== Initialisation Minkowski ===\n");
 
-    double x_min = -128.0, x_max = 128.0;
-    double y_min = -128.0, y_max = 128.0;
-    double z_min = -128.0, z_max = 128.0;
-    double dx = (x_max - x_min)/(NX-1);
-    double dy = (y_max - y_min)/(NY-1);
-    double dz = (z_max - z_min)/(NZ-1);
+    float x_min = -128.0, x_max = 128.0;
+    float y_min = -128.0, y_max = 128.0;
+    float z_min = -128.0, z_max = 128.0;
+    float dx = (x_max - x_min)/(NX-1);
+    float dy = (y_max - y_min)/(NY-1);
+    float dz = (z_max - z_min)/(NZ-1);
 
     for(int i=0; i<NX; i++)
     {
-        double x = x_min + i*dx;
+        float x = x_min + i*dx;
         for(int j=0; j<NY; j++)
         {
-            double y = y_min + j*dy;
+            float y = y_min + j*dy;
             for(int k=0; k<NZ; k++)
             {
                 Cell2D &cell = globalGrid[i][j][k];

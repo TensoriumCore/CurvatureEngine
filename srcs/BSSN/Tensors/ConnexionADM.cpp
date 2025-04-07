@@ -8,19 +8,19 @@
  * @param tildeGamma the output array of the tildeGamma tensor
  * @return void
  * */
-void GridTensor::compute_dt_tildeGamma(Grid &grid_obj, int i, int j, int k, double dt_tildeGamma[3]) {
+void GridTensor::compute_dt_tildeGamma(Grid &grid_obj, int i, int j, int k, float dt_tildeGamma[3]) {
 	Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
     
-    double gammaInv[3][3], Atilde[3][3], dBeta[3][3];
-    double alpha = cell.gauge.alpha;
-    double beta[3] = { cell.gauge.beta[0], cell.gauge.beta[1], cell.gauge.beta[2] };
+    float gammaInv[3][3], Atilde[3][3], dBeta[3][3];
+    float alpha = cell.gauge.alpha;
+    float beta[3] = { cell.gauge.beta[0], cell.gauge.beta[1], cell.gauge.beta[2] };
 
     int iP = std::min(i + 1, NX - 1);
-    int iM = std::max(i - 1, 0);
+    int iM = std::fmax(i - 1, 0);
     int jP = std::min(j + 1, NY - 1);
-    int jM = std::max(j - 1, 0);
+    int jM = std::fmax(j - 1, 0);
     int kP = std::min(k + 1, NZ - 1);
-    int kM = std::max(k - 1, 0);
+    int kM = std::fmax(k - 1, 0);
 
 
 	gammaInv[0][0] = cell.geom.tildgamma_inv[0][0];
@@ -33,7 +33,7 @@ void GridTensor::compute_dt_tildeGamma(Grid &grid_obj, int i, int j, int k, doub
 	gammaInv[2][1] = cell.geom.tildgamma_inv[2][1];
 	gammaInv[2][2] = cell.geom.tildgamma_inv[2][2];
 
-    double Ktrace = 0.0;
+    float Ktrace = 0.0;
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
             Ktrace += gammaInv[a][b] * cell.curv.K[a][b];
@@ -55,11 +55,11 @@ void GridTensor::compute_dt_tildeGamma(Grid &grid_obj, int i, int j, int k, doub
 
  
 	for (int i_comp = 0; i_comp < 3; i_comp++) {
-		double div_Atilde = 0.0;
-		double tildeGamma_Atilde = 0.0;
-		double beta_term = 0.0;
+		float div_Atilde = 0.0;
+		float tildeGamma_Atilde = 0.0;
+		float beta_term = 0.0;
 
-		double KtraceP = 0.0, KtraceM = 0.0;
+		float KtraceP = 0.0, KtraceM = 0.0;
 		for (int a = 0; a < 3; a++) {
 			for (int b = 0; b < 3; b++) {
 				KtraceP += grid_obj.getCell(iP, jP, kP).geom.gamma_inv[a][b] * grid_obj.getCell(iP, jP, kP).curv.K[a][b];
@@ -68,10 +68,10 @@ void GridTensor::compute_dt_tildeGamma(Grid &grid_obj, int i, int j, int k, doub
 		}
 
 		for (int j_comp = 0; j_comp < 3; j_comp++) {
-			double AtildeP = grid_obj.getCell(iP, j, k).curv.K[i_comp][j_comp] -
+			float AtildeP = grid_obj.getCell(iP, j, k).curv.K[i_comp][j_comp] -
 				(1.0 / 3.0) * KtraceP * grid_obj.getCell(iP, j, k).geom.tilde_gamma[i_comp][j_comp];
 
-			double AtildeM = grid_obj.getCell(iM, j, k).curv.K[i_comp][j_comp] -
+			float AtildeM = grid_obj.getCell(iM, j, k).curv.K[i_comp][j_comp] -
 				(1.0 / 3.0) * KtraceM * grid_obj.getCell(iM, j, k).geom.tilde_gamma[i_comp][j_comp];
 
 			div_Atilde += (AtildeP - AtildeM) / (2.0 * DX);
@@ -86,8 +86,8 @@ void GridTensor::compute_dt_tildeGamma(Grid &grid_obj, int i, int j, int k, doub
 
 			const auto &cellP = grid_obj.getCell(iP, j, k);
 			const auto &cellM = grid_obj.getCell(iM, j, k);
-			double GammaP = cell.conn.tildeGamma[i_comp];
-			double GammaM = cell.conn.tildeGamma[i_comp];
+			float GammaP = cell.conn.tildeGamma[i_comp];
+			float GammaM = cell.conn.tildeGamma[i_comp];
 
 			beta_term += grid_obj.getCell(i, j, k).gauge.beta[j_comp] * (GammaP - GammaM) / (2.0 * DX);
 		}
@@ -107,9 +107,9 @@ void GridTensor::compute_dt_tildeGamma(Grid &grid_obj, int i, int j, int k, doub
  * @return void
  * */
 
-void GridTensor::compute_tildeGamma(Grid &grid_obj, int i, int j, int k, double tildeGamma[3]) {
-    double gammaInv[3][3];
-    double christof[3][3][3];
+void GridTensor::compute_tildeGamma(Grid &grid_obj, int i, int j, int k, float tildeGamma[3]) {
+    float gammaInv[3][3];
+    float christof[3][3][3];
     Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
 
     /* for (int a = 0; a < 3; a++) { */
@@ -148,7 +148,7 @@ void GridTensor::compute_tildeGamma(Grid &grid_obj, int i, int j, int k, double 
  * @return void
  * */
 
-void print_matrix_2D(const char *name, double matrix[3][3]) {
+void print_matrix_2D(const char *name, float matrix[3][3]) {
 	printf("%s\n", name);
 	for (int i = 0; i < 3; i++) {
 		printf("[");
@@ -159,11 +159,11 @@ void print_matrix_2D(const char *name, double matrix[3][3]) {
 	}
 }
 
-void GridTensor::compute_christoffel_3D(Grid &grid_obj, int i, int j, int k, double christof[3][3][3]) {
+void GridTensor::compute_christoffel_3D(Grid &grid_obj, int i, int j, int k, float christof[3][3][3]) {
     const auto& cell = grid_obj.getCell(i, j, k);
 
-    double dgamma[3][3][3];
-    auto get_g = [&](int ii, int jj, int kk, int a, int b) -> double {
+    float dgamma[3][3][3];
+    auto get_g = [&](int ii, int jj, int kk, int a, int b) -> float {
         return grid_obj.getCell(ii, jj, kk).geom.tilde_gamma[a][b];
     };
 
@@ -247,9 +247,9 @@ void GridTensor::compute_christoffel_3D(Grid &grid_obj, int i, int j, int k, dou
     for (int kk = 0; kk < 3; kk++) {
         for (int aa = 0; aa < 3; aa++) {
             for (int bb = 0; bb < 3; bb++) {
-                double sum = 0.0;
+                float sum = 0.0;
                 for (int ll = 0; ll < 3; ll++) {
-                    double tmp = dgamma[aa][ll][bb] + dgamma[bb][ll][aa] - dgamma[ll][aa][bb];
+                    float tmp = dgamma[aa][ll][bb] + dgamma[bb][ll][aa] - dgamma[ll][aa][bb];
                     sum += cell.geom.tildgamma_inv[kk][ll] * tmp;
                 }
                 christof[kk][aa][bb] = 0.5 * sum;

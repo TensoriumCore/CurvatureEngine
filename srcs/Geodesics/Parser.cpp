@@ -1,9 +1,9 @@
 #include <Geodesics.h>
 
-extern double	(*geodesic_points)[5];
+extern float	(*geodesic_points)[5];
 extern int		num_points;
 int				capacity = 0;
-extern double	a;
+extern float	a;
 /* 
 	* Write the geodesic points to a VTK file
 	* The VTK file will contain the geodesic points and the lambda values
@@ -24,7 +24,7 @@ void write_vtk_file(const char *filename)
     fprintf(file, "Geodesic Points\n");
     fprintf(file, "ASCII\n");
     fprintf(file, "DATASET POLYDATA\n");
-    fprintf(file, "POINTS %d double\n", num_points);
+    fprintf(file, "POINTS %d float\n", num_points);
 
     for (int i = 0; i < num_points; ++i)
         fprintf(file, "%f %f %f\n", geodesic_points[i][0], geodesic_points[i][1], geodesic_points[i][2]);
@@ -36,7 +36,7 @@ void write_vtk_file(const char *filename)
     }
 
     fprintf(file, "POINT_DATA %d\n", num_points);
-    fprintf(file, "SCALARS lambda double\n");
+    fprintf(file, "SCALARS lambda float\n");
     fprintf(file, "LOOKUP_TABLE default\n");
 
     for (int i = 0; i < num_points; ++i)
@@ -49,12 +49,12 @@ void write_vtk_file(const char *filename)
 }
 
 
-void store_geodesic_point_AVX(VEC_TYPE x[4], double lambda) {
+void store_geodesic_point_AVX(VEC_TYPE x[4], float lambda) {
     #pragma omp critical
     {
         if (num_points + 16 >= capacity) {
             capacity = (capacity == 0) ? 1000 : capacity * 2;
-            double (*new_geodesic_points)[5];
+            float (*new_geodesic_points)[5];
             if (posix_memalign((void **)&new_geodesic_points, ALIGNMENT,
                                capacity * sizeof(*geodesic_points)) != 0)
             {
@@ -74,17 +74,17 @@ void store_geodesic_point_AVX(VEC_TYPE x[4], double lambda) {
 
     #pragma omp parallel for
     for (int i = 0; i < 4; i++) {
-        __attribute__((aligned(32))) double r_vals[4], th_vals[4], ph_vals[4];
+        __attribute__((aligned(32))) float r_vals[4], th_vals[4], ph_vals[4];
 
         VEC_TYPE r     = x[1];
         VEC_TYPE theta = x[2];
         VEC_TYPE phi   = x[3];
 
-        _mm256_store_pd(r_vals,   r);
-        _mm256_store_pd(th_vals,  theta);
-        _mm256_store_pd(ph_vals,  phi);
+        _mm256_store_pd((double *)r_vals,   r);
+        _mm256_store_pd((double *)th_vals,  theta);
+        _mm256_store_pd((double *)ph_vals,  phi);
 
-        double sin_th[4], cos_th[4], sin_ph[4], cos_ph[4];
+        float sin_th[4], cos_th[4], sin_ph[4], cos_ph[4];
         for (int j = 0; j < 4; j++) {
             sin_th[j] = sin(th_vals[j]);
             cos_th[j] = cos(th_vals[j]);
@@ -93,10 +93,10 @@ void store_geodesic_point_AVX(VEC_TYPE x[4], double lambda) {
         }
 
         for (int j = 0; j < 4; j++) {
-            double rr = r_vals[j];
-            double xx = rr * sin_th[j] * cos_ph[j];
-            double yy = rr * sin_th[j] * sin_ph[j];
-            double zz = rr * cos_th[j];
+            float rr = r_vals[j];
+            float xx = rr * sin_th[j] * cos_ph[j];
+            float yy = rr * sin_th[j] * sin_ph[j];
+            float zz = rr * cos_th[j];
 
             #pragma omp critical
             {

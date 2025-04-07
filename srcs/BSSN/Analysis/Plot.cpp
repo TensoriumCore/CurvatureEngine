@@ -1,7 +1,7 @@
 
 #include <Geodesics.h>
 
-void export_gamma_slice(Grid &grid_obj, int j, double time) {
+void export_gamma_slice(Grid &grid_obj, int j, float time) {
     std::ostringstream filename;
     filename << "Output/gamma_slice_t" << std::fixed << std::setprecision(3) << time << ".csv";
 
@@ -16,14 +16,14 @@ void export_gamma_slice(Grid &grid_obj, int j, double time) {
          << "gamma_10,gamma_11,gamma_12,"
          << "gamma_20,gamma_21,gamma_22\n";
 
-    double L = 9.0;
-    double dx = (2.0 * L) / (NX - 1);
-    double dz = (2.0 * L) / (NZ - 1);
+    float L = 9.0;
+    float dx = (2.0 * L) / (NX - 1);
+    float dz = (2.0 * L) / (NZ - 1);
 
     for (int i = 0; i < NX; ++i) {
         for (int k = 0; k < NZ; ++k) {
-            double x = -L + i * dx;
-            double z = -L + k * dz;
+            float x = -L + i * dx;
+            float z = -L + k * dz;
 
             const Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
 
@@ -38,9 +38,9 @@ void export_gamma_slice(Grid &grid_obj, int j, double time) {
     std::cout << "[Export] Gamma slice saved to: " << filename.str() << std::endl;
 }
 
-void Grid::appendConstraintL2ToCSV(const std::string& filename, double time) const {
-    double sum_H = 0.0;
-    double sum_Mx = 0.0, sum_My = 0.0, sum_Mz = 0.0;
+void Grid::appendConstraintL2ToCSV(const std::string& filename, float time) const {
+    float sum_H = 0.0;
+    float sum_Mx = 0.0, sum_My = 0.0, sum_Mz = 0.0;
     int N = 0;
 
     for (int i = 1; i < NX - 1; ++i) {
@@ -56,10 +56,10 @@ void Grid::appendConstraintL2ToCSV(const std::string& filename, double time) con
         }
     }
 
-    double L2_H  = std::sqrt(sum_H / N);
-    double L2_Mx = std::sqrt(sum_Mx / N);
-    double L2_My = std::sqrt(sum_My / N);
-    double L2_Mz = std::sqrt(sum_Mz / N);
+    float L2_H  = std::sqrt(sum_H / N);
+    float L2_Mx = std::sqrt(sum_Mx / N);
+    float L2_My = std::sqrt(sum_My / N);
+    float L2_Mz = std::sqrt(sum_Mz / N);
 
     std::ofstream file;
     bool exists = std::ifstream(filename).good();
@@ -80,19 +80,19 @@ void Grid::appendConstraintL2ToCSV(const std::string& filename, double time) con
 
 
 
-void Grid::export_Atildedt_slide(Grid &grid_obj, double time) {
+void Grid::export_Atildedt_slide(Grid &grid_obj, float time) {
 	std::ofstream file;
 	char filename[256];
 	sprintf(filename, "Output/Atildedt_slice_t%.3f.dat", time);
 	file.open(filename);
-	double L = 19.0;
+	float L = 19.0;
 	int z_mid = NY / 2;
 
 	for (int i = 0; i < NX; ++i) {
 		for (int j = 0; j < NY; ++j) {
-			double x = -L + i * DX;
-			double y = -L + j * DY;
-			double Atildedt = globalGrid[i][j][z_mid].atilde.dt_Atilde[0][0];
+			float x = -L + i * DX;
+			float y = -L + j * DY;
+			float Atildedt = globalGrid[i][j][z_mid].atilde.dt_Atilde[0][0];
 			file << x << " " << y << " " << Atildedt << "\n";
 		}
 		file << "\n";
@@ -107,8 +107,8 @@ void export_K_slice(Grid &grid_obj, int j) {
 
     for (int i = 0; i < NX; i++) {
         for (int k = 0; k < NZ; k++) {
-            double x = -12.0 + i * (9.0 / (NX - 1));
-            double z = -12.0 + k * (9.0 / (NZ - 1));
+            float x = -12.0 + i * (9.0 / (NX - 1));
+            float z = -12.0 + k * (9.0 / (NZ - 1));
 
             Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
 
@@ -122,11 +122,11 @@ void export_K_slice(Grid &grid_obj, int j) {
     std::cout << "curv.K slice saved to K_slice.csv\n";
 }
 
-double r_e_plus(double theta, double a) {
+float r_e_plus(float theta, float a) {
     return M + sqrt(M * M - a * a * cos(theta) * cos(theta)); 
 }
 
-double r_e_minus(double theta, double a) {
+float r_e_minus(float theta, float a) {
     return M - sqrt(M * M - a * a * cos(theta) * cos(theta)); 
 }
 
@@ -139,15 +139,15 @@ void export_K_3D(Grid &grid_obj) {
 
     file << "DIMENSIONS " << NX << " " << NY << " " << NZ << "\n";
 
-    double x0 = -9.0;
-    double y0 = -9.0;
-    double z0 = -9.0;
-    double a = 0.9999;  
+    float x0 = -9.0;
+    float y0 = -9.0;
+    float z0 = -9.0;
+    float a = 0.9999;  
     file << "ORIGIN " << x0 << " " << y0 << " " << z0 << "\n";
 
-    double dx = 18.0 / (NX - 1);
-    double dy = 18.0 / (NY - 1);
-    double dz = 18.0 / (NZ - 1);
+    float dx = 18.0 / (NX - 1);
+    float dy = 18.0 / (NY - 1);
+    float dz = 18.0 / (NZ - 1);
     file << "SPACING " << dx << " " << dy << " " << dz << "\n";
 
     file << "POINT_DATA " << (NX * NY * NZ) << "\n";
@@ -173,17 +173,17 @@ void export_K_3D(Grid &grid_obj) {
                 file << cell.atilde.dt_Atilde[2][0] << " " << cell.atilde.dt_Atilde[2][1] << " " << cell.atilde.dt_Atilde[2][2] << "\n\n";
             }
         }
-    }    double r_H = M + sqrt(M * M - a * a); 
+    }    float r_H = M + sqrt(M * M - a * a); 
 
     file << "SCALARS Horizon float 1\n";
     file << "LOOKUP_TABLE default\n";
     for (int i = 0; i < NX; i++) {
         for (int j = 0; j < NY; j++) {
             for (int k = 0; k < NZ; k++) {
-                double x = x0 + i * dx;
-                double y = y0 + j * dy;
-                double z = z0 + k * dz;
-                double r = sqrt(x * x + y * y + z * z);
+                float x = x0 + i * dx;
+                float y = y0 + j * dy;
+                float z = z0 + k * dz;
+                float r = sqrt(x * x + y * y + z * z);
                 file << (r < r_H ? 1.0 : 0.0) << "\n";
             }
         }
@@ -194,11 +194,11 @@ void export_K_3D(Grid &grid_obj) {
     for (int i = 0; i < NX; i++) {
         for (int j = 0; j < NY; j++) {
             for (int k = 0; k < NZ; k++) {
-                double x = x0 + i * dx;
-                double y = y0 + j * dy;
-                double z = z0 + k * dz;
-                double theta = atan2(sqrt(x * x + y * y), z);
-                double r = sqrt(x * x + y * y + z * z);
+                float x = x0 + i * dx;
+                float y = y0 + j * dy;
+                float z = z0 + k * dz;
+                float theta = atan2(sqrt(x * x + y * y), z);
+                float r = sqrt(x * x + y * y + z * z);
                 file << (r < r_e_plus(theta, a) ? 1.0 : 0.0) << "\n";
             }
         }
@@ -209,11 +209,11 @@ void export_K_3D(Grid &grid_obj) {
     for (int i = 0; i < NX; i++) {
         for (int j = 0; j < NY; j++) {
             for (int k = 0; k < NZ; k++) {
-                double x = x0 + i * dx;
-                double y = y0 + j * dy;
-                double z = z0 + k * dz;
-                double theta = atan2(sqrt(x * x + y * y), z);
-                double r = sqrt(x * x + y * y + z * z);
+                float x = x0 + i * dx;
+                float y = y0 + j * dy;
+                float z = z0 + k * dz;
+                float theta = atan2(sqrt(x * x + y * y), z);
+                float r = sqrt(x * x + y * y + z * z);
                 file << (r < r_e_minus(theta, a) ? 1.0 : 0.0) << "\n";
             }
         }
@@ -273,8 +273,8 @@ void export_alpha_slice(Grid &grid_obj, int j) {
     file << "x,z,alpha\n";
     for(int i = 0; i < NX; i++) {
         for(int k = 0; k < NZ; k++) {
-            double x = -9.0 + i * (18.0 / (NX - 1));
-            double z = -9.0 + k * (18.0 / (NZ - 1));
+            float x = -9.0 + i * (18.0 / (NX - 1));
+            float z = -9.0 + k * (18.0 / (NZ - 1));
 
             Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
             file << x << "," << z << "," << cell.gauge.alpha << "\n";
@@ -292,11 +292,11 @@ void export_gauge_slice(Grid &grid_obj, int j) {
 
     for (int i = 0; i < NX; i++) {
         for (int k = 0; k < NZ; k++) {
-            double x = -9.0 + i * (18.0 / (NX - 1));
-            double z = -9.0 + k * (18.0 / (NZ - 1));
+            float x = -9.0 + i * (18.0 / (NX - 1));
+            float z = -9.0 + k * (18.0 / (NZ - 1));
 
             Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
-            double d_alpha_dt, d_beta_dt[3];
+            float d_alpha_dt, d_beta_dt[3];
             grid_obj.compute_gauge_derivatives(grid_obj, i, j, k, d_alpha_dt, d_beta_dt);
 
             file << x << "," << z << "," 
@@ -314,13 +314,13 @@ void export_gauge_slice(Grid &grid_obj, int j) {
 
 void GridTensor::export_christoffel_slice(Grid &grid_obj, int j) {
     std::ofstream file("Output/christoffel_slice.csv");
-	double L = 9.0;
-    double x_min = -L, x_max = L;
-    double y_min = -L, y_max = L;
-    double z_min = -L, z_max = L;
-    double dx = (x_max - x_min) / (NX - 1);
-    double dy = (y_max - y_min) / (NY - 1);
-    double dz = (z_max - z_min) / (NZ - 1);
+	float L = 9.0;
+    float x_min = -L, x_max = L;
+    float y_min = -L, y_max = L;
+    float z_min = -L, z_max = L;
+    float dx = (x_max - x_min) / (NX - 1);
+    float dy = (y_max - y_min) / (NY - 1);
+    float dz = (z_max - z_min) / (NZ - 1);
     file << "x,z";
     for (int i = 0; i < 3; i++) {
         for (int k = 0; k < 3; k++) {
@@ -333,9 +333,9 @@ void GridTensor::export_christoffel_slice(Grid &grid_obj, int j) {
     
     for (int i_idx = 1; i_idx < NX-1; i_idx++) {
         for (int k_idx = 1; k_idx < NZ-1; k_idx++) {
-            double x = x_min + i_idx * dx;
-            double z = z_min + k_idx * dz;            
-            double christof[3][3][3];
+            float x = x_min + i_idx * dx;
+            float z = z_min + k_idx * dz;            
+            float christof[3][3][3];
 			Grid::Cell2D &cell = grid_obj.getCell(i_idx, j, k_idx);
 
             file << x << "," << z;

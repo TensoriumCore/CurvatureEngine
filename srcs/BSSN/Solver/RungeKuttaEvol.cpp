@@ -1,14 +1,14 @@
 #include <Geodesics.h>
 
 
-void apply_asymptotic_boundary_conditions(Grid &grid_obj, double R_max) {
+void apply_asymptotic_boundary_conditions(Grid &grid_obj, float R_max) {
     for (int i = 0; i < NX; i++) {
         for (int j = 0; j < NY; j++) {
             for (int k = 0; k < NZ; k++) {
-                double x = i * DX ;
-                double y = j * DY ;
-                double z = k * DZ ;
-                double r = sqrt(x * x + y * y + z * z);
+                float x = i * DX ;
+                float y = j * DY ;
+                float z = k * DZ ;
+                float r = sqrt(x * x + y * y + z * z);
 
                 if (r > R_max) {
                     grid_obj.getCell(i, j, k).gauge.alpha = 1.0;
@@ -27,14 +27,14 @@ void apply_asymptotic_boundary_conditions(Grid &grid_obj, double R_max) {
     }
 }
 
-/* void apply_horizon_excision(Grid &grid_obj, double r_H) { */
+/* void apply_horizon_excision(Grid &grid_obj, float r_H) { */
 /*     for (int i = 0; i < NX; i++) { */
 /*         for (int j = 0; j < NY; j++) { */
 /*             for (int k = 0; k < NZ; k++) { */
-/*                 double x = i * DX; */
-/*                 double y = j * DY; */
-/*                 double z = k * DZ; */
-/*                 double r = sqrt(x * x + y * y + z * z); */
+/*                 float x = i * DX; */
+/*                 float y = j * DY; */
+/*                 float z = k * DZ; */
+/*                 float r = sqrt(x * x + y * y + z * z); */
 /*  */
 /*                 if (r < r_H) { */
 /*                     grid_obj.getCell(i, j, k).gauge.alpha = 1.0 / sqrt(1.0 + 2.0 * grid_obj.getCell(i, j, k).H); */
@@ -87,7 +87,7 @@ void Grid::copyInitialState(Cell2D &cell) {
     }
 }
 
-void Grid::updateIntermediateState(Cell2D &cell, double dtCoeff, int stageIndex) {
+void Grid::updateIntermediateState(Cell2D &cell, float dtCoeff, int stageIndex) {
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
             cell.geom.tilde_gamma[a][b] = cell.geom.tilde_gamma0[a][b] + dtCoeff * cell.gammaStage[stageIndex][a][b];
@@ -100,7 +100,7 @@ void Grid::updateIntermediateState(Cell2D &cell, double dtCoeff, int stageIndex)
     }
 }
 
-void Grid::storeStage(Cell2D &cell, int stage, double d_alpha_dt, double d_beta_dt[3]) {
+void Grid::storeStage(Cell2D &cell, int stage, float d_alpha_dt, float d_beta_dt[3]) {
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
             cell.gammaStage[stage][a][b] = cell.dgt[a][b];
@@ -113,7 +113,7 @@ void Grid::storeStage(Cell2D &cell, int stage, double d_alpha_dt, double d_beta_
     }
 }
 
-void Grid::combineStages(Cell2D &cell, double dt) {
+void Grid::combineStages(Cell2D &cell, float dt) {
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
             cell.geom.tilde_gamma[a][b] = cell.geom.tilde_gamma0[a][b] +

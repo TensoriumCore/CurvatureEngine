@@ -23,7 +23,7 @@ void Tensor::contract_riemann(const Riemann4D& Riemann, MatrixNDIM& Ricci, const
         printf("\n");
     }
     
-    double Ricci_scalar = 0.0;
+    float Ricci_scalar = 0.0;
     for (int mu = 0; mu < NDIM; mu++) {
         for (int nu = 0; nu < NDIM; nu++) {
             Ricci_scalar += g_inv[mu][nu] * Ricci[mu][nu];

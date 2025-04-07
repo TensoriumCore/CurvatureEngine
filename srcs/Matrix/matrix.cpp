@@ -1,18 +1,18 @@
 #include <Geodesics.h>
 
-double Matrix::determinant2x2(const std::array<std::array<double, 2>, 2>& mat) {
+float Matrix::determinant2x2(const std::array<std::array<float, 2>, 2>& mat) {
     return mat[0][0] * mat[1][1] - mat[0][1] * mat[1][0];
 }
 
-double Matrix::determinant3x3(const Matrix3x3& mat) {
+float Matrix::determinant3x3(const Matrix3x3& mat) {
     return mat[0][0] * (mat[1][1] * mat[2][2] - mat[1][2] * mat[2][1])
          - mat[0][1] * (mat[1][0] * mat[2][2] - mat[1][2] * mat[2][0])
          + mat[0][2] * (mat[1][0] * mat[2][1] - mat[1][1] * mat[2][0]);
 }
 
-double Matrix::determinant4x4(const Matrix4x4& mat) {
+float Matrix::determinant4x4(const Matrix4x4& mat) {
 	Matrix3x3 minor{};
-    double det = 0.0;
+    float det = 0.0;
     for (int i = 0; i < NDIM; i++) {
         int subi = 0; 
         for (int j = 1; j < NDIM; j++) {
@@ -87,7 +87,7 @@ void Matrix::transpose3x3(const Matrix3x3& mat, Matrix3x3& transposed) {
 }
 
 int Matrix::inverse_matrix(const MatrixNDIM& mat, MatrixNDIM& inverse) {
-    double det = determinant4x4(mat);
+    float det = determinant4x4(mat);
     if (fabs(det) < 1e-10) {
         return 0; 
     }
@@ -105,7 +105,7 @@ int Matrix::inverse_matrix(const MatrixNDIM& mat, MatrixNDIM& inverse) {
 }
 
 int Matrix::inverse_3x3(const Matrix3x3& mat, Matrix3x3& inv) {
-    double det = determinant3x3(mat);
+    float det = determinant3x3(mat);
     if (fabs(det) < 1e-6) {
         return 0; 
     }
@@ -135,7 +135,7 @@ void Matrix::check_inverse_3x3(const Matrix3x3& mat, const Matrix3x3& inv) {
         }
     }
 
-    constexpr double TOL = 1e-10;
+    constexpr float TOL = 1e-10;
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
             if (fabs(product[i][j] - identity[i][j]) > TOL) {

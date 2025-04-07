@@ -1,7 +1,7 @@
 #include "Connexion.h"
 #include <Geodesics.h>
 
-void initialize_riemann_tensor(double R[NDIM][NDIM][NDIM][NDIM]) {
+void initialize_riemann_tensor(float R[NDIM][NDIM][NDIM][NDIM]) {
     for (int mu = 0; mu < NDIM; mu++) {
         for (int nu = 0; nu < NDIM; nu++) {
             for (int rho = 0; rho < NDIM; rho++) {
@@ -15,13 +15,13 @@ void initialize_riemann_tensor(double R[NDIM][NDIM][NDIM][NDIM]) {
 
 
 void Tensor::print_riemann(const Riemann4D& Riemann) {
-    const double threshold = 1e-10; 
+    const float threshold = 1e-10; 
     printf("\nRiemann Tensor (Non-zero components):\n"); 
     for (int rho = 0; rho < NDIM; rho++) {
         for (int sigma = 0; sigma < NDIM; sigma++) {
             for (int mu = 0; mu < NDIM; mu++) {
                 for (int nu = 0; nu < NDIM; nu++) {
-                    double value = Riemann[rho][sigma][mu][nu];
+                    float value = Riemann[rho][sigma][mu][nu];
                     if (fabs(value) > threshold) {
                         printf("Riemann[%d][%d][%d][%d] = %12.6f\n", rho, sigma, mu, nu, value);
                     }

@@ -1,25 +1,25 @@
 
 #include <Geodesics.h>
 
-extern double (*geodesic_points)[5];
+extern float (*geodesic_points)[5];
 extern int num_points;
-extern double a;
-double Q = 0.9;
+extern float a;
+float Q = 0.9;
 
-void Metric::calculate_metric_kerr_newman(const std::array<double, NDIM>& x, 
-				std::array<std::array<double, NDIM>, NDIM>& g,
-				std::array<std::array<double, NDIM>, NDIM>& g_inv) {
+void Metric::calculate_metric_kerr_newman(const std::array<float, NDIM>& x, 
+				std::array<std::array<float, NDIM>, NDIM>& g,
+				std::array<std::array<float, NDIM>, NDIM>& g_inv) {
 	Matrix matrix_obj;
 	Metric metric_obj;
-	double r = x[1];
-    double theta = x[2];
-    double sin_theta = sin(theta);
-    double cos_theta = cos(theta);
-    double sin_theta2 = sin_theta * sin_theta;
-    double cos_theta2 = cos_theta * cos_theta;
+	float r = x[1];
+    float theta = x[2];
+    float sin_theta = sin(theta);
+    float cos_theta = cos(theta);
+    float sin_theta2 = sin_theta * sin_theta;
+    float cos_theta2 = cos_theta * cos_theta;
 
-    double Sigma = r * r + a * a * cos_theta2;
-    double Delta = r * r - 2.0 * M * r + a * a + Q * Q;
+    float Sigma = r * r + a * a * cos_theta2;
+    float Delta = r * r - 2.0 * M * r + a * a + Q * Q;
 
 	for (auto& row : g) {
 		row.fill(0.0);

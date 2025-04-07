@@ -1,10 +1,10 @@
 #include <Geodesics.h>
 
 
-void Connexion::calculate_christoffel(const VectorNDIM& X, double h,
+void Connexion::calculate_christoffel(const VectorNDIM& X, float h,
                                       Christoffel3D& gamma,
-                                      std::array<std::array<double, NDIM>, NDIM>& g,
-                                      std::array<std::array<double, NDIM>, NDIM>& g_inv, 
+                                      std::array<std::array<float, NDIM>, NDIM>& g,
+                                      std::array<std::array<float, NDIM>, NDIM>& g_inv, 
                                       const char* metric) {
     Christoffel3D tmp{};
     VectorNDIM Xh = X, Xl = X;

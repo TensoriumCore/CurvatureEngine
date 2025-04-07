@@ -1,6 +1,6 @@
 #include <Geodesics.h>
 
-static void print_matrix_2D(const char* name, const double mat[3][3])
+static void print_matrix_2D(const char* name, const float mat[3][3])
 {
     printf("\n%s (3x3):\n", name);
     for(int i = 0; i < 3; i++)
@@ -29,7 +29,7 @@ static void print_matrix_2D(const char* name, const double mat[3][3])
 
 
 
-void GridTensor::compute_partial_christoffel(Grid &grid_obj, int i, int j, int k, int dim, double partialGamma[3][3][3][3], double d) {
+void GridTensor::compute_partial_christoffel(Grid &grid_obj, int i, int j, int k, int dim, float partialGamma[3][3][3][3], float d) {
     int ip1 = i, im1 = i;
     int jp1 = j, jm1 = j;
     int kp1 = k, km1 = k;
@@ -53,8 +53,8 @@ void GridTensor::compute_partial_christoffel(Grid &grid_obj, int i, int j, int k
     for (int kk = 0; kk < 3; kk++) {
         for (int aa = 0; aa < 3; aa++) {
             for (int bb = 0; bb < 3; bb++) {
-                double Gamma_p = grid_obj.getCell(ip1, jp1, kp1).conn.Christoffel[kk][aa][bb];
-                double Gamma_m = grid_obj.getCell(im1, jm1, km1).conn.Christoffel[kk][aa][bb];
+                float Gamma_p = grid_obj.getCell(ip1, jp1, kp1).conn.Christoffel[kk][aa][bb];
+                float Gamma_m = grid_obj.getCell(im1, jm1, km1).conn.Christoffel[kk][aa][bb];
 
                 partialGamma[dim][kk][aa][bb] = (Gamma_p - Gamma_m) / (2.0 * d);
             }
@@ -80,11 +80,11 @@ void GridTensor::compute_partial_christoffel(Grid &grid_obj, int i, int j, int k
  * */
 
 
-void GridTensor::compute_ricci_3D_conformal(Grid &grid_obj, int i, int j, int k, double Ricci[3][3]) {
+void GridTensor::compute_ricci_3D_conformal(Grid &grid_obj, int i, int j, int k, float Ricci[3][3]) {
     GridTensor gridTensor;
     /* gridTensor.compute_christoffel_3D(grid_obj, i, j, k, grid_obj.getCell(i, j, k).conn.Christoffel); */
 
-    double partialGamma[3][3][3][3] = {};
+    float partialGamma[3][3][3][3] = {};
 	Log logger;
     compute_partial_christoffel(grid_obj, i, j, k, 0, partialGamma, DX);
     compute_partial_christoffel(grid_obj, i, j, k, 1, partialGamma, DY);
@@ -92,7 +92,7 @@ void GridTensor::compute_ricci_3D_conformal(Grid &grid_obj, int i, int j, int k,
 	
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
-            double term1 = 0.0, term2 = 0.0, term3 = 0.0, term4 = 0.0;
+            float term1 = 0.0, term2 = 0.0, term3 = 0.0, term4 = 0.0;
             for (int m = 0; m < 3; m++) {
                 term1 += partialGamma[m][m][a][b];
                 term2 += partialGamma[a][m][m][b];
@@ -113,18 +113,18 @@ void GridTensor::compute_ricci_3D_conformal(Grid &grid_obj, int i, int j, int k,
 }
 
 
-void GridTensor::compute_ricci_conformal_factor(Grid &grid_obj, int i, int j, int k, double RicciChi[3][3]) {
+void GridTensor::compute_ricci_conformal_factor(Grid &grid_obj, int i, int j, int k, float RicciChi[3][3]) {
     Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
-    double chi = cell.chi;
-    double invChi = 1.0 / chi;
-    double invChi2 = invChi * invChi;
+    float chi = cell.chi;
+    float invChi = 1.0 / chi;
+    float invChi2 = invChi * invChi;
 
-    double dChi[3];
+    float dChi[3];
     dChi[0] = (grid_obj.getCell(i+1,j,k).chi - grid_obj.getCell(i-1,j,k).chi) / (2.0 * DX);
     dChi[1] = (grid_obj.getCell(i,j+1,k).chi - grid_obj.getCell(i,j-1,k).chi) / (2.0 * DY);
     dChi[2] = (grid_obj.getCell(i,j,k+1).chi - grid_obj.getCell(i,j,k-1).chi) / (2.0 * DZ);
 
-    double ddChi[3][3]; 
+    float ddChi[3][3]; 
     for (int a = 0; a < 3; ++a) {
         for (int b = 0; b < 3; ++b) {
             ddChi[a][b] = second_partial(grid_obj, i, j, k, a, b, [&](const Grid::Cell2D &c) {
@@ -135,7 +135,7 @@ void GridTensor::compute_ricci_conformal_factor(Grid &grid_obj, int i, int j, in
 
     for (int a = 0; a < 3; ++a) {
         for (int b = 0; b < 3; ++b) {
-            double term1 = 0.0, term2 = 0.0;
+            float term1 = 0.0, term2 = 0.0;
             for (int m = 0; m < 3; ++m) {
                 for (int n = 0; n < 3; ++n) {
                     term1 += cell.geom.tildgamma_inv[m][n] * ddChi[m][n]; // Δχ
@@ -150,8 +150,8 @@ void GridTensor::compute_ricci_conformal_factor(Grid &grid_obj, int i, int j, in
     }
 }
 
-void GridTensor::compute_ricci_BSSN(Grid &grid_obj, int i, int j, int k, double Ricci[3][3]) {
-    double RicciTilde[3][3], RicciChi[3][3];
+void GridTensor::compute_ricci_BSSN(Grid &grid_obj, int i, int j, int k, float Ricci[3][3]) {
+    float RicciTilde[3][3], RicciChi[3][3];
     compute_ricci_3D_conformal(grid_obj, i, j, k, RicciTilde);
     compute_ricci_conformal_factor(grid_obj, i, j, k, RicciChi);
 

@@ -1,24 +1,24 @@
 #include <Geodesics.h>
 
-extern double (*geodesic_points)[5];
+extern float (*geodesic_points)[5];
 extern int num_points;
-extern double a;
-double Lambda = 1e-4;
+extern float a;
+float Lambda = 1e-4;
 
-void Metric::calculate_metric_kds(const std::array<double, NDIM>& x, 
-                                  std::array<std::array<double, NDIM>, NDIM>& g,
-                                  std::array<std::array<double, NDIM>, NDIM>& g_inv) {
+void Metric::calculate_metric_kds(const std::array<float, NDIM>& x, 
+                                  std::array<std::array<float, NDIM>, NDIM>& g,
+                                  std::array<std::array<float, NDIM>, NDIM>& g_inv) {
     Matrix matrix_obj;
     Metric metric_obj;
-    double r = x[1];
-    double theta = x[2];
-    double sin_theta = sin(theta);
-    double cos_theta = cos(theta);
+    float r = x[1];
+    float theta = x[2];
+    float sin_theta = sin(theta);
+    float cos_theta = cos(theta);
 
-    double Sigma = r * r + a * a * cos_theta * cos_theta;
-    double Delta_r = (1.0 - (Lambda * r * r) / 3.0) * (r * r + a * a) - 2.0 * M * r;
-    double Delta_theta = 1.0 + (Lambda * a * a / 3.0) * cos_theta * cos_theta;
-    double Xi = 1.0 - (Lambda * a * a) / 3.0;
+    float Sigma = r * r + a * a * cos_theta * cos_theta;
+    float Delta_r = (1.0 - (Lambda * r * r) / 3.0) * (r * r + a * a) - 2.0 * M * r;
+    float Delta_theta = 1.0 + (Lambda * a * a / 3.0) * cos_theta * cos_theta;
+    float Xi = 1.0 - (Lambda * a * a) / 3.0;
 
     for (auto& row : g) {
         row.fill(0.0);

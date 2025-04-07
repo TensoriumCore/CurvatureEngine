@@ -4,8 +4,8 @@
 
 class Matrix {
 	public:
-		double determinant3x3(const Matrix3x3& mat);
-		double determinant4x4(const Matrix4x4& mat);
+		float determinant3x3(const Matrix3x3& mat);
+		float determinant4x4(const Matrix4x4& mat);
 		void cofactor(const MatrixNDIM& mat, MatrixNDIM& cofactorMat);
 		void transpose(const MatrixNDIM& mat, MatrixNDIM& transposed);
 		int inverse_matrix(const MatrixNDIM& mat, MatrixNDIM& inverse);
@@ -17,5 +17,5 @@ class Matrix {
 		void transpose3x3(const Matrix3x3& mat, Matrix3x3& transposed);
 		void cofactor3x3(const Matrix3x3& mat, Matrix3x3& cofactorMat);
 		void check_cofactor3x3(const Matrix3x3& mat, const Matrix3x3& cofactorMat);
-		double determinant2x2(const std::array<std::array<double, 2>, 2>& mat);
+		float determinant2x2(const std::array<std::array<float, 2>, 2>& mat);
 };

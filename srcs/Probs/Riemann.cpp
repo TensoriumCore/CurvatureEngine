@@ -1,8 +1,8 @@
 
 #include <Geodesics.h>
-extern double (*geodesic_points)[5];
+extern float (*geodesic_points)[5];
 extern int num_points;
-extern double a;
+extern float a;
 
 int Riemann_tensor(const char *metric) {
     Tensor tensor;
@@ -10,8 +10,8 @@ int Riemann_tensor(const char *metric) {
     Connexion connexion;
     Metric metric_obj;
     
-    double r0 = 6.0;
-    std::array<double, NDIM> X = {0.0, r0, M_PI/2.0, 0.0};
+    float r0 = 6.0;
+    std::array<float, NDIM> X = {0.0, r0, M_PI/2.0, 0.0};
 
     if (strcmp(metric, "ds") == 0) {
         printf("KDS metric calculation\n");

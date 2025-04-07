@@ -1,6 +1,6 @@
 #include <Geodesics.h>
 
-void Tensor::check_riemann_symmetries(const Riemann4D& Riemann, double tolerance) {
+void Tensor::check_riemann_symmetries(const Riemann4D& Riemann, float tolerance) {
     for (int rho = 0; rho < NDIM; rho++) {
         for (int sigma = 0; sigma < NDIM; sigma++) {
             for (int mu = 0; mu < NDIM; mu++) {
@@ -24,7 +24,7 @@ void Connexion::check_symmetry_christoffel(const Christoffel3D& gamma) {
     for (int lambda = 0; lambda < NDIM; lambda++) {
         for (int mu = 0; mu < NDIM; mu++) {
             for (int nu = mu; nu < NDIM; nu++) { 
-                double diff = fabs(gamma[lambda][mu][nu] - gamma[lambda][nu][mu]);
+                float diff = fabs(gamma[lambda][mu][nu] - gamma[lambda][nu][mu]);
                 if (diff > TOLERANCE) {
                     printf("!symmetry at Gamma^%d_%d%d: |%f - %f| = %f\n", 
                            lambda, mu, nu, gamma[lambda][mu][nu], gamma[lambda][nu][mu], diff);

@@ -2,14 +2,14 @@
 #include <tuple>
 
 
-static inline double kerrSchildRadius(double x, double y, double z, double a)
+static inline float kerrSchildRadius(float x, float y, float z, float a)
 {
-    const double r2   = x*x + y*y + z*z;
-    const double a2   = a*a;
-    const double alpha = r2 - a2;
-    const double inside = alpha*alpha + 4.0*a2*z*z;
+    const float r2   = x*x + y*y + z*z;
+    const float a2   = a*a;
+    const float alpha = r2 - a2;
+    const float inside = alpha*alpha + 4.0*a2*z*z;
 
-    const double term = 0.5 * (alpha + std::sqrt(inside));
+    const float term = 0.5 * (alpha + std::sqrt(inside));
 
     if (term <= 0.0) {
         return 0.0;
@@ -17,27 +17,27 @@ static inline double kerrSchildRadius(double x, double y, double z, double a)
     return std::sqrt(term);
 }
 
-void Grid::injectTTWave(Cell2D &cell, double x, double y, double z, double t){
-	constexpr double A      = 1.6; 
-	constexpr double lambda = 3.0; 
-	constexpr double r0     = 2.0;
-	constexpr double sigma  = 0.6; 
-	constexpr double omega  = 2.0 * M_PI / lambda;
+void Grid::injectTTWave(Cell2D &cell, float x, float y, float z, float t){
+	constexpr float A      = 1.6; 
+	constexpr float lambda = 3.0; 
+	constexpr float r0     = 2.0;
+	constexpr float sigma  = 0.6; 
+	constexpr float omega  = 2.0 * M_PI / lambda;
 	
-	double r = std::sqrt(x * x + y * y + z * z);
+	float r = std::sqrt(x * x + y * y + z * z);
 	if (r < 1e-14) return; 
 
-	double theta = std::acos(z / r);
-	double phi   = std::atan2(y, x);
+	float theta = std::acos(z / r);
+	float phi   = std::atan2(y, x);
 
-	double envelope = std::exp(-((r - r0) * (r - r0)) / (sigma * sigma));
-	double phase    = omega * t - 2.0 * phi; 
+	float envelope = std::exp(-((r - r0) * (r - r0)) / (sigma * sigma));
+	float phase    = omega * t - 2.0 * phi; 
 
-	double h_plus   = A / r * std::cos(phase) * envelope;
-	double h_cross  = A / r * std::sin(phase) * envelope;
+	float h_plus   = A / r * std::cos(phase) * envelope;
+	float h_cross  = A / r * std::sin(phase) * envelope;
 
-	double sin_theta = std::sin(theta), cos_theta = std::cos(theta);
-	double sin_phi   = std::sin(phi),   cos_phi   = std::cos(phi);
+	float sin_theta = std::sin(theta), cos_theta = std::cos(theta);
+	float sin_phi   = std::sin(phi),   cos_phi   = std::cos(phi);
 
 	Vector3 e_theta = {
 		cos_theta * cos_phi,
@@ -63,49 +63,49 @@ void Grid::injectTTWave(Cell2D &cell, double x, double y, double z, double t){
 		for (int j = 0; j < 3; ++j)
 			cell.geom.tilde_gamma[i][j] += h_cartesian[i][j];
 
-	double dh_plus_dt  = -omega * A / r * std::sin(phase) * envelope;
-	double dh_cross_dt = -omega * A / r * std::cos(phase) * envelope;
+	float dh_plus_dt  = -omega * A / r * std::sin(phase) * envelope;
+	float dh_cross_dt = -omega * A / r * std::cos(phase) * envelope;
 
 	for (int i = 0; i < 3; ++i)
 		for (int j = 0; j < 3; ++j) {
-			double dh_ij_dt = dh_plus_dt * (e_theta[i] * e_theta[j] - e_phi[i] * e_phi[j])
+			float dh_ij_dt = dh_plus_dt * (e_theta[i] * e_theta[j] - e_phi[i] * e_phi[j])
 				+ dh_cross_dt * (e_theta[i] * e_phi[j] + e_phi[i] * e_theta[j]);
 			cell.atilde.Atilde[i][j] += -0.5 / cell.gauge.alpha * dh_ij_dt;
 		}
 }
 
 void Grid::initializeBinaryKerrData(Grid &grid_obj) {
-    double m1 = 1.0, a1 = 0.935;
-    double m2 = 1.0, a2 = 0.935;
+    float m1 = 1.0, a1 = 0.935;
+    float m2 = 1.0, a2 = 0.935;
 
-    double x1 = 0.0, y1 = -4.0, z1 = 0.0; 
-    double x2 = 0.0, y2 = 4.0, z2 = 0.0; 
+    float x1 = 0.0, y1 = -4.0, z1 = 0.0; 
+    float x2 = 0.0, y2 = 4.0, z2 = 0.0; 
 
-    double L = 24.0;
-    double x_min = -L, x_max = L;
-    double y_min = -L, y_max = L;
-    double z_min = -L, z_max = L;
+    float L = 24.0;
+    float x_min = -L, x_max = L;
+    float y_min = -L, y_max = L;
+    float z_min = -L, z_max = L;
 
-    double dxBH = x2 - x1;
-    double dyBH = y2 - y1;
-    double dzBH = z2 - z1;
-    double r12  = std::sqrt(dxBH*dxBH + dyBH*dyBH + dzBH*dzBH);
-    double eta  = m1 * m2 / (m1 + m2);
-    double v_orb = std::sqrt((m1 + m2)/r12) * (1.0 + (3.0 - eta)/r12);
+    float dxBH = x2 - x1;
+    float dyBH = y2 - y1;
+    float dzBH = z2 - z1;
+    float r12  = std::sqrt(dxBH*dxBH + dyBH*dyBH + dzBH*dzBH);
+    float eta  = m1 * m2 / (m1 + m2);
+    float v_orb = std::sqrt((m1 + m2)/r12) * (1.0 + (3.0 - eta)/r12);
 
-    double dx = (x_max - x_min) / (NX - 1);
-    double dy = (y_max - y_min) / (NY - 1);
-    double dz = (z_max - z_min) / (NZ - 1);
+    float dx = (x_max - x_min) / (NX - 1);
+    float dy = (y_max - y_min) / (NY - 1);
+    float dz = (z_max - z_min) / (NZ - 1);
 
     GridTensor gridtensor;
     Matrix matrix;
     globalGrid.resize(NX, std::vector<std::vector<Cell2D>>(NY, std::vector<Cell2D>(NZ)));
 
     
-	auto lorentz_boost_lmu = [](double beta, double lt, double lx, double ly, double lz) {
-		const double gamma = 1.0 / sqrt(1.0 - beta * beta);
-		double lt_prime = gamma * (lt + beta * ly);
-		double ly_prime = gamma * (ly + beta * lt);
+	auto lorentz_boost_lmu = [](float beta, float lt, float lx, float ly, float lz) {
+		const float gamma = 1.0 / sqrt(1.0 - beta * beta);
+		float lt_prime = gamma * (lt + beta * ly);
+		float ly_prime = gamma * (ly + beta * lt);
 		return std::make_tuple(lt_prime, lx, ly_prime, lz);
 	};
 
@@ -113,38 +113,38 @@ void Grid::initializeBinaryKerrData(Grid &grid_obj) {
     for (int i = 0; i < NX; i++) {
         for (int j = 0; j < NY; j++) {
             for (int k = 0; k < NZ; k++) {
-                double x = x_min + i * dx;
-                double y = y_min + j * dy;
-                double z = z_min + k * dz;
+                float x = x_min + i * dx;
+                float y = y_min + j * dy;
+                float z = z_min + k * dz;
 
-                double dx1 = x - x1, dy1 = y - y1, dz1 = z - z1;
-                double rKS1 = kerrSchildRadius(dx1, dy1, dz1, a1);
-                double cosTheta1 = (rKS1 > 1e-14) ? dz1 / rKS1 : 0.0;
-                double denomKS1 = rKS1*rKS1 + a1*a1*cosTheta1*cosTheta1;
-                double H1 = (rKS1 > 1e-14 && denomKS1 > 1e-14) ? (m1 * rKS1) / denomKS1 : 0.0;
-                double denomVec1 = rKS1*rKS1 + a1*a1;
-                double lx1 = (denomVec1 > 1e-14) ? (rKS1 * dx1 + a1 * dy1) / denomVec1 : 0.0;
-                double ly1 = (denomVec1 > 1e-14) ? (rKS1 * dy1 - a1 * dx1) / denomVec1 : 0.0;
-                double lz1 = (rKS1 > 1e-14) ? dz1 / rKS1 : 0.0;
+                float dx1 = x - x1, dy1 = y - y1, dz1 = z - z1;
+                float rKS1 = kerrSchildRadius(dx1, dy1, dz1, a1);
+                float cosTheta1 = (rKS1 > 1e-14) ? dz1 / rKS1 : 0.0;
+                float denomKS1 = rKS1*rKS1 + a1*a1*cosTheta1*cosTheta1;
+                float H1 = (rKS1 > 1e-14 && denomKS1 > 1e-14) ? (m1 * rKS1) / denomKS1 : 0.0;
+                float denomVec1 = rKS1*rKS1 + a1*a1;
+                float lx1 = (denomVec1 > 1e-14) ? (rKS1 * dx1 + a1 * dy1) / denomVec1 : 0.0;
+                float ly1 = (denomVec1 > 1e-14) ? (rKS1 * dy1 - a1 * dx1) / denomVec1 : 0.0;
+                float lz1 = (rKS1 > 1e-14) ? dz1 / rKS1 : 0.0;
 
 				auto [lt1, lx1b, ly1b, lz1b] = lorentz_boost_lmu(+v_orb, 1.0, lx1, ly1, lz1);
 
-                double dx2 = x - x2, dy2 = y - y2, dz2 = z - z2;
-                double rKS2 = kerrSchildRadius(dx2, dy2, dz2, a2);
-                double cosTheta2 = (rKS2 > 1e-14) ? dz2 / rKS2 : 0.0;
-                double denomKS2 = rKS2*rKS2 + a2*a2*cosTheta2*cosTheta2;
-                double H2 = (rKS2 > 1e-14 && denomKS2 > 1e-14) ? (m2 * rKS2) / denomKS2 : 0.0;
-                double denomVec2 = rKS2*rKS2 + a2*a2;
-                double lx2 = (denomVec2 > 1e-14) ? (rKS2 * dx2 + a2 * dy2) / denomVec2 : 0.0;
-                double ly2 = (denomVec2 > 1e-14) ? (rKS2 * dy2 - a2 * dx2) / denomVec2 : 0.0;
-                double lz2 = (rKS2 > 1e-14) ? dz2 / rKS2 : 0.0;
+                float dx2 = x - x2, dy2 = y - y2, dz2 = z - z2;
+                float rKS2 = kerrSchildRadius(dx2, dy2, dz2, a2);
+                float cosTheta2 = (rKS2 > 1e-14) ? dz2 / rKS2 : 0.0;
+                float denomKS2 = rKS2*rKS2 + a2*a2*cosTheta2*cosTheta2;
+                float H2 = (rKS2 > 1e-14 && denomKS2 > 1e-14) ? (m2 * rKS2) / denomKS2 : 0.0;
+                float denomVec2 = rKS2*rKS2 + a2*a2;
+                float lx2 = (denomVec2 > 1e-14) ? (rKS2 * dx2 + a2 * dy2) / denomVec2 : 0.0;
+                float ly2 = (denomVec2 > 1e-14) ? (rKS2 * dy2 - a2 * dx2) / denomVec2 : 0.0;
+                float lz2 = (rKS2 > 1e-14) ? dz2 / rKS2 : 0.0;
 				auto [lt2b, lx2b, ly2b, lz2b] = lorentz_boost_lmu(-v_orb, 1.0, lx2, ly2, lz2);
 
-                double H = H1 + H2;
-                double lx = lx1b + lx2b;
-                double ly = ly1b + ly2b;
-                double lz = lz1b + lz2b;
-                double norm_l = std::sqrt(lx*lx + ly*ly + lz*lz);
+                float H = H1 + H2;
+                float lx = lx1b + lx2b;
+                float ly = ly1b + ly2b;
+                float lz = lz1b + lz2b;
+                float norm_l = std::sqrt(lx*lx + ly*ly + lz*lz);
                 if (norm_l > 1e-14) {
                     lx /= norm_l;
                     ly /= norm_l;
@@ -202,7 +202,7 @@ void Grid::initializeBinaryKerrData(Grid &grid_obj) {
 				gridtensor.compute_Atilde(*this, i, j, k);
 
 				Cell2D &cell = globalGrid[i][j][k];
-				double Ktrace = 0.0;
+				float Ktrace = 0.0;
 				for (int a = 0; a < 3; a++)
 					for (int b = 0; b < 3; b++)
 						Ktrace += cell.geom.tildgamma_inv[a][b] * cell.curv.K[a][b];
@@ -217,7 +217,7 @@ void Grid::initializeBinaryKerrData(Grid &grid_obj) {
 	printf("Finished computing Atilde and K\n");
 
 	int max_iter = 5000;
-	double tol = 1e-8;
+	float tol = 1e-8;
 	solve_lichnerowicz(max_iter, tol, dx, dy, dz);
 	printf("Chi = %f\n", globalGrid[1][1][1].chi);
 	for (int i = 1; i < NX - 1; i++) {
@@ -257,10 +257,10 @@ void Grid::initializeBinaryKerrData(Grid &grid_obj) {
     printf("chi near (1,1,1) = %e\n", globalGrid[1][1][1].chi);
     printf("alpha_1_1_1 = %e\n", globalGrid[1][1][1].gauge.alpha);
     
-    double test_radii[] = {0.5, 1.0, 2.0, 5.0, 10.0};
-    for (double test_r : test_radii) {
-        double H_test = M / test_r;  
-        double alpha_test = 1.0 / std::sqrt(1.0 + 2.0 * H_test);
+    float test_radii[] = {0.5, 1.0, 2.0, 5.0, 10.0};
+    for (float test_r : test_radii) {
+        float H_test = M / test_r;  
+        float alpha_test = 1.0 / std::sqrt(1.0 + 2.0 * H_test);
         printf("Eq plane r = %f : H = %e, alpha = %e (Schw approx)\n", test_r, H_test, alpha_test);
     }
 }

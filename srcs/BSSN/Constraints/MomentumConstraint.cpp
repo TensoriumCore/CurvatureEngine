@@ -1,19 +1,19 @@
 #include <Geodesics.h>
 
-std::vector<std::vector<std::vector<double>>> hamiltonianGrid;
+std::vector<std::vector<std::vector<float>>> hamiltonianGrid;
 void Grid::initialize_grid() {
     globalGrid.resize(NX, std::vector<std::vector<Cell2D>>(NY, std::vector<Cell2D>(NZ)));
-    hamiltonianGrid.resize(NX, std::vector<std::vector<double>>(NY, std::vector<double>(NZ, 0.0)));
+    hamiltonianGrid.resize(NX, std::vector<std::vector<float>>(NY, std::vector<float>(NZ, 0.0)));
 }
 
 
-void Grid::compute_constraints(Grid &grid_obj, int i, int j, int k, double &hamiltonian, double momentum[3]) {
+void Grid::compute_constraints(Grid &grid_obj, int i, int j, int k, float &hamiltonian, float momentum[3]) {
     Cell2D &cell = globalGrid[i][j][k];
-    double R = 0.0;
+    float R = 0.0;
 	GridTensor grid_tensor_obj;
 	R = compute_ricci_scalar(grid_obj, i, j, k);
-    double Ktrace = 0.0;
-    double KK = 0.0;
+    float Ktrace = 0.0;
+    float KK = 0.0;
 #pragma omp simd collapse(4)
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++) {

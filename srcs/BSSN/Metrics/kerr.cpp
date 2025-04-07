@@ -1,13 +1,13 @@
 #include <Geodesics.h>
 
-static inline double kerrSchildRadius(double x, double y, double z, double a)
+static inline float kerrSchildRadius(float x, float y, float z, float a)
 {
-    const double r2   = x*x + y*y + z*z;
-    const double a2   = a*a;
-    const double alpha = r2 - a2;
-    const double inside = alpha*alpha + 4.0*a2*z*z;
+    const float r2   = x*x + y*y + z*z;
+    const float a2   = a*a;
+    const float alpha = r2 - a2;
+    const float inside = alpha*alpha + 4.0*a2*z*z;
 
-    const double term = 0.5 * (alpha + std::sqrt(inside));
+    const float term = 0.5 * (alpha + std::sqrt(inside));
 
     if (term <= 0.0) {
         return 0.0;
@@ -16,18 +16,18 @@ static inline double kerrSchildRadius(double x, double y, double z, double a)
 }
 
 void Grid::initializeKerrData(Grid &grid_obj) {
-    double m = 1.0;
-    double a = 0.9999;
-    double x0 = 0.0, y0 = 0.0, z0 = 0.0;
+    float m = 1.0;
+    float a = 0.9999;
+    float x0 = 0.0, y0 = 0.0, z0 = 0.0;
 
-    double L = 9.0;
-    double x_min = -L, x_max = L;
-    double y_min = -L, y_max = L;
-    double z_min = -L, z_max = L;
+    float L = 9.0;
+    float x_min = -L, x_max = L;
+    float y_min = -L, y_max = L;
+    float z_min = -L, z_max = L;
 
-    double dx = (x_max - x_min) / (NX - 1);
-    double dy = (y_max - y_min) / (NY - 1);
-    double dz = (z_max - z_min) / (NZ - 1);
+    float dx = (x_max - x_min) / (NX - 1);
+    float dy = (y_max - y_min) / (NY - 1);
+    float dz = (z_max - z_min) / (NZ - 1);
 
     GridTensor gridtensor;
     Matrix matrix;
@@ -38,25 +38,25 @@ void Grid::initializeKerrData(Grid &grid_obj) {
     for (int i = 0; i < NX; i++) {
         for (int j = 0; j < NY; j++) {
             for (int k = 0; k < NZ; k++) {
-                double x = x_min + i * dx;
-                double y = y_min + j * dy;
-                double z = z_min + k * dz;
+                float x = x_min + i * dx;
+                float y = y_min + j * dy;
+                float z = z_min + k * dz;
 
-                double dx0 = x - x0;
-                double dy0 = y - y0;
-                double dz0 = z - z0;
+                float dx0 = x - x0;
+                float dy0 = y - y0;
+                float dz0 = z - z0;
 
-				double rKS = kerrSchildRadius(dx0, dy0, dz0, a);
-                double cosTheta = (rKS > 1e-14) ? dz0 / rKS : 0.0;
-                double denomKS = (rKS * rKS) + (a * a * cosTheta * cosTheta);
-                double H = (rKS > 1e-14 && denomKS > 1e-14) ? (m * rKS) / denomKS : 0.0;
+				float rKS = kerrSchildRadius(dx0, dy0, dz0, a);
+                float cosTheta = (rKS > 1e-14) ? dz0 / rKS : 0.0;
+                float denomKS = (rKS * rKS) + (a * a * cosTheta * cosTheta);
+                float H = (rKS > 1e-14 && denomKS > 1e-14) ? (m * rKS) / denomKS : 0.0;
 
-                double denomVec = (rKS * rKS) + (a * a);
-                double lx = (denomVec > 1e-14) ? (rKS * dx0 + a * dy0) / denomVec : 0.0;
-                double ly = (denomVec > 1e-14) ? (rKS * dy0 - a * dx0) / denomVec : 0.0;
-                double lz = (rKS > 1e-14) ? dz0 / rKS : 0.0;
+                float denomVec = (rKS * rKS) + (a * a);
+                float lx = (denomVec > 1e-14) ? (rKS * dx0 + a * dy0) / denomVec : 0.0;
+                float ly = (denomVec > 1e-14) ? (rKS * dy0 - a * dx0) / denomVec : 0.0;
+                float lz = (rKS > 1e-14) ? dz0 / rKS : 0.0;
 
-                double norm_l = std::sqrt(lx * lx + ly * ly + lz * lz);
+                float norm_l = std::sqrt(lx * lx + ly * ly + lz * lz);
                 if (norm_l > 1e-14) {
                     lx /= norm_l;
                     ly /= norm_l;
@@ -77,7 +77,7 @@ void Grid::initializeKerrData(Grid &grid_obj) {
 
                 matrix.inverse_3x3(cell.geom.gamma, cell.geom.gamma_inv);
 
-                double det_gamma = std::cbrt(
+                float det_gamma = std::cbrt(
                     cell.geom.gamma[0][0] * cell.geom.gamma[1][1] * cell.geom.gamma[2][2]
                   - cell.geom.gamma[0][0] * cell.geom.gamma[1][2] * cell.geom.gamma[2][1]
                   - cell.geom.gamma[1][1] * cell.geom.gamma[0][2] * cell.geom.gamma[2][0]
@@ -141,10 +141,10 @@ void Grid::initializeKerrData(Grid &grid_obj) {
     printf("chi near (1,1,1) = %e\n", globalGrid[1][1][1].chi);
     printf("alpha_1_1_1 = %e\n", globalGrid[1][1][1].gauge.alpha);
     
-    double test_radii[] = {0.5, 1.0, 2.0, 5.0, 10.0};
-    for (double test_r : test_radii) {
-        double H_test = M / test_r;  
-        double alpha_test = 1.0 / std::sqrt(1.0 + 2.0 * H_test);
+    float test_radii[] = {0.5, 1.0, 2.0, 5.0, 10.0};
+    for (float test_r : test_radii) {
+        float H_test = M / test_r;  
+        float alpha_test = 1.0 / std::sqrt(1.0 + 2.0 * H_test);
         printf("Eq plane r = %f : H = %e, alpha = %e (Schw approx)\n", test_r, H_test, alpha_test);
     }
 

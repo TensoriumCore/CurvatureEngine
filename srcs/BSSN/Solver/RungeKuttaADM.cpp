@@ -1,6 +1,6 @@
 #include <Geodesics.h>
 
-void Grid::logger_evolve(Grid &grid_obj, double dt, int nstep)
+void Grid::logger_evolve(Grid &grid_obj, float dt, int nstep)
 {    
 	Cell2D &cell = grid_obj.getCell(0, 0, 0);
 	printf("=============================================\n");
@@ -22,22 +22,22 @@ void Grid::logger_evolve(Grid &grid_obj, double dt, int nstep)
 
 
 
-void Grid::evolve(Grid &grid_obj, double dtInitial, int nSteps) {
+void Grid::evolve(Grid &grid_obj, float dtInitial, int nSteps) {
     initialize_grid();
     GridTensor gridTensor;
-    double CFL = 0.5;
-    double dt = dtInitial;
-    double hamiltonian;
-    double momentum[3];
-	double L = 9.0;
-    double x_min = -L, x_max = L;
-    double y_min = -L, y_max = L;
-    double z_min = -L, z_max = L;
+    float CFL = 0.5;
+    float dt = dtInitial;
+    float hamiltonian;
+    float momentum[3];
+	float L = 9.0;
+    float x_min = -L, x_max = L;
+    float y_min = -L, y_max = L;
+    float z_min = -L, z_max = L;
 
 
-    double dx = (x_max - x_min) / (NX - 1);
-    double dy = (y_max - y_min) / (NY - 1);
-    double dz = (z_max - z_min) / (NZ - 1);
+    float dx = (x_max - x_min) / (NX - 1);
+    float dy = (y_max - y_min) / (NY - 1);
+    float dz = (z_max - z_min) / (NZ - 1);
     for (int step = 0; step < nSteps; step++) {
         dt = computeCFL_dt(CFL);
         apply_boundary_conditions(grid_obj);
@@ -49,9 +49,9 @@ void Grid::evolve(Grid &grid_obj, double dtInitial, int nSteps) {
                 for (int i = 1; i < NX - 1; i++) {
                     for (int j = 1; j < NY - 1; j++) {
                         for (int k = 1; k < NZ - 1; k++) {
-							double x = x_min + i*DX;
-                            double y = y_min + j*DY;
-                            double z = z_min + k*DZ;
+							float x = x_min + i*DX;
+                            float y = y_min + j*DY;
+                            float z = z_min + k*DZ;
                             func(i, j, k);
                         }
                     }
@@ -64,7 +64,7 @@ void Grid::evolve(Grid &grid_obj, double dtInitial, int nSteps) {
 
             forEachCell([&](int i, int j, int k) {
                 compute_time_derivatives(grid_obj, i, j, k);
-                double d_alpha_dt, d_beta_dt[3];
+                float d_alpha_dt, d_beta_dt[3];
                 compute_gauge_derivatives(grid_obj, i, j, k, d_alpha_dt, d_beta_dt);
                 compute_constraints(grid_obj, i, j, k, hamiltonian, momentum);
                 storeStage(globalGrid[i][j][k], 0, d_alpha_dt, d_beta_dt);
@@ -76,7 +76,7 @@ void Grid::evolve(Grid &grid_obj, double dtInitial, int nSteps) {
 
             forEachCell([&](int i, int j, int k) {
                 compute_time_derivatives(grid_obj, i, j, k);
-                double d_alpha_dt, d_beta_dt[3];
+                float d_alpha_dt, d_beta_dt[3];
                 compute_gauge_derivatives(grid_obj, i, j, k, d_alpha_dt, d_beta_dt);
                 storeStage(globalGrid[i][j][k], 1, d_alpha_dt, d_beta_dt);
             });
@@ -87,7 +87,7 @@ void Grid::evolve(Grid &grid_obj, double dtInitial, int nSteps) {
 
             forEachCell([&](int i, int j, int k) {
                 compute_time_derivatives(grid_obj, i, j, k);
-                double d_alpha_dt, d_beta_dt[3];
+                float d_alpha_dt, d_beta_dt[3];
                 compute_gauge_derivatives(grid_obj, i, j, k, d_alpha_dt, d_beta_dt);
                 compute_constraints(grid_obj, i, j, k, hamiltonian, momentum);
                 storeStage(globalGrid[i][j][k], 2, d_alpha_dt, d_beta_dt);
@@ -98,7 +98,7 @@ void Grid::evolve(Grid &grid_obj, double dtInitial, int nSteps) {
             });
             forEachCell([&](int i, int j, int k) {
                 compute_time_derivatives(grid_obj, i, j, k);
-                double d_alpha_dt, d_beta_dt[3];
+                float d_alpha_dt, d_beta_dt[3];
                 compute_gauge_derivatives(grid_obj, i, j, k, d_alpha_dt, d_beta_dt);
                 compute_constraints(grid_obj, i, j, k, hamiltonian, momentum);
                 storeStage(globalGrid[i][j][k], 3, d_alpha_dt, d_beta_dt);
@@ -112,7 +112,7 @@ void Grid::evolve(Grid &grid_obj, double dtInitial, int nSteps) {
 #pragma omp single nowait
         {
             logger_evolve(grid_obj, dt, step);
-			double current_time = step * dt;
+			float current_time = step * dt;
 			export_gamma_slice(grid_obj, NY / 2, dt);
 			grid_obj.appendConstraintL2ToCSV("constraints_evolution.csv", current_time);
 			if (step == nSteps - 1) {

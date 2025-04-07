@@ -1,8 +1,8 @@
 #include <Geodesics.h>
 
-extern double a;
+extern float a;
 
-void geodesic_AVX(__m256d x[4], __m256d v[4], double lambda_max,
+void geodesic_AVX(__m256d x[4], __m256d v[4], float lambda_max,
                    __m256d christoffel[4][4][4], __m256d step_size) 
 {
     __attribute__((aligned(32))) __m256d k1_x[4], k1_v[4];
@@ -10,8 +10,8 @@ void geodesic_AVX(__m256d x[4], __m256d v[4], double lambda_max,
     __attribute__((aligned(32))) __m256d k3_x[4], k3_v[4];
     __attribute__((aligned(32))) __m256d k4_x[4], k4_v[4];
     __attribute__((aligned(32))) __m256d temp_x[4], temp_v[4];
-    __attribute__((aligned(32)))  double lambda = 0.0;
-	double min_r = 1.0 + sqrt(1.0 - a * a) + 1;
+    __attribute__((aligned(32)))  float lambda = 0.0;
+	float min_r = 1.0 + sqrt(1.0 - a * a) + 1;
     while (lambda < lambda_max) {
 
         for (int mu = 0; mu < 4; mu++) {
