@@ -18,6 +18,12 @@ class GridTensor {
 		void compute_partial_christoffel(Grid &grid_obj, int i, int j, int k, int dim, double partialGamma[3][3][3][3], double d);
 		void compute_ricci_conformal_factor(Grid &grid_obj, int i, int j, int k, double RicciChi[3][3]);
 		void compute_ricci_BSSN(Grid &grid_obj, int i, int j, int k, double Ricci[3][3]);
+		void compute_ricci_3D_conformal(Grid &grid_obj, int i, int j, int k, double Ricci[3][3]);
+		void compute_ricci_3d(
+				Grid& grid_obj,  
+				const Vector3& X,       
+				const Tensor3D& Gamma3, 
+				Matrix3x3& R3);
 		double partialX_gamma(Grid &grid_obj, int i, int j, int k, int a, int b);
 		double partialY_gamma(Grid &grid_obj, int i, int j, int k, int a, int b);
 		double partialZ_gamma(Grid &grid_obj, int i, int j, int k, int a, int b);
@@ -25,6 +31,8 @@ class GridTensor {
 		double partialY_Kij(Grid &grid_obj, int i, int j, int k, int a, int b);
 		double partialZ_Kij(Grid &grid_obj, int i, int j, int k, int a, int b);
 		double partialX_gammaSpec(Grid &grid_obj, int i, int j, int k, int a, int b);
+		double compute_momentum_i(Grid &grid, int i, int j, int k, int i_comp);
+		double christoffelTerm(Grid &grid, int i, int j, int k, int i_comp);
 };
 
 

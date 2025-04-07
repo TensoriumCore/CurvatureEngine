@@ -57,11 +57,15 @@ class Derivatives
 
 		double second_partial_alpha(int i, int j, int k, int a, int b);
 };
+
+
 void spectral_derivative_3D(const std::vector<double> &f_in,
 				std::vector<double> &f_out,
 				int N_x, int N_y, int N_z,
 				double dx, double dy, double dz,
 				int dim);
+
+
 template <typename Func>
 double partialX(Grid &grid_obj, int i, int j, int k, Func f) {
 	if (i < 0 || i >= NX) return 0.0;

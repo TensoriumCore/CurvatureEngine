@@ -80,15 +80,15 @@ void GridTensor::compute_partial_christoffel(Grid &grid_obj, int i, int j, int k
  * */
 
 
-void Grid::compute_ricci_3D_conformal(Grid &grid_obj, int i, int j, int k, double Ricci[3][3]) {
+void GridTensor::compute_ricci_3D_conformal(Grid &grid_obj, int i, int j, int k, double Ricci[3][3]) {
     GridTensor gridTensor;
     /* gridTensor.compute_christoffel_3D(grid_obj, i, j, k, grid_obj.getCell(i, j, k).conn.Christoffel); */
 
     double partialGamma[3][3][3][3] = {};
 	Log logger;
-    gridTensor.compute_partial_christoffel(grid_obj, i, j, k, 0, partialGamma, DX);
-    gridTensor.compute_partial_christoffel(grid_obj, i, j, k, 1, partialGamma, DY);
-    gridTensor.compute_partial_christoffel(grid_obj, i, j, k, 2, partialGamma, DZ);
+    compute_partial_christoffel(grid_obj, i, j, k, 0, partialGamma, DX);
+    compute_partial_christoffel(grid_obj, i, j, k, 1, partialGamma, DY);
+    compute_partial_christoffel(grid_obj, i, j, k, 2, partialGamma, DZ);
 	
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
@@ -152,7 +152,7 @@ void GridTensor::compute_ricci_conformal_factor(Grid &grid_obj, int i, int j, in
 
 void GridTensor::compute_ricci_BSSN(Grid &grid_obj, int i, int j, int k, double Ricci[3][3]) {
     double RicciTilde[3][3], RicciChi[3][3];
-    grid_obj.compute_ricci_3D_conformal(grid_obj, i, j, k, RicciTilde);
+    compute_ricci_3D_conformal(grid_obj, i, j, k, RicciTilde);
     compute_ricci_conformal_factor(grid_obj, i, j, k, RicciChi);
 
     for (int a = 0; a < 3; ++a)

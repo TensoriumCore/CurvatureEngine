@@ -26,43 +26,6 @@
 * */
 
 
-double partialX_alpha(Grid &grid_obj, int i, int j, int k) {
-    if (i < 2 || i > NX - 3) {
-        return (grid_obj.getCell(i + 1, j, k).gauge.alpha - grid_obj.getCell(i - 1, j, k).gauge.alpha) / (2.0 * DX);
-    }
-
-    double alpha_ip2 = grid_obj.getCell(i + 2, j, k).gauge.alpha;
-    double alpha_ip1 = grid_obj.getCell(i + 1, j, k).gauge.alpha;
-    double alpha_im1 = grid_obj.getCell(i - 1, j, k).gauge.alpha;
-    double alpha_im2 = grid_obj.getCell(i - 2, j, k).gauge.alpha;
-
-    return (-alpha_ip2 + 8.0 * alpha_ip1 - 8.0 * alpha_im1 + alpha_im2) / (12.0 * DX);
-}
-
-
-double partialY_alpha(Grid &grid_obj, int i, int j, int k) {
-    if (j < 2 || j > NY - 3) {
-        return (grid_obj.getCell(i, j + 1, k).gauge.alpha - grid_obj.getCell(i, j - 1, k).gauge.alpha) / (2.0 * DY);
-    }
-    double alpha_jp2 = grid_obj.getCell(i, j + 2, k).gauge.alpha;
-    double alpha_jp1 = grid_obj.getCell(i, j + 1, k).gauge.alpha;
-    double alpha_jm1 = grid_obj.getCell(i, j - 1, k).gauge.alpha;
-    double alpha_jm2 = grid_obj.getCell(i, j - 2, k).gauge.alpha;
-
-    return (-alpha_jp2 + 8.0 * alpha_jp1 - 8.0 * alpha_jm1 + alpha_jm2) / (12.0 * DY);
-}
-
-double partialZ_alpha(Grid &grid_obj, int i, int j, int k) {
-    if (k < 2 || k > NZ - 3) {
-        return (grid_obj.getCell(i, j, k + 1).gauge.alpha - grid_obj.getCell(i, j, k - 1).gauge.alpha) / (2.0 * DZ);
-    }
-    double alpha_kp2 = grid_obj.getCell(i, j, k + 2).gauge.alpha;
-    double alpha_kp1 = grid_obj.getCell(i, j, k + 1).gauge.alpha;
-    double alpha_km1 = grid_obj.getCell(i, j, k - 1).gauge.alpha;
-    double alpha_km2 = grid_obj.getCell(i, j, k - 2).gauge.alpha;
-
-    return (-alpha_kp2 + 8.0 * alpha_kp1 - 8.0 * alpha_km1 + alpha_km2) / (12.0 * DZ);
-}
 
 
 double partialXX_alpha(Grid &grid_obj, int i, int j, int k) {
@@ -80,18 +43,6 @@ double partialZZ_alpha(Grid &grid_obj, int i, int j, int k) {
            / (DZ * DZ);
 }
 
-
-double partialX_betacomp(Grid &grid_obj, int i, int j, int k, int comp) {
-    return (grid_obj.getCell(i+1, j, k).gauge.beta[comp] - grid_obj.getCell(i-1, j, k).gauge.beta[comp]) / (2.0 * DX);
-}
-
-double partialY_betacomp(Grid &grid_obj, int i, int j, int k, int comp) {
-    return (grid_obj.getCell(i, j+1, k).gauge.beta[comp] - grid_obj.getCell(i, j-1, k).gauge.beta[comp]) / (2.0 * DY);
-}
-
-double partialZ_betacomp(Grid &grid_obj, int i, int j, int k, int comp) {
-    return (grid_obj.getCell(i, j, k+1).gauge.beta[comp] - grid_obj.getCell(i, j, k-1).gauge.beta[comp]) / (2.0 * DZ);
-}
 
 double partialXY_alpha(Grid &grid_obj, int i, int j, int k) {
     return (grid_obj.getCell(i+1, j+1, k).gauge.alpha - grid_obj.getCell(i+1, j-1, k).gauge.alpha

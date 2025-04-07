@@ -50,23 +50,22 @@ double divKUp_i(Grid &grid, int i, int j, int k, int i_comp)
     return px + py + pz;
 }
 
-double Grid::christoffelTerm(Grid &grid, int i, int j, int k, int i_comp)
+double GridTensor::christoffelTerm(Grid &grid, int i, int j, int k, int i_comp)
 {
-    Cell2D &cell = grid.globalGrid[i][j][k];
     double KupLocal[3][3];
     {
         double tmpG[3][3];
 #pragma omp simd
         for(int a=0; a<3; a++){
             for(int b=0; b<3; b++){
-                tmpG[a][b] = cell.geom.gamma[a][b];
+                tmpG[a][b] = grid.getCell(i,j,k).geom.gamma[a][b];
             }
         }
         for(int aa=0; aa<3; aa++){
             for(int bb=0; bb<3; bb++){
                 double sum=0.0;
                 for(int cc=0; cc<3; cc++){
-                    sum += cell.geom.gamma_inv[aa][cc]*cell.curv.K[cc][bb];
+					sum += grid.getCell(i,j,k).geom.gamma_inv[aa][cc] * grid.getCell(i,j,k).curv.K[cc][bb];
                 }
                 KupLocal[aa][bb] = sum;
             }
@@ -75,8 +74,8 @@ double Grid::christoffelTerm(Grid &grid, int i, int j, int k, int i_comp)
     double sum1=0.0, sum2=0.0;
     for(int j_=0; j_<3; j_++){
         for(int m=0; m<3; m++){
-            sum1 += cell.conn.Christoffel[m][j_][j_] * KupLocal[m][i_comp];
-            sum2 += cell.conn.Christoffel[m][j_][i_comp] * KupLocal[j_][m];
+			sum1 += grid.getCell(i,j,k).conn.Christoffel[m][j_][j_] * KupLocal[m][i_comp];
+			sum2 += grid.getCell(i,j,k).conn.Christoffel[m][j_][i_comp] * KupLocal[j_][m];
         }
     }
     return sum1 - sum2;
@@ -130,10 +129,10 @@ double partial_i_Ktrace(Grid &grid, int i, int j, int k, int i_comp)
     return 0.0;
 }
 
-double compute_momentum_i(Grid &grid, int i, int j, int k, int i_comp)
+double GridTensor::compute_momentum_i(Grid &grid, int i, int j, int k, int i_comp)
 {
     double divKUpVal = divKUp_i(grid, i, j, k, i_comp);
-    double christofVal = grid.christoffelTerm(grid, i, j, k, i_comp);
+    double christofVal = christoffelTerm(grid, i, j, k, i_comp);
     double dK = partial_i_Ktrace(grid, i, j, k, i_comp);
     return divKUpVal + christofVal - dK;
 }

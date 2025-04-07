@@ -78,26 +78,7 @@ void Grid::appendConstraintL2ToCSV(const std::string& filename, double time) con
     file.close();
 }
 
-void Grid::export_chi_slice(Grid &grid_obj, double time) {
-    std::ofstream file;
-    char filename[256];
-    sprintf(filename, "Output/chi_slice_t%.3f.dat", time);
-    file.open(filename);
-	double L = 9.0;
-    int z_mid = NY / 2; 
 
-    for (int i = 0; i < NX; ++i) {
-        for (int j = 0; j < NY; ++j) {
-            double x = -L + i * DX;
-            double y = -L + j * DY;
-            double chi = globalGrid[i][j][z_mid].dt_chi;
-            file << x << " " << y << " " << chi << "\n";
-        }
-        file << "\n";
-    }
-
-    file.close();
-}
 
 void Grid::export_Atildedt_slide(Grid &grid_obj, double time) {
 	std::ofstream file;

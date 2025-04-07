@@ -103,28 +103,27 @@ class Grid {
 			double KStage[4][3][3];
 			double dgt[3][3];
 		};
+
+		struct alignas(32) GridStorage {
+			Cell2D* cells;
+
+			double* alpha;
+			double* chi;
+			double* Atilde[3][3];
+
+			int nx, ny, nz;
+
+			inline int idx(int i, int j, int k) const {
+				return i * ny * nz + j * nz + k;
+			}
+		};
+
 		void appendConstraintL2ToCSV(const std::string& filename, double time) const;
 		void inject_BowenYork_Atilde(Grid &grid_obj, const Vector3 &P, const Vector3 &Coor);
 		void logger_evolve(Grid &grid_obj, double dt, int nstep);
-		void compute_spectral_derivatives_for_gamma() ;
-		void compute_energy_momentum_evolution(int i, int j, int k, double dt);
-		void update_energy_momentum_tensor(int i, int j, int k);
 		double compute_ricci_scalar(Grid &grid, int i, int j, int k);
-		void initializeKerrData();
 		void initialize_grid();
 		void evolve(Grid &grid_obj, double dtinitital, int nSteps);
-		void initializeData(); 
-		void compute_ricci_3d(
-				Grid& grid_obj,  
-				const Vector3& X,       
-				const Tensor3D& Gamma3, 
-				Matrix3x3& R3);
-		void calculate_christoffel_3D(const Vector3& X, Tensor3D& Gamma3, 
-				const Matrix3x3& gamma, Matrix3x3 gamma_inv) ;
-		void compute_ricci_3d(
-				const Vector3& X,       
-				const Tensor3D& Gamma3, 
-				Matrix3x3& R3);
 		double KUpAt(Grid &grid, int ip, int jp, int kp, int j_up, int i_low);
 		void copyInitialState(Cell2D &cell);
 		void updateIntermediateState(Cell2D &cell, double dtCoeff, int stageIndex);
@@ -134,22 +133,17 @@ class Grid {
 		double computeMaxSpeed();
 		double computeCFL_dt(double CFL);
 		void compute_constraints(Grid &grid_obj, int i, int j, int k, double &hamiltonian, double momentum[3]);
-		void calculate_ricci_3d_from_riemann(const Riemann3D& Riemann, Matrix3x3& Ricci);
 		void compute_time_derivatives(Grid &grid_obj, int i, int j, int k);
 		void allocateGlobalGrid();
 		void initializeData_Minkowski();
 		void initializeKerrData(Grid &grid_obj);
 		void initializeBinaryKerrData(Grid &grid_obj);
-		void compute_ricci_3D_conformal(Grid &grid_obj, int i, int j, int k, double Ricci[3][3]);
 		double partialX_KUp(Grid &grid, int i, int j, int k, int j_up, int i_low);
 		double partialY_KUp(Grid &grid, int i, int j, int k, int j_up, int i_low);
 		double partialZ_KUp(Grid &grid, int i, int j, int k, int j_up, int i_low);
-		void export_chi_slice(Grid &grid_obj, double time);
 		double computeTraceK(Grid &grid, int i, int j, int k);
-		double christoffelTerm(Grid &grid, int i, int j, int k, int i_comp);
 		void compute_gauge_derivatives(Grid &grid_obj, int i, int j, int k, double &d_alpha_dt, double d_beta_dt[3]);
 		void injectTTWave(Cell2D &cell, double x, double y, double z, double t);
-		void initializeFishboneMoncriefTorus(double r_in, double r_max, double rho_max, double l_torus, double Gamma);
 		void solve_lichnerowicz(int max_iter, double tol, double dx, double dy, double dz);
 		Cell2D& getCell(int i, int j, int k) {
 			return globalGrid[i][j][k];
@@ -160,18 +154,10 @@ class Grid {
 
 };
 
-double partialX_alpha(Grid &grid_obj, int i, int j, int k);
-double partialY_alpha(Grid &grid_obj, int i, int j, int k);
-double partialZ_alpha(Grid &grid_obj, int i, int j, int k);
+
 double partialXX_alpha(Grid &grid_obj, int i, int j, int k);
 double partialYY_alpha(Grid &grid_obj, int i, int j, int k);
 double partialZZ_alpha(Grid &grid_obj, int i, int j, int k);
-double partialX_betacomp(Grid &grid_obj, int i, int j, int k, int comp);
-double partialY_betacomp(Grid &grid_obj, int i, int j, int k, int comp);
-double partialZ_betacomp(Grid &grid_obj, int i, int j, int k, int comp);
-double partialXY_alpha(Grid &grid_obj, int i, int j, int k);
-double partialXZ_alpha(Grid &grid_obj, int i, int j, int k);
-double partialYZ_alpha(Grid &grid_obj, int i, int j, int k);
 double second_partial_alpha(Grid &grid_obj, int i, int j, int k, int a, int b);
 bool invert_3x3(const double m[3][3], double inv[3][3]);
 void apply_boundary_conditions(Grid &grid_obj);
@@ -181,4 +167,3 @@ void export_gauge_slice(Grid &grid_obj, int j);
 void export_K_slice(Grid &grid_obj, int j);
 void export_gamma_slice(Grid &grid_obj, int j, double time);
 void export_tilde_gamma_3D(Grid &grid_obj);
-double compute_momentum_i(Grid &grid, int i, int j, int k, int i_comp);

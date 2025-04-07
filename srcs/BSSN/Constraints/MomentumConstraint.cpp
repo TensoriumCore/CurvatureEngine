@@ -10,6 +10,7 @@ void Grid::initialize_grid() {
 void Grid::compute_constraints(Grid &grid_obj, int i, int j, int k, double &hamiltonian, double momentum[3]) {
     Cell2D &cell = globalGrid[i][j][k];
     double R = 0.0;
+	GridTensor grid_tensor_obj;
 	R = compute_ricci_scalar(grid_obj, i, j, k);
     double Ktrace = 0.0;
     double KK = 0.0;
@@ -32,6 +33,6 @@ void Grid::compute_constraints(Grid &grid_obj, int i, int j, int k, double &hami
     hamiltonianGrid[i][j][k] = hamiltonian;
 	cell.matter.hamiltonian = hamiltonian;
 	for(int i_comp=0; i_comp<3; i_comp++){
-		cell.matter.momentum[i_comp] = compute_momentum_i(grid_obj, i, j, k, i_comp);
+		cell.matter.momentum[i_comp] = grid_tensor_obj.compute_momentum_i(grid_obj, i, j, k, i_comp);
 	}
 }

@@ -52,7 +52,6 @@ void Grid::evolve(Grid &grid_obj, double dtInitial, int nSteps) {
 							double x = x_min + i*DX;
                             double y = y_min + j*DY;
                             double z = z_min + k*DZ;
-                            injectTTWave(globalGrid[i][j][k], x, y, z, grid_obj.time);
                             func(i, j, k);
                         }
                     }
@@ -97,7 +96,6 @@ void Grid::evolve(Grid &grid_obj, double dtInitial, int nSteps) {
             forEachCell([&](int i, int j, int k) {
                 updateIntermediateState(globalGrid[i][j][k], dt, 2);
             });
-
             forEachCell([&](int i, int j, int k) {
                 compute_time_derivatives(grid_obj, i, j, k);
                 double d_alpha_dt, d_beta_dt[3];
