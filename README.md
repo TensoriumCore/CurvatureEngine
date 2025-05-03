@@ -6,7 +6,7 @@ This project is a high-performance computational framework for solving geodesic 
 ## Features
 - **Geodesic Integrator:** Computes null and timelike geodesics in curved spacetimes.
 - **Curvature Tensor Computation in analytical formalism:** Computes Christoffel symbols, Riemann, Ricci, and Einstein tensors.
-- **ADM Formalism Solver:** Implements the Arnowitt-Deser-Misner (ADM) evolution equations for numerical relativity using a 3+1 decomposition.
+- **BSSN Formalism Solver:** Implements evolution equations for numerical relativity using a 3+1 decomposition.
 - **Constraint Equations:** Enforces Hamiltonian and momentum constraints to ensure numerical stability.
 - **Support for Multiple Metrics:** Includes Schwarzschild, Minkowski, and Kerr metrics, with extensibility to other spacetimes.
 - **Parallelized Computation:** Optimized for multi-threading and SIMD vectorization to accelerate computations (Parallel computing is not ready atm so monothread atm...).
