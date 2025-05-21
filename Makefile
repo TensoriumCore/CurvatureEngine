@@ -27,7 +27,6 @@ NC := \033[0m
 
 .PHONY: all clean fclean re
 
-
 all: $(NAME)
 	@if [ -f $(OBJ_DIR)/.counter ]; then rm $(OBJ_DIR)/.counter; fi
 	@echo -e "$(GREEN)Build complete!$(NC)"
