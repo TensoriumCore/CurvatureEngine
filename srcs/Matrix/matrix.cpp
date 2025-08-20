@@ -146,8 +146,6 @@ void Matrix::check_inverse_3x3(const Matrix3x3& mat, const Matrix3x3& inv) {
     }
 }
 
-
-
 void Matrix::check_inverse(const MatrixNDIM& gcov, const MatrixNDIM& g_inv) {
     MatrixNDIM identity{};
     for (int i = 0; i < NDIM; i++) {
@@ -173,7 +171,6 @@ void Matrix::check_inverse(const MatrixNDIM& gcov, const MatrixNDIM& g_inv) {
     }
 	print_matrix("identity", identity);
 }
-
 
 void Matrix::print_matrix(const char* name, const MatrixNDIM& mat) {
     std::cout << name << " =\n";
