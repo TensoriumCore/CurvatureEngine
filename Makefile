@@ -6,7 +6,7 @@ CFLAGS = -g -std=c++17 -O3\
          -mavx2 -mfma -march=native -mtune=native \
          -funroll-loops -fvectorize -ffp-contract=fast \
          -freciprocal-math  -fstrict-aliasing \
-         -fomit-frame-pointer -flto=full -mprefer-vector-width=256 -fopenmp \
+         -fomit-frame-pointer -fuse-ld=lld -flto=full -mprefer-vector-width=256 -fopenmp \
          -I$(INC_DIR)
 
 SRC_DIR = srcs

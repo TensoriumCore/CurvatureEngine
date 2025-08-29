@@ -14,7 +14,7 @@
 #include <iomanip>
 #include <vector>
 #include <fstream>
-#include <fftw3.h>
+// #include <fftw3.h>
 #define C 1.0
 #define G 1.0 
 #define M 1.0

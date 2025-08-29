@@ -167,3 +167,5 @@ void export_gauge_slice(Grid &grid_obj, int j);
 void export_K_slice(Grid &grid_obj, int j);
 void export_gamma_slice(Grid &grid_obj, int j, float time);
 void export_tilde_gamma_3D(Grid &grid_obj);
+void export_gauge_slice_anim(Grid &grid_obj, int j, float time);
+void export_gauge_slice_xy(Grid &grid, int k, float time);

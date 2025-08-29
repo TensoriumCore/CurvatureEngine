@@ -78,8 +78,8 @@ void Grid::initializeBinaryKerrData(Grid &grid_obj) {
     float m1 = 1.0, a1 = 0.935;
     float m2 = 1.0, a2 = 0.935;
 
-    float x1 = 0.0, y1 = -4.0, z1 = 0.0; 
-    float x2 = 0.0, y2 = 4.0, z2 = 0.0; 
+    float x1 = 0.0, y1 = -6.0, z1 = 0.0; 
+    float x2 = 0.0, y2 = 6.0, z2 = 0.0; 
 
     float L = 24.0;
     float x_min = -L, x_max = L;
@@ -144,12 +144,6 @@ void Grid::initializeBinaryKerrData(Grid &grid_obj) {
                 float lx = lx1b + lx2b;
                 float ly = ly1b + ly2b;
                 float lz = lz1b + lz2b;
-                float norm_l = std::sqrt(lx*lx + ly*ly + lz*lz);
-                if (norm_l > 1e-14) {
-                    lx /= norm_l;
-                    ly /= norm_l;
-                    lz /= norm_l;
-                }
                 Cell2D &cell = globalGrid[i][j][k];
 
                 cell.geom.gamma[0][0] = 1.0 + 2.0 * H * lx * lx;

@@ -291,7 +291,7 @@ void export_gauge_slice(Grid &grid_obj, int j) {
     file << "x,z,alpha,beta0,beta1,beta2,d_alpha_dt,d_beta0_dt,d_beta1_dt,d_beta2_dt\n";
 
     for (int i = 0; i < NX; i++) {
-        for (int k = 0; k < NZ; k++) {
+        for (int k = 0; k < NY; k++) {
             float x = -9.0 + i * (18.0 / (NX - 1));
             float z = -9.0 + k * (18.0 / (NZ - 1));
 
@@ -310,7 +310,47 @@ void export_gauge_slice(Grid &grid_obj, int j) {
 }
 
 
+void export_gauge_slice_anim(Grid &grid_obj, int j, float time) {
+    char name[256];
+    sprintf(name, "Output/gauge_slice_t%.3f.csv", time);
+    std::ofstream file(name);
+    file << "x,z,alpha,beta0,beta1,beta2,d_alpha_dt,d_beta0_dt,d_beta1_dt,d_beta2_dt\n";
 
+    for (int i = 0; i < NX; i++) {
+        for (int k = 0; k < NZ; k++) {
+            float x = -9.0f + i * (18.0f / (NX - 1));
+            float z = -9.0f + k * (18.0f / (NZ - 1));
+
+            Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
+            float d_alpha_dt, d_beta_dt[3];
+            grid_obj.compute_gauge_derivatives(grid_obj, i, j, k, d_alpha_dt, d_beta_dt);
+
+            file << x << "," << z << ","
+                 << cell.gauge.alpha << ","
+                 << cell.gauge.beta[0] << "," << cell.gauge.beta[1] << "," << cell.gauge.beta[2] << ","
+                 << d_alpha_dt << "," << cell.gauge.beta[0] << "," << cell.gauge.beta[1] << "," << cell.gauge.beta[2] << "\n";
+        }
+    }
+    file.close();
+    std::cout << "[Export] Gauge slice saved to: " << name << "\n";
+}
+
+void export_gauge_slice_xy(Grid &grid, int k, float time) {
+    char name[256];
+    sprintf(name, "Output/gauge_xy_t%.3f.csv", time);
+    std::ofstream f(name);
+    f << "x,y,alpha,beta0,beta1\n";
+
+    float L=9.f, dx=2*L/(NX-1), dy=2*L/(NY-1);
+    for (int i=0;i<NX;++i)
+      for (int j=0;j<NY;++j) {
+        float x=-L+i*dx, y=-L+j*dy;
+        const auto &c = grid.getCell(i,j,k);
+        f << x << "," << y << "," << c.gauge.alpha << ","
+          << c.gauge.dt_beta[0] << "," << c.gauge.dt_beta[1] << "\n";
+      }
+    printf("[Export] Gauge XY slice saved: %s\n", name);
+}
 
 void GridTensor::export_christoffel_slice(Grid &grid_obj, int j) {
     std::ofstream file("Output/christoffel_slice.csv");

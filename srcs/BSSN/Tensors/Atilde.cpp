@@ -11,7 +11,7 @@ void GridTensor::compute_Atilde(Grid &grid_obj, int i, int j, int k) {
     for (int a = 0; a < 3; ++a) {
         for (int b = 0; b < 3; ++b) {
             float Aij = cell.curv.K[a][b] - (1.0/3.0) * Ktrace * cell.geom.gamma[a][b];
-            cell.atilde.Atilde[a][b] = std::sqrt(cell.chi) * Aij; 
+			cell.atilde.Atilde[a][b] = cell.chi * Aij;
         }
     }
 }

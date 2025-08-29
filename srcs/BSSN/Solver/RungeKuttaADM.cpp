@@ -15,7 +15,7 @@ void Grid::logger_evolve(Grid &grid_obj, float dt, int nstep)
 		printf("	  %e %e %e\n", cell.atilde.dt_Atilde[i][0], \
 								   cell.atilde.dt_Atilde[i][1], 
 								   cell.atilde.dt_Atilde[i][2]);
-	printf("Chi: %e\n", cell.dt_chi);
+	printf("dtChi: %e\n", cell.dt_chi);
 	printf("=============================================\n");
 	printf("\n\n");
 }
@@ -27,103 +27,111 @@ void Grid::evolve(Grid &grid_obj, float dtInitial, int nSteps) {
     GridTensor gridTensor;
     float CFL = 0.5;
     float dt = dtInitial;
-    float hamiltonian;
-    float momentum[3];
+	float hamiltonian;
+	float momentum[3];
 	float L = 9.0;
-    float x_min = -L, x_max = L;
-    float y_min = -L, y_max = L;
-    float z_min = -L, z_max = L;
+	float x_min = -L, x_max = L;
+	float y_min = -L, y_max = L;
+	float z_min = -L, z_max = L;
 
 
-    float dx = (x_max - x_min) / (NX - 1);
-    float dy = (y_max - y_min) / (NY - 1);
-    float dz = (z_max - z_min) / (NZ - 1);
-    for (int step = 0; step < nSteps; step++) {
-        dt = computeCFL_dt(CFL);
-        apply_boundary_conditions(grid_obj);
+	Cell2D &cell = grid_obj.getCell(0, 0, 0);
+		float dx = (x_max - x_min) / (NX - 1);
+	float dy = (y_max - y_min) / (NY - 1);
+	float dz = (z_max - z_min) / (NZ - 1);
+	for (int step = 0; step < nSteps; step++) {
+		dt = computeCFL_dt(CFL);
+		apply_boundary_conditions(grid_obj);
 
-#pragma omp parallel
-        {
-            auto forEachCell = [&](auto func) {
-#pragma omp for collapse(3) schedule(runtime)
-                for (int i = 1; i < NX - 1; i++) {
-                    for (int j = 1; j < NY - 1; j++) {
-                        for (int k = 1; k < NZ - 1; k++) {
+		#pragma omp parallel
+		{
+			auto forEachCell = [&](auto func) {
+				#pragma omp for collapse(3) schedule(runtime)
+				for (int i = 1; i < NX - 1; i++) {
+					for (int j = 1; j < NY - 1; j++) {
+						for (int k = 1; k < NZ - 1; k++) {
 							float x = x_min + i*DX;
-                            float y = y_min + j*DY;
-                            float z = z_min + k*DZ;
-                            func(i, j, k);
-                        }
-                    }
-                }
-            };
+							float y = y_min + j*DY;
+							float z = z_min + k*DZ;
+							func(i, j, k);
+						}
+					}
+				}
+			};
 
-            forEachCell([&](int i, int j, int k) {
-                copyInitialState(globalGrid[i][j][k]);
-            });
+			forEachCell([&](int i, int j, int k) {
+				copyInitialState(globalGrid[i][j][k]);
+			});
 
-            forEachCell([&](int i, int j, int k) {
-                compute_time_derivatives(grid_obj, i, j, k);
-                float d_alpha_dt, d_beta_dt[3];
-                compute_gauge_derivatives(grid_obj, i, j, k, d_alpha_dt, d_beta_dt);
-                compute_constraints(grid_obj, i, j, k, hamiltonian, momentum);
-                storeStage(globalGrid[i][j][k], 0, d_alpha_dt, d_beta_dt);
-            });
+			forEachCell([&](int i, int j, int k) {
+				compute_time_derivatives(grid_obj, i, j, k);
+				float d_alpha_dt, d_beta_dt[3];
+				compute_gauge_derivatives(grid_obj, i, j, k, d_alpha_dt, d_beta_dt);
+				compute_constraints(grid_obj, i, j, k, hamiltonian, momentum);
+				storeStage(globalGrid[i][j][k], 0, d_alpha_dt, d_beta_dt);
+				// printf("Init alpha=%e beta=%e %e %e chi=%e Ktrace=%e\n",
+				// 		   cell.gauge.alpha, cell.gauge.beta[i], cell.gauge.beta[j], cell.gauge.beta[k],
+				// 		   cell.chi, cell.curv.K_trace);
 
-            forEachCell([&](int i, int j, int k) {
-                updateIntermediateState(globalGrid[i][j][k], 0.5 * dt, 0);
-            });
+			});
 
-            forEachCell([&](int i, int j, int k) {
-                compute_time_derivatives(grid_obj, i, j, k);
-                float d_alpha_dt, d_beta_dt[3];
-                compute_gauge_derivatives(grid_obj, i, j, k, d_alpha_dt, d_beta_dt);
-                storeStage(globalGrid[i][j][k], 1, d_alpha_dt, d_beta_dt);
-            });
+			forEachCell([&](int i, int j, int k) {
+				updateIntermediateState(globalGrid[i][j][k], 0.5 * dt, 0);
+			});
 
-            forEachCell([&](int i, int j, int k) {
-                updateIntermediateState(globalGrid[i][j][k], 0.5 * dt, 1);
-            });
+			forEachCell([&](int i, int j, int k) {
+				compute_time_derivatives(grid_obj, i, j, k);
+				float d_alpha_dt, d_beta_dt[3];
+				compute_gauge_derivatives(grid_obj, i, j, k, d_alpha_dt, d_beta_dt);
+				storeStage(globalGrid[i][j][k], 1, d_alpha_dt, d_beta_dt);
+			});
 
-            forEachCell([&](int i, int j, int k) {
-                compute_time_derivatives(grid_obj, i, j, k);
-                float d_alpha_dt, d_beta_dt[3];
-                compute_gauge_derivatives(grid_obj, i, j, k, d_alpha_dt, d_beta_dt);
-                compute_constraints(grid_obj, i, j, k, hamiltonian, momentum);
-                storeStage(globalGrid[i][j][k], 2, d_alpha_dt, d_beta_dt);
-            });
+			forEachCell([&](int i, int j, int k) {
+				updateIntermediateState(globalGrid[i][j][k], 0.5 * dt, 1);
+			});
 
-            forEachCell([&](int i, int j, int k) {
-                updateIntermediateState(globalGrid[i][j][k], dt, 2);
-            });
-            forEachCell([&](int i, int j, int k) {
-                compute_time_derivatives(grid_obj, i, j, k);
-                float d_alpha_dt, d_beta_dt[3];
-                compute_gauge_derivatives(grid_obj, i, j, k, d_alpha_dt, d_beta_dt);
-                compute_constraints(grid_obj, i, j, k, hamiltonian, momentum);
-                storeStage(globalGrid[i][j][k], 3, d_alpha_dt, d_beta_dt);
-            });
+			forEachCell([&](int i, int j, int k) {
+				compute_time_derivatives(grid_obj, i, j, k);
+				float d_alpha_dt, d_beta_dt[3];
+				compute_gauge_derivatives(grid_obj, i, j, k, d_alpha_dt, d_beta_dt);
+				compute_constraints(grid_obj, i, j, k, hamiltonian, momentum);
+				storeStage(globalGrid[i][j][k], 2, d_alpha_dt, d_beta_dt);
+			});
 
-            forEachCell([&](int i, int j, int k) {
-                combineStages(globalGrid[i][j][k], dt);
-            });
-        }
+			forEachCell([&](int i, int j, int k) {
+				updateIntermediateState(globalGrid[i][j][k], dt, 2);
+			});
+			forEachCell([&](int i, int j, int k) {
+				compute_time_derivatives(grid_obj, i, j, k);
+				float d_alpha_dt, d_beta_dt[3];
+				compute_gauge_derivatives(grid_obj, i, j, k, d_alpha_dt, d_beta_dt);
+				compute_constraints(grid_obj, i, j, k, hamiltonian, momentum);
+				storeStage(globalGrid[i][j][k], 3, d_alpha_dt, d_beta_dt);
+			});
 
-#pragma omp single nowait
-        {
-            logger_evolve(grid_obj, dt, step);
+			forEachCell([&](int i, int j, int k) {
+				combineStages(globalGrid[i][j][k], dt);
+			});
+
+		}
+
+		#pragma omp single nowait
+		{
+			logger_evolve(grid_obj, dt, step);
 			float current_time = step * dt;
+			// export_gauge_slice_anim(grid_obj, NY/2, current_time);
+			export_gauge_slice_xy(*this, NZ/2, time);
 			export_gamma_slice(grid_obj, NY / 2, dt);
 			grid_obj.appendConstraintL2ToCSV("constraints_evolution.csv", current_time);
 			if (step == nSteps - 1) {
-                printf("Exporting slices\n");
-                export_K_slice(grid_obj, NY / 2);
-                export_gauge_slice(grid_obj, NY / 2);
-                gridTensor.export_christoffel_slice(grid_obj, NX / 2);
-                export_K_3D(grid_obj);
-            }
-        }
+				printf("Exporting slices\n");
+				export_K_slice(grid_obj, NY / 2);
+				export_gauge_slice(grid_obj, NY / 2);
+				gridTensor.export_christoffel_slice(grid_obj, NX / 2);
+				export_K_3D(grid_obj);
+			}
+		}
 
-        grid_obj.time += dt;
-    }
+		grid_obj.time += dt;
+	}
 }

@@ -11,7 +11,7 @@
 void GridTensor::compute_dt_tildeGamma(Grid &grid_obj, int i, int j, int k, float dt_tildeGamma[3]) {
 	Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
     
-    float gammaInv[3][3], Atilde[3][3], dBeta[3][3];
+    float gammaInv[3][3], dBeta[3][3];
     float alpha = cell.gauge.alpha;
     float beta[3] = { cell.gauge.beta[0], cell.gauge.beta[1], cell.gauge.beta[2] };
 
@@ -40,12 +40,6 @@ void GridTensor::compute_dt_tildeGamma(Grid &grid_obj, int i, int j, int k, floa
         }
     }
 
-	for (int a = 0; a < 3; a++) {
-		for (int b = 0; b < 3; b++) {
-			cell.atilde.Atilde[a][b] = cell.curv.K[a][b] - (1.0 / 3.0) * Ktrace * cell.geom.tilde_gamma[a][b];
-			cell.atilde.Atilde[a][b] *= cell.chi; 
-		}
-	}
 
 	for (int n = 0; n < 3; n++) {
 		dBeta[0][n] = (grid_obj.getCell(iP, j, k).gauge.beta[n] - grid_obj.getCell(iM, j, k).gauge.beta[n]) / (2.0 * DX);
@@ -79,7 +73,7 @@ void GridTensor::compute_dt_tildeGamma(Grid &grid_obj, int i, int j, int k, floa
 
 		for (int j_comp = 0; j_comp < 3; j_comp++) {
 			for (int k_comp = 0; k_comp < 3; k_comp++) {
-				tildeGamma_Atilde += gammaInv[j_comp][k_comp] * Atilde[j_comp][k_comp];
+				tildeGamma_Atilde += gammaInv[j_comp][k_comp] * cell.atilde.Atilde[j_comp][k_comp];
 			}
 		}
 		for (int j_comp = 0; j_comp < 3; j_comp++) {
@@ -92,10 +86,7 @@ void GridTensor::compute_dt_tildeGamma(Grid &grid_obj, int i, int j, int k, floa
 			beta_term += grid_obj.getCell(i, j, k).gauge.beta[j_comp] * (GammaP - GammaM) / (2.0 * DX);
 		}
 
-		dt_tildeGamma[i_comp] = -2.0 * alpha * div_Atilde + 2.0 * alpha * tildeGamma_Atilde + beta_term;
-	}
-	for (int i_comp = 0; i_comp < 3; i_comp++) {
-		dt_tildeGamma[i_comp] = cell.geom.dt_tildeGamma[i_comp];
+		dt_tildeGamma[i_comp] = -2.0f * alpha * div_Atilde + 2.0f * alpha * tildeGamma_Atilde + beta_term;
 	}
 }
 
