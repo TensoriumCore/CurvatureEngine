@@ -1,7 +1,5 @@
 #include <Geodesics.h>
 
-
-
 void Tensor::calculate_Gamma_at_offset(const std::array<float, NDIM>& X, int direction, 
                                          float offset, float delta,
                                          Tensor::MatrixNDIM& gcov, 
@@ -23,7 +21,6 @@ void Tensor::calculate_Gamma_at_offset(const std::array<float, NDIM>& X, int dir
     
     Gamma_slice = tempGamma;
 }
-
 
 float Tensor::richardson_derivative(
     const Tensor3D& Gamma_plus_h, 
@@ -62,7 +59,6 @@ void Tensor::calculate_riemann(const Christoffel3D& Gamma,
                         Gamma_terms += Gamma[rho][mu][lambda] * Gamma[lambda][nu][sigma]
                                      - Gamma[rho][nu][lambda] * Gamma[lambda][mu][sigma];
                     }
-
                     Riemann[rho][sigma][mu][nu] = dGamma_mu - dGamma_nu + Gamma_terms;
                 }
             }
