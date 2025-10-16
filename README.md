@@ -1,8 +1,7 @@
 # CurvatureEngine
 
 ## Overview
-This project is a high-performance computational framework for solving geodesic equations and curvature tensors in General Relativity. It includes tools for computing Christoffel symbols, Ricci tensors, Riemann curvature tensors, and the evolution of spacetime using the ADM/BSSN formalism. The code supports multiple metrics, including Schwarzschild and Minkowski, and provides efficient numerical solvers.
-
+This project is a high-performance computational framework for solving geodesic equations and curvature tensors in General Relativity. It includes tools for computing Christoffel symbols, Ricci tensors, Riemann curvature tensors, and the evolution of spacetime using the ADM/BSSN formalism. The code supports multiple metrics, including Schwarzschild and Minkowski, and provides efficient numerical solvers. In the future, this solver will Use the entire Tensorium_lib and the initial condition and generated code and optimizations by our MLIR compiler (Tensorium_MLIR).
 ## Features
 - **Geodesic Integrator:** Computes null and timelike geodesics in curved spacetimes.
 - **Curvature Tensor Computation in analytical formalism:** Computes Christoffel symbols, Riemann, Ricci, and Einstein tensors.
@@ -26,20 +25,15 @@ Run the simulation with:
 Data will be stored in CSV and VTK (for extrinsic curvature tensor components and Geodesics)format for further analysis.
 The plots are managed in the scripts (all python and for k_to_vtk you need paraview and pvpython)
 ## Future Work (TODO)
-- Extend support to Kerr-Newman/dS/adS and other exotic spacetimes.
+- Aarch64 support on Macos 
 - Unit tests and debug mode.
 - Class template to integrate your own problems
 - Optimize for parallel computation and SIMDs.
 - Implement relativistic fluid dynamics template.
 - Implement GPU acceleration for faster computations.
-- Improve numerical stability of high-curvature geodesics and ADM compute (AMR grid and CFL conditions).
-- Implement spectral methods (see spectral methods TODO section).
 - Implement BSSN formalism (modern and currently wip).
-- Add a FFT solver for spectral differentiation (from scratch or with FFTW, maybe on GPU) for vacuum solutions or GRMHD.
-- Chebyshev polynomial imp for non-uniform grids (rotating spacetime).
 - Add analytical approximations and tests.
 - Improve stability (Spectral BSSN/z4c) and reduce constraints violations.
-- Klein-Gordon Scalar fields template.
 - Gravitational waves and binary black holes template.
 
 ## Contributions
