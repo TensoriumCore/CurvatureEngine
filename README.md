@@ -8,7 +8,7 @@ This project is a high-performance computational framework for solving geodesic 
 - **BSSN Formalism Solver:** Implements evolution equations for numerical relativity using a 3+1 decomposition.
 - **Constraint Equations:** Enforces Hamiltonian and momentum constraints to ensure numerical stability.
 - **Support for Multiple Metrics:** Includes Schwarzschild, Minkowski, and Kerr metrics, with extensibility to other spacetimes.
-- **Parallelized Computation:** Optimized for multi-threading and SIMD vectorization to accelerate computations (Parallel computing is not ready atm so monothread atm...).
+- **Parallelized Computation:** Optimized for multi-threading and SIMD vectorization to accelerate computations.
 - **High-Precision Numerical Methods:** Uses high-order finite difference schemes for derivatives and tensor calculations.
 
 ## Compilation
@@ -31,7 +31,6 @@ The plots are managed in the scripts (all python and for k_to_vtk you need parav
 - Optimize for parallel computation and SIMDs.
 - Implement relativistic fluid dynamics template.
 - Implement GPU acceleration for faster computations.
-- Implement BSSN formalism (modern and currently wip).
 - Add analytical approximations and tests.
 - Improve stability (Spectral BSSN/z4c) and reduce constraints violations.
 - Gravitational waves and binary black holes template.
