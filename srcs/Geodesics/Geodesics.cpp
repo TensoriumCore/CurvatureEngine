@@ -1,97 +1,112 @@
 #include <Geodesics.h>
+#include <algorithm>
 
 extern float a;
 
-void geodesic_AVX(__m256d x[4], __m256d v[4], float lambda_max,
-                   __m256d christoffel[4][4][4], __m256d step_size) 
-{
-    __attribute__((aligned(32))) __m256d k1_x[4], k1_v[4];
-    __attribute__((aligned(32))) __m256d k2_x[4], k2_v[4];
-    __attribute__((aligned(32))) __m256d k3_x[4], k3_v[4];
-    __attribute__((aligned(32))) __m256d k4_x[4], k4_v[4];
-    __attribute__((aligned(32))) __m256d temp_x[4], temp_v[4];
-    __attribute__((aligned(32)))  float lambda = 0.0;
-	float min_r = 1.0 + sqrt(1.0 - a * a) + 1;
-    while (lambda < lambda_max) {
+namespace {
 
-        for (int mu = 0; mu < 4; mu++) {
-            k1_x[mu] = v[mu];
-            k1_v[mu] = _mm256_setzero_pd();
-            for (int alpha = 0; alpha < 4; alpha++) {
-                for (int beta = 0; beta < 4; beta++) {
-                    __m256d prod = _mm256_mul_pd(v[alpha], v[beta]);
-                    k1_v[mu] = _mm256_fnmadd_pd(christoffel[mu][alpha][beta], prod, k1_v[mu]);
-                }
-            }
-        }
+struct StageDerivatives {
+  double dx[NDIM];
+  double dv[NDIM];
+};
 
-        for (int mu = 0; mu < 4; mu++) {
-            __m256d half_step = _mm256_mul_pd(step_size, _mm256_set1_pd(0.5));
-            temp_x[mu] = _mm256_fmadd_pd(half_step, k1_x[mu], x[mu]);
-            temp_v[mu] = _mm256_fmadd_pd(half_step, k1_v[mu], v[mu]);
-        }
+void compute_scalar_stage(const double state_x[NDIM],
+                          const double state_v[NDIM], ChristoffelEvalFn eval_fn,
+                          void *ctx, StageDerivatives &stage) {
+  ChristoffelTensor gamma{};
+  if (eval_fn) {
+    eval_fn(state_x, gamma, ctx);
+  }
 
-        for (int mu = 0; mu < 4; mu++) {
-            k2_x[mu] = temp_v[mu];
-            k2_v[mu] = _mm256_setzero_pd();
-            for (int alpha = 0; alpha < 4; alpha++) {
-                for (int beta = 0; beta < 4; beta++) {
-                    __m256d prod = _mm256_mul_pd(temp_v[alpha], temp_v[beta]);
-                    k2_v[mu] = _mm256_fnmadd_pd(christoffel[mu][alpha][beta], prod, k2_v[mu]);
-                }
-            }
+  for (int mu = 0; mu < NDIM; ++mu) {
+    stage.dx[mu] = state_v[mu];
+    double acc = 0.0;
+    if (eval_fn) {
+      for (int alpha = 0; alpha < NDIM; ++alpha) {
+        for (int beta = 0; beta < NDIM; ++beta) {
+          acc -= gamma[mu][alpha][beta] * state_v[alpha] * state_v[beta];
         }
-
-        for (int mu = 0; mu < 4; mu++) {
-            __m256d half_step = _mm256_mul_pd(step_size, _mm256_set1_pd(0.5));
-            temp_x[mu] = _mm256_fmadd_pd(half_step, k2_x[mu], x[mu]);
-            temp_v[mu] = _mm256_fmadd_pd(half_step, k2_v[mu], v[mu]);
-        }
-
-        for (int mu = 0; mu < 4; mu++) {
-            k3_x[mu] = temp_v[mu];
-            k3_v[mu] = _mm256_setzero_pd();
-            for (int alpha = 0; alpha < 4; alpha++) {
-                for (int beta = 0; beta < 4; beta++) {
-                    __m256d prod = _mm256_mul_pd(temp_v[alpha], temp_v[beta]);
-                    k3_v[mu] = _mm256_fnmadd_pd(christoffel[mu][alpha][beta], prod, k3_v[mu]);
-                }
-            }
-        }
-
-        for (int mu = 0; mu < 4; mu++) {
-            temp_x[mu] = _mm256_fmadd_pd(step_size, k3_x[mu], x[mu]);
-            temp_v[mu] = _mm256_fmadd_pd(step_size, k3_v[mu], v[mu]);
-        }
-
-        for (int mu = 0; mu < 4; mu++) {
-            k4_x[mu] = temp_v[mu];
-            k4_v[mu] = _mm256_setzero_pd();
-            for (int alpha = 0; alpha < 4; alpha++) {
-                for (int beta = 0; beta < 4; beta++) {
-                    __m256d prod = _mm256_mul_pd(temp_v[alpha], temp_v[beta]);
-                    k4_v[mu] = _mm256_fnmadd_pd(christoffel[mu][alpha][beta], prod, k4_v[mu]);
-                }
-            }
-        }
-
-        for (int mu = 0; mu < 4; mu++) {
-            __m256d two = _mm256_set1_pd(2.0);
-            __m256d six = _mm256_set1_pd(6.0);
-            __m256d sum_x = _mm256_add_pd(k1_x[mu],
-                               _mm256_add_pd(_mm256_mul_pd(two, k2_x[mu]),
-                               _mm256_add_pd(_mm256_mul_pd(two, k3_x[mu]), k4_x[mu])));
-            __m256d sum_v = _mm256_add_pd(k1_v[mu],
-                               _mm256_add_pd(_mm256_mul_pd(two, k2_v[mu]),
-                               _mm256_add_pd(_mm256_mul_pd(two, k3_v[mu]), k4_v[mu])));
-            
-            x[mu] = _mm256_fmadd_pd(step_size, _mm256_div_pd(sum_x, six), x[mu]);
-            v[mu] = _mm256_fmadd_pd(step_size, _mm256_div_pd(sum_v, six), v[mu]);
-        }
-		if (_mm256_cvtsd_f64(x[1]) < min_r) {	
-			printf("particle has crossed the horizon at r = %f\n", _mm256_cvtsd_f64(x[1]));
-		}
-        lambda += _mm256_cvtsd_f64(step_size);
-        store_geodesic_point_AVX(x, lambda);
+      }
     }
+    stage.dv[mu] = acc;
+  }
+}
+
+void store_geodesic_point_scalar(const double x_scalar[NDIM], double lambda) {
+  using curvatureengine::simd::broadcast;
+
+  VEC_TYPE x_vec[NDIM];
+  for (int mu = 0; mu < NDIM; ++mu) {
+    x_vec[mu] = broadcast(x_scalar[mu]);
+  }
+  store_geodesic_point_AVX(x_vec, static_cast<float>(lambda));
+}
+
+void integrate_geodesic_scalar(double x_scalar[NDIM], double v_scalar[NDIM],
+                               double lambda_max, ChristoffelEvalFn eval_fn,
+                               void *ctx, double step_size) {
+  double lambda = 0.0;
+  while (lambda < lambda_max) {
+    const double h =
+        std::min(step_size, static_cast<double>(lambda_max) - lambda);
+
+    StageDerivatives k1{}, k2{}, k3{}, k4{};
+    double temp_x[NDIM];
+    double temp_v[NDIM];
+
+    compute_scalar_stage(x_scalar, v_scalar, eval_fn, ctx, k1);
+
+    for (int mu = 0; mu < NDIM; ++mu) {
+      temp_x[mu] = x_scalar[mu] + 0.5 * h * k1.dx[mu];
+      temp_v[mu] = v_scalar[mu] + 0.5 * h * k1.dv[mu];
+    }
+    compute_scalar_stage(temp_x, temp_v, eval_fn, ctx, k2);
+
+    for (int mu = 0; mu < NDIM; ++mu) {
+      temp_x[mu] = x_scalar[mu] + 0.5 * h * k2.dx[mu];
+      temp_v[mu] = v_scalar[mu] + 0.5 * h * k2.dv[mu];
+    }
+    compute_scalar_stage(temp_x, temp_v, eval_fn, ctx, k3);
+
+    for (int mu = 0; mu < NDIM; ++mu) {
+      temp_x[mu] = x_scalar[mu] + h * k3.dx[mu];
+      temp_v[mu] = v_scalar[mu] + h * k3.dv[mu];
+    }
+    compute_scalar_stage(temp_x, temp_v, eval_fn, ctx, k4);
+
+    for (int mu = 0; mu < NDIM; ++mu) {
+      const double sum_dx =
+          k1.dx[mu] + 2.0 * k2.dx[mu] + 2.0 * k3.dx[mu] + k4.dx[mu];
+      const double sum_dv =
+          k1.dv[mu] + 2.0 * k2.dv[mu] + 2.0 * k3.dv[mu] + k4.dv[mu];
+      x_scalar[mu] += (h / 6.0) * sum_dx;
+      v_scalar[mu] += (h / 6.0) * sum_dv;
+    }
+
+    lambda += h;
+    store_geodesic_point_scalar(x_scalar, lambda);
+  }
+}
+
+} // namespace
+
+void geodesic_AVX(VEC_TYPE x[4], VEC_TYPE v[4], float lambda_max,
+                  ChristoffelEvalFn evaluator, void *ctx, VEC_TYPE step_size) {
+  using curvatureengine::simd::broadcast;
+  using curvatureengine::simd::lane0;
+
+  double x_scalar[NDIM];
+  double v_scalar[NDIM];
+  for (int mu = 0; mu < NDIM; ++mu) {
+    x_scalar[mu] = lane0(x[mu]);
+    v_scalar[mu] = lane0(v[mu]);
+  }
+
+  const double h = lane0(step_size);
+  integrate_geodesic_scalar(x_scalar, v_scalar, lambda_max, evaluator, ctx, h);
+
+  for (int mu = 0; mu < NDIM; ++mu) {
+    x[mu] = broadcast(x_scalar[mu]);
+    v[mu] = broadcast(v_scalar[mu]);
+  }
 }
