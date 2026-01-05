@@ -1,7 +1,11 @@
 #include <Geodesics.h>
+#include <atomic>
+#include <cmath>
 
 extern float (*geodesic_points)[5];
-extern int num_points;
+extern int num_points; 
+std::atomic<int> global_idx{0}; 
+const int MAX_SAFE_CAPACITY = 10000000; 
 int capacity = 0;
 extern float a;
 /*
@@ -47,42 +51,25 @@ void write_vtk_file(const char *filename) {
   fclose(file);
 }
 
+
+
 void store_geodesic_point_AVX(VEC_TYPE x[4], float lambda) {
-#pragma omp critical
-  {
-    if (num_points + 16 >= capacity) {
-      capacity = (capacity == 0) ? 1000 : capacity * 2;
-      float (*new_geodesic_points)[5];
-      if (posix_memalign((void **)&new_geodesic_points, ALIGNMENT,
-                         capacity * sizeof(*geodesic_points)) != 0) {
-        fprintf(stderr,
-                "Error: failed to allocate memory for geodesic_points\n");
-        exit(EXIT_FAILURE);
-      }
-
-      if (geodesic_points) {
-        memcpy(new_geodesic_points, geodesic_points,
-               num_points * sizeof(*geodesic_points));
-        free(geodesic_points);
-      }
-
-      geodesic_points = new_geodesic_points;
-    }
-  }
-
-  __attribute__((aligned(32))) double r_vals[4], th_vals[4], ph_vals[4];
-
+  alignas(32) double r_vals[4], th_vals[4], ph_vals[4];
   curvatureengine::simd::store(r_vals, x[1]);
   curvatureengine::simd::store(th_vals, x[2]);
   curvatureengine::simd::store(ph_vals, x[3]);
 
   double sin_th[4], cos_th[4], sin_ph[4], cos_ph[4];
   for (int j = 0; j < 4; j++) {
-    sin_th[j] = sin(th_vals[j]);
-    cos_th[j] = cos(th_vals[j]);
-    sin_ph[j] = sin(ph_vals[j]);
-    cos_ph[j] = cos(ph_vals[j]);
+    sin_th[j] = std::sin(th_vals[j]);
+    cos_th[j] = std::cos(th_vals[j]);
+    sin_ph[j] = std::sin(ph_vals[j]);
+    cos_ph[j] = std::cos(ph_vals[j]);
   }
+
+  int idx = global_idx.fetch_add(4, std::memory_order_relaxed);
+
+  if (idx + 4 >= MAX_SAFE_CAPACITY) return;
 
   for (int j = 0; j < 4; j++) {
     double rr = r_vals[j];
@@ -90,13 +77,10 @@ void store_geodesic_point_AVX(VEC_TYPE x[4], float lambda) {
     double yy = rr * sin_th[j] * sin_ph[j];
     double zz = rr * cos_th[j];
 
-#pragma omp critical
-    {
-      geodesic_points[num_points][0] = static_cast<float>(xx);
-      geodesic_points[num_points][1] = static_cast<float>(yy);
-      geodesic_points[num_points][2] = static_cast<float>(zz);
-      geodesic_points[num_points][3] = lambda;
-      num_points++;
-    }
+    int current = idx + j;
+    geodesic_points[current][0] = static_cast<float>(xx);
+    geodesic_points[current][1] = static_cast<float>(yy);
+    geodesic_points[current][2] = static_cast<float>(zz);
+    geodesic_points[current][3] = lambda;
   }
 }

@@ -1,7 +1,10 @@
 #include <Geodesics.h>
+
 extern float (*geodesic_points)[5];
 extern int num_points;
 extern float a;
+
+using namespace curvatureengine::simd; // Indispensable pour load/store/broadcast
 
 namespace {
 
@@ -22,6 +25,7 @@ void evaluate_light_christoffel(const double coords[NDIM],
   Connexion::Christoffel3D gamma_float{};
   Connexion::MatrixNDIM g_local{};
   Connexion::MatrixNDIM g_inv_local{};
+  
   context->metric->calculate_metric(Xf, g_local, g_inv_local);
   context->connexion->calculate_christoffel(Xf, context->step, gamma_float,
                                             g_local, g_inv_local,
@@ -36,6 +40,39 @@ void evaluate_light_christoffel(const double coords[NDIM],
   }
 }
 
+void evaluate_light_christoffel_adapter(const VEC_TYPE coords[NDIM],
+                                        ChristoffelTensorVec& gamma, void *ctx) {
+    double pos_unpacked[NDIM][4];
+    for(int i = 0; i < NDIM; ++i) {
+        store(pos_unpacked[i], coords[i]);
+    }
+
+    double gamma_buffer[NDIM][NDIM][NDIM][4];
+
+    for(int lane = 0; lane < 4; ++lane) {
+        double local_coords[NDIM];
+        for(int i = 0; i < NDIM; ++i) {
+            local_coords[i] = pos_unpacked[i][lane];
+        }
+
+        ChristoffelTensor local_gamma;
+        evaluate_light_christoffel(local_coords, local_gamma, ctx);
+
+        for(int i = 0; i < NDIM; ++i)
+            for(int j = 0; j < NDIM; ++j)
+                for(int k = 0; k < NDIM; ++k)
+                    gamma_buffer[i][j][k][lane] = local_gamma[i][j][k];
+    }
+
+    for(int i = 0; i < NDIM; ++i) {
+        for(int j = 0; j < NDIM; ++j) {
+            for(int k = 0; k < NDIM; ++k) {
+                gamma[i][j][k] = load(gamma_buffer[i][j][k]);
+            }
+        }
+    }
+}
+
 } // namespace
 
 int light_geodesics_prob() {
@@ -43,7 +80,7 @@ int light_geodesics_prob() {
   Metric metric_obj;
   float r0 = 100.0;
   std::array<float, NDIM> X = {0.0, r0, M_PI / 4.0, 0.0};
-  ;
+  
   metric_obj.calculate_metric(X, metric_obj.gcov, metric_obj.gcon);
   float g_tt = metric_obj.gcov[0][0];
   float g_tphi = metric_obj.gcov[0][3];
@@ -54,17 +91,21 @@ int light_geodesics_prob() {
   float v[NDIM] = {vt, 0.0, 0.0, 3.5f * Omega * vt};
   float norm =
       g_tt * v[0] * v[0] + 2.0 * g_tphi * v[0] * v[3] + g_phiphi * v[3] * v[3];
+  
   float dt = 0.00910;
   LightChristoffelContext ctx{&connexion, &metric_obj, "kerr", DELTA};
+  
   VEC_TYPE X_avx[NDIM], v_avx[NDIM];
   for (int i = 0; i < NDIM; i++) {
-    X_avx[i] = curvatureengine::simd::broadcast(X[i]);
-    v_avx[i] = curvatureengine::simd::broadcast(v[i]);
+    X_avx[i] = broadcast(X[i]);
+    v_avx[i] = broadcast(v[i]);
   }
 
   auto start = std::chrono::high_resolution_clock::now();
-  geodesic_AVX(X_avx, v_avx, max_dt + 4, evaluate_light_christoffel, &ctx,
-               curvatureengine::simd::broadcast(dt));
+  
+  geodesic_AVX(X_avx, v_avx, max_dt + 4, evaluate_light_christoffel_adapter, &ctx,
+               broadcast(dt));
+               
   auto end = std::chrono::high_resolution_clock::now();
 
   std::chrono::duration<float> elapsed_seconds = end - start;

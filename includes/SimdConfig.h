@@ -89,7 +89,9 @@ inline Vec4d fmadd(const Vec4d &a, const Vec4d &b, const Vec4d &c) {
   return add(mul(a, b), c);
 #endif
 }
-
+inline Vec4d sqrt_vec(const Vec4d &a) {
+  return {vsqrtq_f64(a.lo), vsqrtq_f64(a.hi)};
+}
 inline Vec4d fnmadd(const Vec4d &a, const Vec4d &b, const Vec4d &c) {
   return sub(c, mul(a, b));
 }
@@ -136,5 +138,22 @@ inline Vec4d fnmadd(const Vec4d &a, const Vec4d &b, const Vec4d &c) {
 }
 inline double lane0(const Vec4d &value) { return value.lane[0]; }
 #endif
+// Opérateurs pour permettre la syntaxe naturelle
+inline Vec4d operator+(const Vec4d &a, const Vec4d &b) { return add(a, b); }
+inline Vec4d operator-(const Vec4d &a, const Vec4d &b) { return sub(a, b); }
+inline Vec4d operator*(const Vec4d &a, const Vec4d &b) { return mul(a, b); }
+inline Vec4d operator/(const Vec4d &a, const Vec4d &b) { return div(a, b); }
 
+inline Vec4d operator+(const Vec4d &a, double b) {
+  return add(a, broadcast(b));
+}
+inline Vec4d operator*(const Vec4d &a, double b) {
+  return mul(a, broadcast(b));
+}
+inline Vec4d operator*(double a, const Vec4d &b) {
+  return mul(broadcast(a), b);
+}
+inline Vec4d operator-(const Vec4d &a) {
+  return sub(zero(), a); // Équivalent à 0 - a
+}
 } // namespace curvatureengine::simd

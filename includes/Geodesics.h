@@ -15,7 +15,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <vector>
-// #include <fftw3.h>
+
 #define C 1.0
 #define G 1.0
 #define M 1.0
@@ -24,7 +24,7 @@
 #define SMALL 1.e-40
 #define NDIM 4
 #define DT 0.0000005
-#define max_dt 19999.0
+#define max_dt 5999.0
 #define ALIGNMENT 32
 #if CURVATUREENGINE_TARGET_AVX2
 #define ARCH "AVX2"
@@ -63,10 +63,21 @@ using ChristoffelTensor = double[NDIM][NDIM][NDIM];
 using ChristoffelEvalFn = void (*)(const double coords[NDIM],
                                    ChristoffelTensor gamma, void *ctx);
 
+using VEC_TYPE = curvatureengine::simd::Vec4d;
+
+using ChristoffelTensorVec = VEC_TYPE[NDIM][NDIM][NDIM];
+using ChristoffelEvalFnVec = void (*)(const VEC_TYPE coords[NDIM],
+                                      ChristoffelTensorVec &gamma, void *ctx);
+
+void geodesic_AVX(VEC_TYPE x[NDIM], VEC_TYPE v[NDIM], float lambda_max,
+                  ChristoffelEvalFnVec evaluator, void *ctx,
+                  VEC_TYPE step_size);
+VEC_TYPE geodesic_raytrace_AVX(VEC_TYPE x[NDIM], VEC_TYPE v[NDIM],
+                               float lambda_max, ChristoffelEvalFnVec evaluator,
+                               void *ctx, VEC_TYPE step_size);
+void store_geodesic_point_AVX(VEC_TYPE x[NDIM], float lambda);
 void write_vtk_file(const char *filename);
 void store_geodesic_point(float x[4], float lambda);
-void geodesic_AVX(VEC_TYPE x[4], VEC_TYPE v[4], float lambda_max,
-                  ChristoffelEvalFn evaluator, void *ctx, VEC_TYPE step_size);
 void store_geodesic_point_AVX(VEC_TYPE x[4], float lambda);
 
 float calculate_impact_parameter(float p_t, float p_phi, float g_tt,
@@ -83,6 +94,7 @@ int Geodesics_prob();
 int light_geodesics_prob();
 int Metric_prob();
 int grid_setup();
+int shadow_prob(); 
 void generate_blackhole_image();
 void generate_blackhole_shadow();
 void evolveADM(Grid::Cell2D &cell, int i, int j, float dt,
