@@ -1,7 +1,7 @@
 # CurvatureEngine
-
+## !!DEPRECATED!! for 3+1 decompositions, see Tensorium_lib 
 ## Overview
-This project is a high-performance computational framework for solving geodesic equations and curvature tensors in General Relativity. It includes tools for computing Christoffel symbols, Ricci tensors, Riemann curvature tensors, and the evolution of spacetime using the ADM/BSSN formalism. The code supports multiple metrics, including Schwarzschild and Minkowski, and provides efficient numerical solvers. In the future, this solver will Use the entire Tensorium_lib and the initial condition and generated code and optimizations by our MLIR compiler (Tensorium_MLIR).
+This project is a computational framework for solving geodesic equations and curvature tensors in General Relativity. It includes tools for computing Christoffel symbols, Ricci tensors, Riemann curvature tensors, and the evolution of spacetime using the ADM/BSSN formalism. The code supports multiple metrics, including Schwarzschild and Minkowski, and provides efficient numerical solvers. In the future, this solver will Use the entire Tensorium_lib and the initial condition and generated code and optimizations by our MLIR compiler (Tensorium_MLIR).
 ## Features
 - **Geodesic Integrator:** Computes null and timelike geodesics in curved spacetimes.
 - **Curvature Tensor Computation in analytical formalism:** Computes Christoffel symbols, Riemann, Ricci, and Einstein tensors.
