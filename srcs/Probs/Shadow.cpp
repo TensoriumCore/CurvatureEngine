@@ -608,8 +608,10 @@ static bool build_fm_torus_model(double spin,
     return false;
   }
 
+  // Keep the default torus bounded but slightly less compact so the image
+  // occupies a bit more of the frame.
   const double compact_offset =
-      0.35 * (model.config.r_center - r_bound_surface);
+      0.15 * (model.config.r_center - r_bound_surface);
   if (!user_defined_r_in) {
     model.config.r_in = r_bound_surface + compact_offset;
   } else if (model.config.r_in <= r_bound_surface) {
