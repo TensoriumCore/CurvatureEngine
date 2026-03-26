@@ -59,7 +59,7 @@ struct ShadowRenderConfig {
 
 struct FishboneMoncriefTorusConfig {
   double r_in = 0.0;
-  double r_center = 0.0;
+  double r_center = 12.0;
   double gamma = 4.0 / 3.0;
   double rho_center = 1.0;
   double beta_inv = 0.03;
@@ -566,7 +566,7 @@ static bool build_fm_torus_model(double spin,
 
   if (!(model.config.r_center > 0.0)) {
     model.config.r_center =
-        std::max(model.config.r_in + 6.0, model.risco + 8.0);
+        std::max(model.config.r_in + 8.0, model.risco + 10.0);
   } else if (model.config.r_center <= model.config.r_in + 0.5) {
     model.config.r_center = model.config.r_in + 2.0;
   }
@@ -608,10 +608,10 @@ static bool build_fm_torus_model(double spin,
     return false;
   }
 
-  // Keep the default torus bounded but slightly less compact so the image
-  // occupies a bit more of the frame.
+  // Shift the default torus farther out to widen the disk radially, while
+  // keeping a relatively compact cross-section so it does not puff up.
   const double compact_offset =
-      0.15 * (model.config.r_center - r_bound_surface);
+      0.25 * (model.config.r_center - r_bound_surface);
   if (!user_defined_r_in) {
     model.config.r_in = r_bound_surface + compact_offset;
   } else if (model.config.r_in <= r_bound_surface) {
