@@ -1,8 +1,14 @@
+#include "Connexion.h"
+#include "Metric.h"
+#include "Tensor.h"
+#include "app/Problems.h"
+#include "matrix.h"
 
-#include <Geodesics.h>
-extern float (*geodesic_points)[5];
-extern int num_points;
-extern float a;
+#include <array>
+#include <cmath>
+#include <cstdio>
+#include <cstring>
+#include <iostream>
 
 int Riemann_tensor(const char *metric) {
     Tensor tensor;

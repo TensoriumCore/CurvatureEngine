@@ -1,8 +1,10 @@
+#include "Metric.h"
+#include "app/Problems.h"
+#include "core/Constants.h"
 
-#include <Geodesics.h>
-extern float (*geodesic_points)[5];
-extern int num_points;
-extern float a;
+#include <array>
+#include <cmath>
+#include <cstdio>
 
 int Metric_prob() {
 	Metric metric_obj;
@@ -20,4 +22,3 @@ int Metric_prob() {
 	metric_obj.calculate_metric_kds(X, gcov_kds, gcon_kds);
 	return 0;
 }
-

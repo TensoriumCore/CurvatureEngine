@@ -1,4 +1,8 @@
-#include <Geodesics.h>
+#include "Connexion.h"
+#include "Tensor.h"
+
+#include <cmath>
+#include <cstdio>
 
 void Tensor::check_riemann_symmetries(const Riemann4D& Riemann, float tolerance) {
     for (int rho = 0; rho < NDIM; rho++) {
@@ -34,4 +38,3 @@ void Connexion::check_symmetry_christoffel(const Christoffel3D& gamma) {
     }
     printf("Symmetric !\n");
 }
-

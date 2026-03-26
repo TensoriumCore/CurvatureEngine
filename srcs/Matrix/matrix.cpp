@@ -1,4 +1,8 @@
-#include <Geodesics.h>
+#include "matrix.h"
+
+#include <cmath>
+#include <iomanip>
+#include <iostream>
 
 float Matrix::determinant2x2(const std::array<std::array<float, 2>, 2>& mat) {
     return mat[0][0] * mat[1][1] - mat[0][1] * mat[1][0];
@@ -191,5 +195,4 @@ void Matrix::print_matrix_3x3(const char* name, const Matrix3x3& mat) {
         std::cout << std::endl;
     }
 }
-
 

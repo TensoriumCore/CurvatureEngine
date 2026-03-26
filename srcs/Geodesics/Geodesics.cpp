@@ -1,7 +1,9 @@
-#include <Geodesics.h>
-#include <algorithm>
+#include "app/RuntimeState.h"
+#include "core/Constants.h"
+#include "core/GeodesicIntegrator.h"
 
-extern float a;
+#include <algorithm>
+#include <cmath>
 
 using namespace curvatureengine::simd;
 

@@ -1,4 +1,7 @@
-#include <Geodesics.h>
+#include "Grid.h"
+#include "app/Problems.h"
+
+#include <cstdio>
 
 int grid_setup() {
     Grid grid_obj;

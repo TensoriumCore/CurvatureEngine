@@ -1,8 +1,10 @@
+#include "Metric.h"
+#include "app/RuntimeState.h"
+#include "matrix.h"
 
-#include <Geodesics.h>
+#include <cmath>
+#include <cstdio>
 
-extern float (*geodesic_points)[5];
-extern int num_points;
 extern float a;
 float Q = 0.9;
 
@@ -10,7 +12,6 @@ void Metric::calculate_metric_kerr_newman(const std::array<float, NDIM>& x,
 				std::array<std::array<float, NDIM>, NDIM>& g,
 				std::array<std::array<float, NDIM>, NDIM>& g_inv) {
 	Matrix matrix_obj;
-	Metric metric_obj;
 	float r = x[1];
     float theta = x[2];
     float sin_theta = sin(theta);
@@ -47,6 +48,5 @@ void Metric::calculate_metric_kerr_newman(const std::array<float, NDIM>& x,
     matrix_obj.print_matrix("g", g);
     matrix_obj.print_matrix("g_inv", g_inv);
 }
-
 
 

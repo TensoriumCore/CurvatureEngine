@@ -1,4 +1,9 @@
-#include <Geodesics.h>
+#include "Connexion.h"
+#include "Metric.h"
+#include "Tensor.h"
+
+#include <cstdio>
+#include <cstring>
 
 void Tensor::calculate_Gamma_at_offset(const std::array<float, NDIM>& X, int direction, 
                                          float offset, float delta,

@@ -4,6 +4,8 @@
 #include "core/Constants.h"
 #include "core/GeodesicIntegrator.h"
 #include "core/Types.h"
+#include "app/Problems.h"
+#include "app/RuntimeState.h"
 
 #include <array>
 #include <chrono>
@@ -35,14 +37,6 @@ float calculate_emission_angle(float p_r, float p_phi, float g_rr,
 float b_critique_kerr(float a, int sense);
 int compute_photon_properties(float g[4][4], float p[4]);
 
-/* Problem specific functions */
-
-int Riemann_tensor(const char *metric);
-int Geodesics_prob();
-int light_geodesics_prob();
-int Metric_prob();
-int grid_setup();
-int shadow_prob(); 
 void generate_blackhole_image();
 void generate_blackhole_shadow();
 void evolveADM(Grid::Cell2D &cell, int i, int j, float dt,

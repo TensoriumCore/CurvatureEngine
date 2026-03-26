@@ -1,9 +1,17 @@
+#include "Connexion.h"
+#include "Metric.h"
 #include "MetricAVX.h"
-#include <Geodesics.h>
+#include "app/RuntimeState.h"
+#include "core/Constants.h"
+#include "core/GeodesicIntegrator.h"
 
-extern float (*geodesic_points)[5];
-extern int num_points;
-extern float a;
+#include <array>
+#include <atomic>
+#include <chrono>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+
 
 using namespace curvatureengine::simd;
 

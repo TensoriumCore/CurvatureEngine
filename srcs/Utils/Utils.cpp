@@ -1,5 +1,8 @@
 #include "Connexion.h"
-#include <Geodesics.h>
+#include "Tensor.h"
+
+#include <cmath>
+#include <cstdio>
 
 void initialize_riemann_tensor(float R[NDIM][NDIM][NDIM][NDIM]) {
     for (int mu = 0; mu < NDIM; mu++) {

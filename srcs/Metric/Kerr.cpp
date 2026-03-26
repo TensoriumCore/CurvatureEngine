@@ -1,8 +1,9 @@
+#include "Metric.h"
+#include "app/RuntimeState.h"
+#include "matrix.h"
 
-#include <Geodesics.h>
+#include <cmath>
 
-extern float (*geodesic_points)[5];
-extern int num_points;
 extern float a;
 
 void Metric::calculate_metric(
@@ -10,7 +11,6 @@ void Metric::calculate_metric(
     std::array<std::array<float, NDIM>, NDIM> &g,
     std::array<std::array<float, NDIM>, NDIM> &g_inv) {
   Matrix matrix_obj;
-  Metric metric_obj;
   float r = x[1];
   float theta = x[2];
 
@@ -32,4 +32,3 @@ void Metric::calculate_metric(
 
   matrix_obj.inverse_matrix(g, g_inv);
 }
-

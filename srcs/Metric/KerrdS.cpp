@@ -1,7 +1,10 @@
-#include <Geodesics.h>
+#include "Metric.h"
+#include "app/RuntimeState.h"
+#include "matrix.h"
 
-extern float (*geodesic_points)[5];
-extern int num_points;
+#include <cmath>
+#include <cstdio>
+
 extern float a;
 float Lambda = 1e-4;
 
@@ -9,7 +12,6 @@ void Metric::calculate_metric_kds(const std::array<float, NDIM>& x,
                                   std::array<std::array<float, NDIM>, NDIM>& g,
                                   std::array<std::array<float, NDIM>, NDIM>& g_inv) {
     Matrix matrix_obj;
-    Metric metric_obj;
     float r = x[1];
     float theta = x[2];
     float sin_theta = sin(theta);
@@ -45,5 +47,4 @@ void Metric::calculate_metric_kds(const std::array<float, NDIM>& x,
 
     matrix_obj.print_matrix("g", g);
 }
-
 

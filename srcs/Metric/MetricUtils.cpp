@@ -1,4 +1,8 @@
-#include <Geodesics.h>
+#include "Metric.h"
+#include "matrix.h"
+
+#include <cmath>
+#include <cstdio>
 
 void Metric::verify_metric(const std::array<std::array<float, NDIM>, NDIM>& g,
 				const std::array<std::array<float, NDIM>, NDIM>& g_inv){

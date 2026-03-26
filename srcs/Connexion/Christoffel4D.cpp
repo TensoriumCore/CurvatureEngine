@@ -1,5 +1,9 @@
-#include <Geodesics.h>
-#include "MetricAVX.h"
+#include "Connexion.h"
+#include "Metric.h"
+
+#include <cmath>
+#include <cstring>
+#include <iostream>
 
 namespace {
 
@@ -174,4 +178,3 @@ void Connexion::calculate_christoffel(
   check_symmetry_christoffel(gamma);
 #endif
 }
-

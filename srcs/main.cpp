@@ -1,4 +1,9 @@
-#include <Geodesics.h>
+#include "app/Problems.h"
+#include "app/RuntimeState.h"
+
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 float (*geodesic_points)[5] = NULL;
 int num_points = 0;

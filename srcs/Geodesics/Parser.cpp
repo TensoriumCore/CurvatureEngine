@@ -1,13 +1,14 @@
-#include <Geodesics.h>
+#include "core/GeodesicIntegrator.h"
+
+#include <cstdio>
 #include <atomic>
 #include <cmath>
 
-extern float (*geodesic_points)[5];
-extern int num_points; 
+#include "app/RuntimeState.h"
+
 std::atomic<int> global_idx{0}; 
 const int MAX_SAFE_CAPACITY = 10000000; 
 int capacity = 0;
-extern float a;
 /*
  * Write the geodesic points to a VTK file
  * The VTK file will contain the geodesic points and the lambda values

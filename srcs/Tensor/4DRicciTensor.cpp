@@ -1,4 +1,6 @@
-#include <Geodesics.h>
+#include "Tensor.h"
+
+#include <cstdio>
 
 void Tensor::contract_riemann(const Riemann4D& Riemann, MatrixNDIM& Ricci, const MatrixNDIM& g_inv) {
     for (auto &row : Ricci) {
@@ -31,4 +33,3 @@ void Tensor::contract_riemann(const Riemann4D& Riemann, MatrixNDIM& Ricci, const
     }
     printf("Ricci Scalar: %12.6f\n", Ricci_scalar);
 }
-
