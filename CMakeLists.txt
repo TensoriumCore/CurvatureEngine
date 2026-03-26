@@ -2,6 +2,7 @@
 
 cmake_minimum_required(VERSION 3.16)
 project(CurvatureEngine LANGUAGES CXX)
+enable_testing()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -121,3 +122,10 @@ endif()
 
 add_executable(CurvatureEngine ${CURVATUREENGINE_MAIN})
 target_link_libraries(CurvatureEngine PRIVATE curvatureengine_core)
+
+add_executable(curvatureengine_riemann_regression tests/RiemannRegression.cpp)
+target_link_libraries(curvatureengine_riemann_regression PRIVATE curvatureengine_core)
+
+add_test(
+    NAME curvatureengine_riemann_regression
+    COMMAND curvatureengine_riemann_regression)

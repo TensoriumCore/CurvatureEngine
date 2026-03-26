@@ -2,7 +2,6 @@
 #include "Metric.h"
 #include "Tensor.h"
 
-#include <cstdio>
 #include <cstring>
 
 void Tensor::calculate_Gamma_at_offset(const std::array<float, NDIM>& X, int direction, 
@@ -19,50 +18,37 @@ void Tensor::calculate_Gamma_at_offset(const std::array<float, NDIM>& X, int dir
     Tensor::MatrixNDIM gcov_local = gcov;
     Tensor::MatrixNDIM gcon_local = gcon;
     
-    if (strcmp(metric_type, "minkowski") == 0) {
-        connexion.calculate_christoffel(X_offset, delta, tempGamma, gcov_local, gcon_local, "minkowski");
-    } else if (strcmp(metric_type, "kds") == 0) {
-        metric.calculate_metric_kds(X_offset, gcov_local, gcon_local);
-    } else if (strcmp(metric_type, "kerr-newman") == 0) {
-        metric.calculate_metric_kerr_newman(X_offset, gcov_local, gcon_local);
-    } else if (strcmp(metric_type, "kerr") == 0 || strcmp(metric_type, "schwarzschild") == 0) {
-        metric.calculate_metric(X_offset, gcov_local, gcon_local);
+    if (strcmp(metric_type, "minkowski") != 0) {
+        metric.calculate_metric_by_name(metric_type, X_offset, gcov_local, gcon_local);
     }
     connexion.calculate_christoffel(X_offset, delta, tempGamma, gcov_local, gcon_local, metric_type);
     
     Gamma_slice = tempGamma;
 }
 
-float Tensor::richardson_derivative(
+float Tensor::central_difference_derivative(
     const Tensor3D& Gamma_plus_h, 
     const Tensor3D& Gamma_minus_h,
-    const Tensor3D& Gamma_plus_half_h,
-    const Tensor3D& Gamma_minus_half_h,
     int rho, int mu, int nu, float h) 
 {
     float diff_h = (Gamma_plus_h[rho][mu][nu] - Gamma_minus_h[rho][mu][nu]) / (2 * h);
-    float diff_half_h = (Gamma_plus_half_h[rho][mu][nu] - Gamma_minus_half_h[rho][mu][nu]) / h;
-    return (4 * diff_half_h - diff_h) / 3;
+    return diff_h;
 }
 
 void Tensor::calculate_riemann(const Christoffel3D& Gamma, 
 				const Christoffel4D& Gamma_plus_h, 
 				const Christoffel4D& Gamma_minus_h, 
-				const Christoffel4D& Gamma_plus_half_h, 
-				const Christoffel4D& Gamma_minus_half_h,
 				Riemann4D& Riemann, 
 				float h) {
     for (int rho = 0; rho < NDIM; rho++) {
         for (int sigma = 0; sigma < NDIM; sigma++) {
             for (int mu = 0; mu < NDIM; mu++) {
                 for (int nu = 0; nu < NDIM; nu++) {
-                    float dGamma_mu = richardson_derivative(
+                    float dGamma_mu = central_difference_derivative(
                         Gamma_plus_h[mu], Gamma_minus_h[mu], 
-                        Gamma_plus_half_h[mu], Gamma_minus_half_h[mu], 
                         rho, nu, sigma, h);
-                    float dGamma_nu = richardson_derivative(
+                    float dGamma_nu = central_difference_derivative(
                         Gamma_plus_h[nu], Gamma_minus_h[nu],
-                        Gamma_plus_half_h[nu], Gamma_minus_half_h[nu],
                         rho, mu, sigma, h);
 
                     float Gamma_terms = 0.0;
@@ -75,20 +61,37 @@ void Tensor::calculate_riemann(const Christoffel3D& Gamma,
             }
         }
     }
-	float Kretschmann_scalar = 0.0;
-    for (int rho = 0; rho < NDIM; rho++) {
-        for (int sigma = 0; sigma < NDIM; sigma++) {
-            for (int mu = 0; mu < NDIM; mu++) {
-                for (int nu = 0; nu < NDIM; nu++) {
-                    Kretschmann_scalar += Riemann[rho][sigma][mu][nu] * \
-										  Riemann[rho][sigma][mu][nu];
+}
+
+double Tensor::calculate_kretschmann_scalar(const Riemann4D& Riemann,
+                                            const MatrixNDIM& g_cov,
+                                            const MatrixNDIM& g_inv) {
+    double kretschmann = 0.0;
+
+    for (int rho = 0; rho < NDIM; ++rho) {
+        for (int sigma = 0; sigma < NDIM; ++sigma) {
+            for (int mu = 0; mu < NDIM; ++mu) {
+                for (int nu = 0; nu < NDIM; ++nu) {
+                    const double lhs = static_cast<double>(Riemann[rho][sigma][mu][nu]);
+                    for (int alpha = 0; alpha < NDIM; ++alpha) {
+                        for (int beta = 0; beta < NDIM; ++beta) {
+                            for (int gamma = 0; gamma < NDIM; ++gamma) {
+                                for (int delta = 0; delta < NDIM; ++delta) {
+                                    kretschmann +=
+                                        static_cast<double>(g_cov[rho][alpha]) *
+                                        static_cast<double>(g_inv[sigma][beta]) *
+                                        static_cast<double>(g_inv[mu][gamma]) *
+                                        static_cast<double>(g_inv[nu][delta]) *
+                                        lhs *
+                                        static_cast<double>(Riemann[alpha][beta][gamma][delta]);
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
     }
-    if (Kretschmann_scalar > 1e10) {
-        printf("Kretschmann Scalar: INF (Singularity detected)\n");
-    } else {
-        printf("Kretschmann Scalar: %12.6f\n", Kretschmann_scalar);
-    }
+
+    return kretschmann;
 }

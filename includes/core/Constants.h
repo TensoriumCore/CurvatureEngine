@@ -17,6 +17,8 @@ inline constexpr int ALIGNMENT = 32;
 inline constexpr double TOLERANCE = 1.0e-10;
 inline constexpr float DELTA = 1.0e-6f;
 inline constexpr float DELTA3 = 1.0e-4f;
+inline constexpr float KERR_NEWMAN_CHARGE = 0.9f;
+inline constexpr float KERR_DE_SITTER_LAMBDA = 1.0e-4f;
 
 #if CURVATUREENGINE_TARGET_AVX2
 inline constexpr char ARCH[] = "AVX2";

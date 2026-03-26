@@ -9,12 +9,6 @@ class Connexion {
 		using MatrixNDIM = std::array<std::array<float, NDIM>, NDIM>;
 		using VectorNDIM = std::array<float, NDIM>;
 
-		Christoffel3D Gamma{};
-		Christoffel4D Gamma_plus_h{};
-		Christoffel4D Gamma_minus_h{};
-		Christoffel4D Gamma_plus_half_h{};
-		Christoffel4D Gamma_minus_half_h{};
-
 		void calculate_christoffel(const VectorNDIM& X, float h,
 				Christoffel3D& gamma,
 				std::array<std::array<float, NDIM>, NDIM>& g,

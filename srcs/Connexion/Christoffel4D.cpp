@@ -52,16 +52,7 @@ void populate_metric(const char *metric_name, Metric &metric_obj,
                      const Connexion::VectorNDIM &coords,
                      Connexion::MatrixNDIM &gout,
                      Connexion::MatrixNDIM &ginv_out) {
-  if (std::strcmp(metric_name, "kds") == 0) {
-    metric_obj.calculate_metric_kds(coords, gout, ginv_out);
-    return;
-  }
-  if (std::strcmp(metric_name, "kerr-newman") == 0) {
-    metric_obj.calculate_metric_kerr_newman(coords, gout, ginv_out);
-    return;
-  }
-
-  metric_obj.calculate_metric(coords, gout, ginv_out);
+  metric_obj.calculate_metric_by_name(metric_name, coords, gout, ginv_out);
 }
 
 } // namespace

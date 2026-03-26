@@ -128,7 +128,10 @@ int Matrix::inverse_3x3(const Matrix3x3& mat, Matrix3x3& inv) {
 
 void Matrix::check_inverse_3x3(const Matrix3x3& mat, const Matrix3x3& inv) {
     Matrix3x3 product{};
-    constexpr Matrix3x3 identity = {};
+    Matrix3x3 identity{};
+    for (int i = 0; i < 3; i++) {
+        identity[i][i] = 1.0f;
+    }
 
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
@@ -195,4 +198,3 @@ void Matrix::print_matrix_3x3(const char* name, const Matrix3x3& mat) {
         std::cout << std::endl;
     }
 }
-

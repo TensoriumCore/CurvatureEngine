@@ -3,14 +3,10 @@
 #include "matrix.h"
 
 #include <cmath>
-#include <cstdio>
-
-extern float a;
-float Q = 0.9;
 
 void Metric::calculate_metric_kerr_newman(const std::array<float, NDIM>& x, 
-				std::array<std::array<float, NDIM>, NDIM>& g,
-				std::array<std::array<float, NDIM>, NDIM>& g_inv) {
+					std::array<std::array<float, NDIM>, NDIM>& g,
+					std::array<std::array<float, NDIM>, NDIM>& g_inv) {
 	Matrix matrix_obj;
 	float r = x[1];
     float theta = x[2];
@@ -20,7 +16,7 @@ void Metric::calculate_metric_kerr_newman(const std::array<float, NDIM>& x,
     float cos_theta2 = cos_theta * cos_theta;
 
     float Sigma = r * r + a * a * cos_theta2;
-    float Delta = r * r - 2.0 * M * r + a * a + Q * Q;
+    float Delta = r * r - 2.0f * M * r + a * a + KERR_NEWMAN_CHARGE * KERR_NEWMAN_CHARGE;
 
 	for (auto& row : g) {
 		row.fill(0.0);
@@ -29,24 +25,13 @@ void Metric::calculate_metric_kerr_newman(const std::array<float, NDIM>& x,
 		row.fill(0.0);
 	}
 
-    g[0][0] = -(1.0 - (2.0 * M * r - Q * Q) / Sigma);
+    g[0][0] = -(1.0f - (2.0f * M * r - KERR_NEWMAN_CHARGE * KERR_NEWMAN_CHARGE) / Sigma);
     g[1][1] = Sigma / Delta;
     g[2][2] = Sigma;
-    g[3][3] = sin_theta2 * (r * r + a * a + (2.0 * M * r - Q * Q) * a * a * sin_theta2 / Sigma);
-    g[0][3] = -((2.0 * M * r - Q * Q) * a * sin_theta2) / Sigma;
+    g[3][3] = sin_theta2 * (r * r + a * a + (2.0f * M * r - KERR_NEWMAN_CHARGE * KERR_NEWMAN_CHARGE) * a * a * sin_theta2 / Sigma);
+    g[0][3] = -((2.0f * M * r - KERR_NEWMAN_CHARGE * KERR_NEWMAN_CHARGE) * a * sin_theta2) / Sigma;
     g[3][0] = g[0][3];
 
     matrix_obj.inverse_matrix(g, g_inv);
 
-    if (a == 0.0 && Q == 0.0) 
-        printf("Schwarzschild metric calculated\n");
-    else if (Q == 0.0) 
-        printf("Kerr metric calculated\n");
-	else
-        printf("Kerr-Newman metric calculated\n");
-
-    matrix_obj.print_matrix("g", g);
-    matrix_obj.print_matrix("g_inv", g_inv);
 }
-
-
