@@ -7,8 +7,8 @@
 
 void Tensor::calculate_Gamma_at_offset(const std::array<float, NDIM>& X, int direction, 
                                          float offset, float delta,
-                                         Tensor::MatrixNDIM& gcov, 
-                                         Tensor::MatrixNDIM& gcon, 
+                                         const Tensor::MatrixNDIM& gcov, 
+                                         const Tensor::MatrixNDIM& gcon, 
                                          Tensor::Christoffel3D& Gamma_slice, 
                                          const char* metric_type) {
     std::array<float, NDIM> X_offset = X;
@@ -16,13 +16,19 @@ void Tensor::calculate_Gamma_at_offset(const std::array<float, NDIM>& X, int dir
     Tensor::Christoffel3D tempGamma{};
     Connexion connexion;
     Metric metric;
+    Tensor::MatrixNDIM gcov_local = gcov;
+    Tensor::MatrixNDIM gcon_local = gcon;
     
     if (strcmp(metric_type, "minkowski") == 0) {
-        connexion.calculate_christoffel(X_offset, delta, tempGamma, gcov, gcon, "minkowski");
+        connexion.calculate_christoffel(X_offset, delta, tempGamma, gcov_local, gcon_local, "minkowski");
+    } else if (strcmp(metric_type, "kds") == 0) {
+        metric.calculate_metric_kds(X_offset, gcov_local, gcon_local);
+    } else if (strcmp(metric_type, "kerr-newman") == 0) {
+        metric.calculate_metric_kerr_newman(X_offset, gcov_local, gcon_local);
     } else if (strcmp(metric_type, "kerr") == 0 || strcmp(metric_type, "schwarzschild") == 0) {
-        metric.calculate_metric(X_offset, gcov, gcon);
+        metric.calculate_metric(X_offset, gcov_local, gcon_local);
     }
-    connexion.calculate_christoffel(X_offset, delta, tempGamma, gcov, gcon, metric_type);
+    connexion.calculate_christoffel(X_offset, delta, tempGamma, gcov_local, gcon_local, metric_type);
     
     Gamma_slice = tempGamma;
 }

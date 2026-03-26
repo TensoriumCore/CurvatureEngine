@@ -48,6 +48,22 @@ void compute_schwarzschild_metric(const std::array<double, NDIM> &coords,
   ginv_d[3][3] = 1.0 / (r * r * sin_theta2);
 }
 
+void populate_metric(const char *metric_name, Metric &metric_obj,
+                     const Connexion::VectorNDIM &coords,
+                     Connexion::MatrixNDIM &gout,
+                     Connexion::MatrixNDIM &ginv_out) {
+  if (std::strcmp(metric_name, "kds") == 0) {
+    metric_obj.calculate_metric_kds(coords, gout, ginv_out);
+    return;
+  }
+  if (std::strcmp(metric_name, "kerr-newman") == 0) {
+    metric_obj.calculate_metric_kerr_newman(coords, gout, ginv_out);
+    return;
+  }
+
+  metric_obj.calculate_metric(coords, gout, ginv_out);
+}
+
 } // namespace
 
 void Connexion::calculate_christoffel(
@@ -83,7 +99,7 @@ void Connexion::calculate_christoffel(
       gout_d = g_base_d;
       ginv_d = g_inv_base_d;
     } else {
-      metric_obj.calculate_metric(coords, gout, ginv_out);
+      populate_metric(metric, metric_obj, coords, gout, ginv_out);
       for (int i = 0; i < NDIM; ++i) {
         for (int j = 0; j < NDIM; ++j) {
           gout_d[i][j] = static_cast<double>(gout[i][j]);
@@ -106,7 +122,7 @@ void Connexion::calculate_christoffel(
     compute_schwarzschild_metric(X_double, g_base, g_inv_base, g_base_d,
                                  g_inv_base_d);
   } else {
-    metric_obj.calculate_metric(X, g_base, g_inv_base);
+    populate_metric(metric, metric_obj, X, g_base, g_inv_base);
     for (int i = 0; i < NDIM; ++i) {
       for (int j = 0; j < NDIM; ++j) {
         g_base_d[i][j] = static_cast<double>(g_base[i][j]);

@@ -84,26 +84,15 @@ void evaluate_christoffel_adapter(const VEC_TYPE coords[NDIM],
 }
 
 } // namespace
-
-extern std::atomic<int> global_idx;
-
-using namespace curvatureengine::simd;
-
 int Geodesics_prob() {
   Connexion connexion;
   Metric metric_obj;
 
   const size_t max_points = 10000000;
-  if (geodesic_points)
-    free(geodesic_points);
-
-  if (posix_memalign((void **)&geodesic_points, 32,
-                     max_points * sizeof(*geodesic_points)) != 0) {
+  if (!initialize_geodesic_point_storage(max_points)) {
     fprintf(stderr, "Allocation failed\n");
     return -1;
   }
-
-  global_idx.store(0);
 
   float r0 = 19.3;
   std::array<float, NDIM> X = {0.0, r0, M_PI / 3.8, 0.0};
@@ -137,18 +126,14 @@ int Geodesics_prob() {
 
   auto end = std::chrono::high_resolution_clock::now();
 
-  num_points = global_idx.load();
+  num_points = get_stored_geodesic_point_count();
 
   std::chrono::duration<float> elapsed_seconds = end - start;
   printf("Elapsed time: %f\n", elapsed_seconds.count());
   printf("Points computed: %d\n", num_points);
 
   write_vtk_file("Output/geodesic.vtk");
-
-  if (geodesic_points != NULL) {
-    free(geodesic_points);
-    geodesic_points = NULL;
-  }
+  release_geodesic_point_storage();
 
   return 0;
 }

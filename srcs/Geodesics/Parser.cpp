@@ -1,6 +1,8 @@
 #include "core/GeodesicIntegrator.h"
 
+#include <algorithm>
 #include <cstdio>
+#include <cstdlib>
 #include <atomic>
 #include <cmath>
 
@@ -15,6 +17,42 @@ int capacity = 0;
  * The lambda values are the affine parameter values
  * The VTK file can be visualized using Paraview
  */
+
+bool initialize_geodesic_point_storage(std::size_t max_points) {
+  if (max_points == 0) {
+    return false;
+  }
+
+  release_geodesic_point_storage();
+
+  const std::size_t clamped_points =
+      std::min<std::size_t>(max_points, MAX_SAFE_CAPACITY);
+  if (posix_memalign((void **)&geodesic_points, 32,
+                     clamped_points * sizeof(*geodesic_points)) != 0) {
+    geodesic_points = nullptr;
+    capacity = 0;
+    return false;
+  }
+
+  capacity = static_cast<int>(clamped_points);
+  num_points = 0;
+  global_idx.store(0, std::memory_order_relaxed);
+  return true;
+}
+
+int get_stored_geodesic_point_count() {
+  return std::min(global_idx.load(std::memory_order_relaxed), capacity);
+}
+
+void release_geodesic_point_storage() {
+  if (geodesic_points != nullptr) {
+    free(geodesic_points);
+    geodesic_points = nullptr;
+  }
+  capacity = 0;
+  num_points = 0;
+  global_idx.store(0, std::memory_order_relaxed);
+}
 
 void write_vtk_file(const char *filename) {
   FILE *file = fopen(filename, "w");
@@ -69,10 +107,12 @@ void store_geodesic_point_AVX(VEC_TYPE x[4], float lambda) {
   }
 
   int idx = global_idx.fetch_add(4, std::memory_order_relaxed);
+  if (idx >= capacity) {
+    return;
+  }
 
-  if (idx + 4 >= MAX_SAFE_CAPACITY) return;
-
-  for (int j = 0; j < 4; j++) {
+  const int write_count = std::min(4, capacity - idx);
+  for (int j = 0; j < write_count; j++) {
     double rr = r_vals[j];
     double xx = rr * sin_th[j] * cos_ph[j];
     double yy = rr * sin_th[j] * sin_ph[j];

@@ -84,6 +84,11 @@ void evaluate_light_christoffel_adapter(const VEC_TYPE coords[NDIM],
 int light_geodesics_prob() {
   Connexion connexion;
   Metric metric_obj;
+  const size_t max_points = 10000000;
+  if (!initialize_geodesic_point_storage(max_points)) {
+    fprintf(stderr, "Allocation failed\n");
+    return -1;
+  }
   float r0 = 100.0;
   std::array<float, NDIM> X = {0.0, r0, M_PI / 4.0, 0.0};
   
@@ -114,11 +119,10 @@ int light_geodesics_prob() {
                
   auto end = std::chrono::high_resolution_clock::now();
 
+  num_points = get_stored_geodesic_point_count();
   std::chrono::duration<float> elapsed_seconds = end - start;
   printf("Elapsed time: %f\n", elapsed_seconds.count());
-  write_vtk_file("output/light_geodesic.vtk");
-  if (geodesic_points != NULL) {
-    free(geodesic_points);
-  }
+  write_vtk_file("Output/light_geodesic.vtk");
+  release_geodesic_point_storage();
   return 0;
 }

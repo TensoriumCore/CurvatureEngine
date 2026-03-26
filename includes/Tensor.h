@@ -26,8 +26,8 @@ class Tensor {
 	
 		void calculate_Gamma_at_offset(const std::array<float, NDIM>& X, int direction, 
 				float offset, float delta,
-				MatrixNDIM& gcov, 
-				MatrixNDIM& gcon, 
+				const MatrixNDIM& gcov, 
+				const MatrixNDIM& gcon, 
 				Christoffel3D& Gamma_slice, 
 				const char* metric_type);
 		float richardson_derivative(

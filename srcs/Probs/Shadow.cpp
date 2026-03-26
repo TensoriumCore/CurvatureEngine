@@ -1,5 +1,9 @@
 #include "MetricAVX.h"
-#include <Geodesics.h>
+#include "app/Problems.h"
+#include "app/RuntimeState.h"
+#include "core/Constants.h"
+#include "core/GeodesicIntegrator.h"
+
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -8,10 +12,9 @@
 #include <omp.h>
 #include <vector>
 
-extern float a;
-extern float (*geodesic_points)[5];
-
 using namespace curvatureengine::simd;
+
+namespace {
 
 struct StageDerivativesVec {
   VEC_TYPE dx[NDIM];
@@ -26,6 +29,19 @@ struct PixelResult {
 
 struct Tetrad {
   double e[4][4];
+};
+
+struct ShadowRenderConfig {
+  int width = 1920;
+  int height = 1080;
+  double r_cam = 75.0;
+  double theta_cam = 1.5865;
+  double phi_cam = 0.0;
+  double fov = 1.3;
+  double lambda_max = 4000.0;
+  double r_escape = 80.0;
+  double exposure = 2.5;
+  const char *output_path = "Output/accretion_disk.ppm";
 };
 
 static inline double dot_g(const double g[4][4], const double u[4],
@@ -126,7 +142,7 @@ static inline void make_camera_rays_4(const Tetrad &T, const double sx[4],
   const double tan_half_fov = std::tan(0.5 * fov);
 
   for (int i = 0; i < 4; ++i) {
-    double dx = sx[i] * tan_half_fov; 
+    double dx = sx[i] * tan_half_fov;
     double dy = sy[i] * tan_half_fov;
 
     double norm = std::sqrt(1.0 + dx * dx + dy * dy);
@@ -324,6 +340,40 @@ static inline void rt_step_exact(double dl, double Jinv, double Ainv,
   tau += dtau;
 }
 
+static inline bool fm_torus_state_from_metric(double g_tt, double g_tph, double g_phph,
+                                              double ell, double Win,
+                                              double Gamma, double Kpoly,
+                                              double &rho, double &p,
+                                              double &ut, double &uph,
+                                              double &u_cov_t, double &u_cov_ph) {
+  double denom = (g_phph + ell * g_tph);
+  if (std::abs(denom) < 1e-30) return false;
+
+  double Omega = (-g_tph - ell * g_tt) / denom;
+
+  double norm_u = -(g_tt + 2.0 * g_tph * Omega + g_phph * Omega * Omega);
+  if (!(norm_u > 0.0)) return false;
+
+  ut = 1.0 / std::sqrt(norm_u);
+  uph = Omega * ut;
+
+  u_cov_t  = g_tt * ut + g_tph * uph;
+  u_cov_ph = g_tph * ut + g_phph * uph;
+
+  double minus_ut = -u_cov_t;
+  if (!(minus_ut > 0.0)) return false;
+
+  double W = std::log(minus_ut);
+  double h = std::exp(Win - W);
+  if (!(h > 1.0)) { rho = 0.0; p = 0.0; return false; }
+
+  double x = (h - 1.0) * (Gamma - 1.0) / (Gamma * Kpoly);
+  if (!(x > 0.0)) return false;
+
+  rho = std::pow(x, 1.0 / (Gamma - 1.0));
+  p = Kpoly * std::pow(rho, Gamma);
+  return true;
+}
 static inline void accumulate_grrt_step(const VEC_TYPE x_prev[NDIM],
                                         const VEC_TYPE x_curr[NDIM],
                                         const VEC_TYPE k_curr[NDIM],
@@ -331,7 +381,7 @@ static inline void accumulate_grrt_step(const VEC_TYPE x_prev[NDIM],
                                         double Ibar[4], double tau[4],
                                         double WTe[4], double Wsum[4]) {
   const double a_d = (double)a;
-  double risco = compute_risco(a_d);
+  const double risco = compute_risco(a_d);
 
   alignas(32) double rP[4], rC[4], thP[4], thC[4];
   store(rP, x_prev[1]);
@@ -360,29 +410,18 @@ static inline void accumulate_grrt_step(const VEC_TYPE x_prev[NDIM],
   MetricSIMD::calculate_metric_avx(X_mid, gS, ginvS);
 
   alignas(32) double gtt[4], gtph[4], gphph[4];
-  alignas(32) double gtr[4], grr[4], grph[4];
-  alignas(32) double gtht[4], gthr[4], gthph[4];
-
   store(gtt, gS[0][0]);
   store(gtph, gS[0][3]);
   store(gphph, gS[3][3]);
-  store(gtr, gS[0][1]);
-  store(grr, gS[1][1]);
-  store(grph, gS[1][3]);
-  store(gtht, gS[2][0]);
-  store(gthr, gS[2][1]);
-  store(gthph, gS[2][3]);
 
   const double sigma_th = 0.03;
-  const double T_max = 225000.0;
-  const double inflow_strength = 0.25;
-
+  const double T_max = 65000.0;
   const double kappa0 = 1.05;
   const double emiss_scale = 2.5e-12;
 
   for (int i = 0; i < 4; ++i) {
     double r = rM[i];
-    if (r < risco || r > 40.0)
+    if (r < risco || r > 50.0)
       continue;
 
     double dth = thM[i] - 1.57079632679;
@@ -396,26 +435,16 @@ static inline void accumulate_grrt_step(const VEC_TYPE x_prev[NDIM],
       continue;
 
     double Te = T_max * std::pow(flux_nt, 0.25);
-    double Omega = 1.0 / (std::pow(r, 1.5) + a_d);
 
-    double f = std::max(0.0, 1.0 - risco / r);
-    double ur0 = -inflow_strength * f * std::sqrt(2.0 / r);
+    double Omega = compute_Kepler_Omega(r, a_d);
 
-    double A1 = gtt[i] + 2.0 * gtph[i] * Omega + gphph[i] * Omega * Omega;
-    double B1 = 2.0 * ur0 * (gtr[i] + grph[i] * Omega);
-    double C1 = grr[i] * ur0 * ur0;
-    double norm = -(A1 + B1 + C1);
-    if (norm <= 0.0)
+    double ut, uph, uct, ucph;
+    if (!fluid_ut_uph_from_metric(gtt[i], gtph[i], gphph[i], Omega, ut, uph,
+                                  uct, ucph))
       continue;
 
-    double ut = 1.0 / std::sqrt(norm);
-    double uph = Omega * ut;
-    double ur = ur0 * ut;
-
-    double uct = gtt[i] * ut + gtph[i] * uph + gtr[i] * ur;
-    double ucr = gtr[i] * ut + grr[i] * ur + grph[i] * uph;
-    double ucth = gtht[i] * ut + gthr[i] * ur + gthph[i] * uph;
-    double ucph = gtph[i] * ut + gphph[i] * uph + grph[i] * ur;
+    double ucr = 0.0;
+    double ucth = 0.0;
 
     double nu_em = -(uct * kt[i] + ucr * kr[i] + ucth * kth[i] + ucph * kph[i]);
     if (nu_em <= 1e-12)
@@ -449,7 +478,8 @@ static PixelResult
 geodesic_raytrace_physical(VEC_TYPE x[NDIM], VEC_TYPE v[NDIM],
                            const double uk_obs[4], float lambda_max,
                            ChristoffelEvalFnVec eval_fn, void *ctx,
-                           double r_horizon, double r_escape) {
+                           double r_horizon, double r_escape,
+                           double exposure) {
   double lambda_lane[4] = {0.0, 0.0, 0.0, 0.0};
   const double l_max = (double)lambda_max;
 
@@ -580,10 +610,9 @@ geodesic_raytrace_physical(VEC_TYPE x[NDIM], VEC_TYPE v[NDIM],
 
     double Iobs = Ibar[i] * nu_obs[i] * nu_obs[i] * nu_obs[i];
 
-    // Iobs *= 2.0e6;
-    double Ir = Iobs * cr;
-    double Ig = Iobs * cg;
-    double Ib = Iobs * cb;
+    double Ir = Iobs * cr * exposure;
+    double Ig = Iobs * cg * exposure;
+    double Ib = Iobs * cb * exposure;
 
     tone_map_rgb(Ir, Ig, Ib, res.r[i], res.g[i], res.b[i]);
   }
@@ -600,105 +629,117 @@ void write_ppm_image(const char *filename, int width, int height,
   fclose(fp);
 }
 
-int shadow_prob() {
-  a = 0.935f;
+bool is_valid_render_config(const ShadowRenderConfig &config) {
+  return config.width > 0 && config.height > 0 && config.r_cam > 0.0 &&
+         config.lambda_max > 0.0 && config.r_escape > 0.0 &&
+         config.output_path != nullptr;
+}
 
-  const int WIDTH = 1000;
-  const int HEIGHT = 800;
-  std::vector<uint8_t> image_buffer(WIDTH * HEIGHT * 3);
+void compute_observer_frequency(const Tetrad &tetrad, const double g_cov[4][4],
+                                const double kt[4], const double kr[4],
+                                const double kth[4], const double kph[4],
+                                double uk_obs[4]) {
+  double u_obs_cov[4] = {0.0, 0.0, 0.0, 0.0};
+  for (int mu = 0; mu < 4; ++mu) {
+    double sum = 0.0;
+    for (int nu = 0; nu < 4; ++nu) {
+      sum += g_cov[mu][nu] * tetrad.e[0][nu];
+    }
+    u_obs_cov[mu] = sum;
+  }
 
-  const double r_cam = 75.0;
-  const double theta_cam = 1.2865;
-  const double phi_cam = 0.0;
+  for (int i = 0; i < 4; ++i) {
+    uk_obs[i] = u_obs_cov[0] * kt[i] + u_obs_cov[1] * kr[i] +
+                u_obs_cov[2] * kth[i] + u_obs_cov[3] * kph[i];
+  }
+}
 
-  const double fov = 1.3;
-  const double aspect = (double)WIDTH / (double)HEIGHT;
+PixelResult render_packet(int y, int packet_index,
+                          const ShadowRenderConfig &config, double aspect) {
+  const int x_base = packet_index * 4;
+  const double sy =
+      -(2.0 * ((y + 0.5) / static_cast<double>(config.height)) - 1.0);
 
-  const double r_horizon = 1.0 + std::sqrt(1.0 - (double)a * (double)a);
+  alignas(32) double sx4[4];
+  for (int lane = 0; lane < 4; ++lane) {
+    const int x = std::min(x_base + lane, config.width - 1);
+    const double sx =
+        2.0 * ((x + 0.5) / static_cast<double>(config.width)) - 1.0;
+    sx4[lane] = sx * aspect;
+  }
+
+  VEC_TYPE x_cam[NDIM] = {broadcast(0.0), broadcast(config.r_cam),
+                          broadcast(config.theta_cam), broadcast(config.phi_cam)};
+  VEC_TYPE g_simd[NDIM][NDIM], ginv_simd[NDIM][NDIM];
+  MetricSIMD::calculate_metric_avx(x_cam, g_simd, ginv_simd);
+
+  alignas(32) double cov_lane[4], inv_lane[4];
+  double g_cov[4][4], g_inv[4][4];
+  for (int mu = 0; mu < 4; ++mu) {
+    for (int nu = 0; nu < 4; ++nu) {
+      store(cov_lane, g_simd[mu][nu]);
+      store(inv_lane, ginv_simd[mu][nu]);
+      g_cov[mu][nu] = cov_lane[0];
+      g_inv[mu][nu] = inv_lane[0];
+    }
+  }
+
+  Tetrad tetrad;
+  build_camera_tetrad_zamo(g_cov, g_inv, tetrad);
+
+  const double sy4[4] = {sy, sy, sy, sy};
+  double k_out[4][4];
+  make_camera_rays_4(tetrad, sx4, sy4, config.fov, k_out);
+
+  alignas(32) double kt[4], kr[4], kth[4], kph[4];
+  for (int i = 0; i < 4; ++i) {
+    kt[i] = k_out[i][0];
+    kr[i] = k_out[i][1];
+    kth[i] = k_out[i][2];
+    kph[i] = k_out[i][3];
+  }
+
+  double uk_obs[4];
+  compute_observer_frequency(tetrad, g_cov, kt, kr, kth, kph, uk_obs);
+
+  const double r_horizon =
+      1.0 + std::sqrt(1.0 - static_cast<double>(a) * static_cast<double>(a));
   const double r_stop = r_horizon + 0.05;
+  VEC_TYPE v_avx[NDIM] = {load(kt), load(kr), load(kth), load(kph)};
+  return geodesic_raytrace_physical(x_cam, v_avx, uk_obs,
+                                    static_cast<float>(config.lambda_max),
+                                    evaluate_christoffel_native_avx, nullptr,
+                                    r_stop, config.r_escape, config.exposure);
+}
 
-  const int packets_x = WIDTH / 4;
+int render_shadow_image() {
+  const ShadowRenderConfig config{};
+  if (std::abs(static_cast<double>(a)) > 1.0) {
+    std::fprintf(stderr, "Shadow mode requires |spin| <= 1.\n");
+    return 1;
+  }
+  if (!is_valid_render_config(config)) {
+    std::fprintf(stderr, "Invalid shadow render configuration.\n");
+    return 1;
+  }
+
+  std::vector<uint8_t> image_buffer(config.width * config.height * 3);
+  const double aspect =
+      static_cast<double>(config.width) / static_cast<double>(config.height);
+  const int packets_x = (config.width + 3) / 4;
 
 #pragma omp parallel for schedule(dynamic)
-  for (int y = 0; y < HEIGHT; ++y) {
-    double sy = 2.0 * ((y + 0.5) / (double)HEIGHT) - 1.0;
-
-    sy = -sy;
-
+  for (int y = 0; y < config.height; ++y) {
     for (int p = 0; p < packets_x; ++p) {
-      int x_base = p * 4;
-
-      alignas(32) double sx4[4];
-      for (int l = 0; l < 4; ++l) {
-        double sx = 2.0 * ((x_base + l + 0.5) / (double)WIDTH) - 1.0;
-        sx *= aspect;
-        sx4[l] = sx;
-      }
-
-      VEC_TYPE X_cam[NDIM] = {broadcast(0.0), broadcast(r_cam),
-                              broadcast(theta_cam), broadcast(phi_cam)};
-      VEC_TYPE gS[NDIM][NDIM], ginvS[NDIM][NDIM];
-      MetricSIMD::calculate_metric_avx(X_cam, gS, ginvS);
-
-      alignas(32) double gsc[4], gisc[4];
-      double g0[4][4], gi0[4][4];
-      for (int mu = 0; mu < 4; ++mu) {
-        for (int nu = 0; nu < 4; ++nu) {
-          store(gsc, gS[mu][nu]);
-          store(gisc, ginvS[mu][nu]);
-          g0[mu][nu] = gsc[0];
-          gi0[mu][nu] = gisc[0];
-        }
-      }
-
-      Tetrad T;
-      build_camera_tetrad_zamo(g0, gi0, T);
-
-      double sy4[4] = {sy, sy, sy, sy};
-      double k_out[4][4];
-      make_camera_rays_4(T, sx4, sy4, fov, k_out);
-
-      alignas(32) double kt[4], kr[4], kth[4], kph[4];
-      for (int i = 0; i < 4; ++i) {
-        kt[i] = k_out[i][0];
-        kr[i] = k_out[i][1];
-        kth[i] = k_out[i][2];
-        kph[i] = k_out[i][3];
-      }
-      VEC_TYPE v_avx[NDIM] = {load(kt), load(kr), load(kth), load(kph)};
-
-      double u_obs[4] = {T.e[0][0], T.e[0][1], T.e[0][2], T.e[0][3]};
-      double u_obs_cov[4] = {0};
-      for (int mu = 0; mu < 4; ++mu) {
-        double s = 0.0;
-        for (int nu = 0; nu < 4; ++nu)
-          s += g0[mu][nu] * u_obs[nu];
-        u_obs_cov[mu] = s;
-      }
-
-      double uk_obs[4];
-      for (int i = 0; i < 4; ++i) {
-        uk_obs[i] = u_obs_cov[0] * kt[i] + u_obs_cov[1] * kr[i] +
-                    u_obs_cov[2] * kth[i] + u_obs_cov[3] * kph[i];
-      }
-
-      static int once = 0;
-      if (!once) {
-        once = 1;
-        for (int i = 0; i < 4; ++i) {
-          printf("uk_obs[%d]=%.6e  nu_obs=%.6e\n", i, uk_obs[i],
-                 safe_pos(-uk_obs[i]));
-        }
-      }
-      VEC_TYPE X_avx[NDIM] = {broadcast(0.0), broadcast(r_cam),
-                              broadcast(theta_cam), broadcast(phi_cam)};
-
-      PixelResult res = geodesic_raytrace_physical(
-          X_avx, v_avx, uk_obs, 4000.0, evaluate_christoffel_native_avx,
-          nullptr, r_stop, 80.0);
+      const PixelResult res = render_packet(y, p, config, aspect);
+      const int x_base = p * 4;
 
       for (int l = 0; l < 4; ++l) {
-        int px_idx = (y * WIDTH + (x_base + l)) * 3;
+        const int x = x_base + l;
+        if (x >= config.width) {
+          continue;
+        }
+        const int px_idx = (y * config.width + x) * 3;
         image_buffer[px_idx + 0] = (uint8_t)res.r[l];
         image_buffer[px_idx + 1] = (uint8_t)res.g[l];
         image_buffer[px_idx + 2] = (uint8_t)res.b[l];
@@ -706,11 +747,10 @@ int shadow_prob() {
     }
   }
 
-  write_ppm_image("Output/accretion_disk.ppm", WIDTH, HEIGHT, image_buffer);
-
-  alignas(32) static float geodesic_points_fallback[2048][5];
-  if (!geodesic_points)
-    geodesic_points = geodesic_points_fallback;
-
+  write_ppm_image(config.output_path, config.width, config.height, image_buffer);
   return 0;
 }
+
+} // namespace
+
+int shadow_prob() { return render_shadow_image(); }
