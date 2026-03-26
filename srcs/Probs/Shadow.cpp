@@ -8,8 +8,14 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <cstdlib>
 #include <cstdio>
+#include <filesystem>
+#include <fstream>
+#include <iomanip>
+#include <limits>
 #include <omp.h>
+#include <string>
 #include <vector>
 
 using namespace curvatureengine::simd;
@@ -22,9 +28,12 @@ struct StageDerivativesVec {
 };
 
 struct PixelResult {
-  double r[4];
-  double g[4];
-  double b[4];
+  double linear_r[4];
+  double linear_g[4];
+  double linear_b[4];
+  double intensity[4];
+  double optical_depth[4];
+  double effective_temperature[4];
 };
 
 struct Tetrad {
@@ -34,6 +43,7 @@ struct Tetrad {
 struct ShadowRenderConfig {
   int width = 1920;
   int height = 1080;
+  int samples_per_pixel = 4;
   double r_cam = 75.0;
   double theta_cam = 1.5865;
   double phi_cam = 0.0;
@@ -42,7 +52,85 @@ struct ShadowRenderConfig {
   double r_escape = 80.0;
   double exposure = 2.5;
   const char *output_path = "Output/accretion_disk.ppm";
+  const char *hdr_output_path = "Output/accretion_disk_linear.pfm";
+  const char *plot_output_path = "Output/accretion_disk_data.csv";
+  const char *metadata_output_path = "Output/accretion_disk_metadata.json";
 };
+
+struct SampleOffset {
+  double x;
+  double y;
+};
+
+constexpr SampleOffset kCenteredSample = {0.5, 0.5};
+constexpr SampleOffset kSubpixelPattern[4] = {
+    {0.25, 0.25},
+    {0.75, 0.25},
+    {0.25, 0.75},
+    {0.75, 0.75},
+};
+
+static int read_env_int(const char *name, int fallback) {
+  const char *value = std::getenv(name);
+  if (!value || *value == '\0')
+    return fallback;
+  char *end = nullptr;
+  long parsed = std::strtol(value, &end, 10);
+  if (!end || *end != '\0')
+    return fallback;
+  if (parsed <= 0 || parsed > std::numeric_limits<int>::max())
+    return fallback;
+  return static_cast<int>(parsed);
+}
+
+static double read_env_double(const char *name, double fallback) {
+  const char *value = std::getenv(name);
+  if (!value || *value == '\0')
+    return fallback;
+  char *end = nullptr;
+  double parsed = std::strtod(value, &end);
+  if (!end || *end != '\0' || !std::isfinite(parsed))
+    return fallback;
+  return parsed;
+}
+
+static const char *read_env_path(const char *name, const char *fallback) {
+  const char *value = std::getenv(name);
+  if (!value || *value == '\0')
+    return fallback;
+  return value;
+}
+
+static ShadowRenderConfig load_shadow_render_config() {
+  ShadowRenderConfig config;
+  config.width = read_env_int("CURVATUREENGINE_SHADOW_WIDTH", config.width);
+  config.height = read_env_int("CURVATUREENGINE_SHADOW_HEIGHT", config.height);
+  config.samples_per_pixel =
+      std::min(4, read_env_int("CURVATUREENGINE_SHADOW_SPP",
+                               config.samples_per_pixel));
+  config.r_cam = read_env_double("CURVATUREENGINE_SHADOW_R_CAM", config.r_cam);
+  config.theta_cam =
+      read_env_double("CURVATUREENGINE_SHADOW_THETA_CAM", config.theta_cam);
+  config.phi_cam =
+      read_env_double("CURVATUREENGINE_SHADOW_PHI_CAM", config.phi_cam);
+  config.fov = read_env_double("CURVATUREENGINE_SHADOW_FOV", config.fov);
+  config.lambda_max =
+      read_env_double("CURVATUREENGINE_SHADOW_LAMBDA_MAX", config.lambda_max);
+  config.r_escape =
+      read_env_double("CURVATUREENGINE_SHADOW_R_ESCAPE", config.r_escape);
+  config.exposure =
+      read_env_double("CURVATUREENGINE_SHADOW_EXPOSURE", config.exposure);
+  config.output_path =
+      read_env_path("CURVATUREENGINE_SHADOW_OUTPUT_PPM", config.output_path);
+  config.hdr_output_path = read_env_path("CURVATUREENGINE_SHADOW_OUTPUT_PFM",
+                                         config.hdr_output_path);
+  config.plot_output_path = read_env_path("CURVATUREENGINE_SHADOW_OUTPUT_CSV",
+                                          config.plot_output_path);
+  config.metadata_output_path =
+      read_env_path("CURVATUREENGINE_SHADOW_OUTPUT_JSON",
+                    config.metadata_output_path);
+  return config;
+}
 
 static inline double dot_g(const double g[4][4], const double u[4],
                            const double v[4]) {
@@ -214,6 +302,7 @@ static inline void tone_map_rgb(double Ir, double Ig, double Ib, double &out_r,
   auto TM = [](double x) {
     x = std::max(0.0, x);
     double y = x / (1.0 + x);
+    y = std::pow(y, 1.0 / 2.2);
     return 255.0 * y;
   };
   out_r = clamp255(TM(Ir));
@@ -603,36 +692,148 @@ geodesic_raytrace_physical(VEC_TYPE x[NDIM], VEC_TYPE v[NDIM],
 
   PixelResult res;
   for (int i = 0; i < 4; ++i) {
-    double Te_eff = (Wsum[i] > 0.0) ? (WTe[i] / Wsum[i]) : 9000.0;
-
-    double cr, cg, cb;
-    blackbody_rgb(std::max(100.0, Te_eff), cr, cg, cb);
-
+    const bool has_emission = Wsum[i] > 0.0;
+    double Te_eff = has_emission ? (WTe[i] / Wsum[i]) : 0.0;
     double Iobs = Ibar[i] * nu_obs[i] * nu_obs[i] * nu_obs[i];
-
+    double cr, cg, cb;
+    blackbody_rgb(std::max(100.0, has_emission ? Te_eff : 9000.0), cr, cg, cb);
     double Ir = Iobs * cr * exposure;
     double Ig = Iobs * cg * exposure;
     double Ib = Iobs * cb * exposure;
 
-    tone_map_rgb(Ir, Ig, Ib, res.r[i], res.g[i], res.b[i]);
+    res.linear_r[i] = Ir;
+    res.linear_g[i] = Ig;
+    res.linear_b[i] = Ib;
+    res.intensity[i] = Iobs;
+    res.optical_depth[i] = tau[i];
+    res.effective_temperature[i] = Te_eff;
   }
   return res;
 }
 
-void write_ppm_image(const char *filename, int width, int height,
+bool ensure_parent_directory(const char *filename) {
+  if (!filename || *filename == '\0')
+    return false;
+  const std::filesystem::path path(filename);
+  if (!path.has_parent_path())
+    return true;
+  std::error_code ec;
+  std::filesystem::create_directories(path.parent_path(), ec);
+  return !ec;
+}
+
+bool write_ppm_image(const char *filename, int width, int height,
                      const std::vector<uint8_t> &rgb_buffer) {
+  if (!ensure_parent_directory(filename))
+    return false;
   FILE *fp = fopen(filename, "wb");
   if (!fp)
-    return;
+    return false;
   fprintf(fp, "P6\n%d %d\n255\n", width, height);
   fwrite(rgb_buffer.data(), 1, rgb_buffer.size(), fp);
   fclose(fp);
+  return true;
+}
+
+bool write_pfm_image(const char *filename, int width, int height,
+                     const std::vector<double> &rgb_buffer) {
+  if (!ensure_parent_directory(filename))
+    return false;
+  FILE *fp = fopen(filename, "wb");
+  if (!fp)
+    return false;
+
+  fprintf(fp, "PF\n%d %d\n-1.0\n", width, height);
+  std::vector<float> row(static_cast<std::size_t>(width) * 3U);
+  for (int y = height - 1; y >= 0; --y) {
+    for (int x = 0; x < width; ++x) {
+      const std::size_t src = (static_cast<std::size_t>(y) * width + x) * 3U;
+      const std::size_t dst = static_cast<std::size_t>(x) * 3U;
+      row[dst + 0] = static_cast<float>(rgb_buffer[src + 0]);
+      row[dst + 1] = static_cast<float>(rgb_buffer[src + 1]);
+      row[dst + 2] = static_cast<float>(rgb_buffer[src + 2]);
+    }
+    fwrite(row.data(), sizeof(float), row.size(), fp);
+  }
+  fclose(fp);
+  return true;
+}
+
+bool write_shadow_plot_data_csv(const char *filename,
+                                const ShadowRenderConfig &config,
+                                const std::vector<double> &rgb_buffer,
+                                const std::vector<double> &intensity_buffer,
+                                const std::vector<double> &tau_buffer,
+                                const std::vector<double> &temperature_buffer) {
+  if (!ensure_parent_directory(filename))
+    return false;
+
+  std::ofstream file(filename);
+  if (!file.is_open())
+    return false;
+
+  const double aspect =
+      static_cast<double>(config.width) / static_cast<double>(config.height);
+  file << std::scientific << std::setprecision(12);
+  file << "pixel_x,pixel_y,screen_x,screen_y,linear_r,linear_g,linear_b,"
+          "intensity,optical_depth,effective_temperature\n";
+
+  for (int y = 0; y < config.height; ++y) {
+    const double screen_y =
+        -(2.0 * ((y + 0.5) / static_cast<double>(config.height)) - 1.0);
+    for (int x = 0; x < config.width; ++x) {
+      const double screen_x =
+          (2.0 * ((x + 0.5) / static_cast<double>(config.width)) - 1.0) *
+          aspect;
+      const std::size_t pixel_idx =
+          static_cast<std::size_t>(y) * config.width + x;
+      const std::size_t rgb_idx = pixel_idx * 3U;
+      file << x << ',' << y << ',' << screen_x << ',' << screen_y << ','
+           << rgb_buffer[rgb_idx + 0] << ',' << rgb_buffer[rgb_idx + 1] << ','
+           << rgb_buffer[rgb_idx + 2] << ',' << intensity_buffer[pixel_idx]
+           << ',' << tau_buffer[pixel_idx] << ','
+           << temperature_buffer[pixel_idx] << '\n';
+    }
+  }
+
+  return true;
+}
+
+bool write_shadow_metadata_json(const char *filename,
+                                const ShadowRenderConfig &config) {
+  if (!ensure_parent_directory(filename))
+    return false;
+
+  std::ofstream file(filename);
+  if (!file.is_open())
+    return false;
+
+  file << std::fixed << std::setprecision(6);
+  file << "{\n";
+  file << "  \"width\": " << config.width << ",\n";
+  file << "  \"height\": " << config.height << ",\n";
+  file << "  \"samples_per_pixel\": " << config.samples_per_pixel << ",\n";
+  file << "  \"spin\": " << static_cast<double>(a) << ",\n";
+  file << "  \"r_cam\": " << config.r_cam << ",\n";
+  file << "  \"theta_cam\": " << config.theta_cam << ",\n";
+  file << "  \"phi_cam\": " << config.phi_cam << ",\n";
+  file << "  \"fov\": " << config.fov << ",\n";
+  file << "  \"lambda_max\": " << config.lambda_max << ",\n";
+  file << "  \"r_escape\": " << config.r_escape << ",\n";
+  file << "  \"exposure\": " << config.exposure << ",\n";
+  file << "  \"ppm_output\": \"" << config.output_path << "\",\n";
+  file << "  \"pfm_output\": \"" << config.hdr_output_path << "\",\n";
+  file << "  \"csv_output\": \"" << config.plot_output_path << "\"\n";
+  file << "}\n";
+  return true;
 }
 
 bool is_valid_render_config(const ShadowRenderConfig &config) {
   return config.width > 0 && config.height > 0 && config.r_cam > 0.0 &&
          config.lambda_max > 0.0 && config.r_escape > 0.0 &&
-         config.output_path != nullptr;
+         config.samples_per_pixel > 0 && config.output_path != nullptr &&
+         config.hdr_output_path != nullptr && config.plot_output_path != nullptr &&
+         config.metadata_output_path != nullptr;
 }
 
 void compute_observer_frequency(const Tetrad &tetrad, const double g_cov[4][4],
@@ -655,16 +856,17 @@ void compute_observer_frequency(const Tetrad &tetrad, const double g_cov[4][4],
 }
 
 PixelResult render_packet(int y, int packet_index,
-                          const ShadowRenderConfig &config, double aspect) {
+                          const ShadowRenderConfig &config, double aspect,
+                          double sample_x, double sample_y) {
   const int x_base = packet_index * 4;
   const double sy =
-      -(2.0 * ((y + 0.5) / static_cast<double>(config.height)) - 1.0);
+      -(2.0 * ((y + sample_y) / static_cast<double>(config.height)) - 1.0);
 
   alignas(32) double sx4[4];
   for (int lane = 0; lane < 4; ++lane) {
     const int x = std::min(x_base + lane, config.width - 1);
     const double sx =
-        2.0 * ((x + 0.5) / static_cast<double>(config.width)) - 1.0;
+        2.0 * ((x + sample_x) / static_cast<double>(config.width)) - 1.0;
     sx4[lane] = sx * aspect;
   }
 
@@ -713,7 +915,7 @@ PixelResult render_packet(int y, int packet_index,
 }
 
 int render_shadow_image() {
-  const ShadowRenderConfig config{};
+  const ShadowRenderConfig config = load_shadow_render_config();
   if (std::abs(static_cast<double>(a)) > 1.0) {
     std::fprintf(stderr, "Shadow mode requires |spin| <= 1.\n");
     return 1;
@@ -724,30 +926,101 @@ int render_shadow_image() {
   }
 
   std::vector<uint8_t> image_buffer(config.width * config.height * 3);
+  std::vector<double> hdr_buffer(static_cast<std::size_t>(config.width) *
+                                 config.height * 3U, 0.0);
+  std::vector<double> intensity_buffer(static_cast<std::size_t>(config.width) *
+                                       config.height, 0.0);
+  std::vector<double> tau_buffer(static_cast<std::size_t>(config.width) *
+                                 config.height, 0.0);
+  std::vector<double> temperature_buffer(
+      static_cast<std::size_t>(config.width) * config.height, 0.0);
   const double aspect =
       static_cast<double>(config.width) / static_cast<double>(config.height);
   const int packets_x = (config.width + 3) / 4;
+  const int sample_count = std::max(1, std::min(config.samples_per_pixel, 4));
 
 #pragma omp parallel for schedule(dynamic)
   for (int y = 0; y < config.height; ++y) {
     for (int p = 0; p < packets_x; ++p) {
-      const PixelResult res = render_packet(y, p, config, aspect);
       const int x_base = p * 4;
+      PixelResult accum{};
+
+      for (int sample = 0; sample < sample_count; ++sample) {
+        const SampleOffset offset =
+            (sample_count == 1) ? kCenteredSample : kSubpixelPattern[sample];
+        const PixelResult res =
+            render_packet(y, p, config, aspect, offset.x, offset.y);
+        for (int l = 0; l < 4; ++l) {
+          accum.linear_r[l] += res.linear_r[l];
+          accum.linear_g[l] += res.linear_g[l];
+          accum.linear_b[l] += res.linear_b[l];
+          accum.intensity[l] += res.intensity[l];
+          accum.optical_depth[l] += res.optical_depth[l];
+          accum.effective_temperature[l] += res.effective_temperature[l];
+        }
+      }
+
+      const double inv_samples = 1.0 / static_cast<double>(sample_count);
 
       for (int l = 0; l < 4; ++l) {
         const int x = x_base + l;
         if (x >= config.width) {
           continue;
         }
+        const std::size_t pixel_idx =
+            static_cast<std::size_t>(y) * config.width + x;
         const int px_idx = (y * config.width + x) * 3;
-        image_buffer[px_idx + 0] = (uint8_t)res.r[l];
-        image_buffer[px_idx + 1] = (uint8_t)res.g[l];
-        image_buffer[px_idx + 2] = (uint8_t)res.b[l];
+        const std::size_t hdr_idx = pixel_idx * 3U;
+        const double linear_r = accum.linear_r[l] * inv_samples;
+        const double linear_g = accum.linear_g[l] * inv_samples;
+        const double linear_b = accum.linear_b[l] * inv_samples;
+        const double intensity = accum.intensity[l] * inv_samples;
+        const double optical_depth = accum.optical_depth[l] * inv_samples;
+        const double effective_temperature =
+            accum.effective_temperature[l] * inv_samples;
+
+        hdr_buffer[hdr_idx + 0] = linear_r;
+        hdr_buffer[hdr_idx + 1] = linear_g;
+        hdr_buffer[hdr_idx + 2] = linear_b;
+        intensity_buffer[pixel_idx] = intensity;
+        tau_buffer[pixel_idx] = optical_depth;
+        temperature_buffer[pixel_idx] = effective_temperature;
+
+        double display_r, display_g, display_b;
+        tone_map_rgb(linear_r, linear_g, linear_b, display_r, display_g,
+                     display_b);
+        image_buffer[px_idx + 0] = static_cast<uint8_t>(display_r);
+        image_buffer[px_idx + 1] = static_cast<uint8_t>(display_g);
+        image_buffer[px_idx + 2] = static_cast<uint8_t>(display_b);
       }
     }
   }
 
-  write_ppm_image(config.output_path, config.width, config.height, image_buffer);
+  const bool ppm_ok =
+      write_ppm_image(config.output_path, config.width, config.height,
+                      image_buffer);
+  const bool pfm_ok =
+      write_pfm_image(config.hdr_output_path, config.width, config.height,
+                      hdr_buffer);
+  const bool csv_ok = write_shadow_plot_data_csv(
+      config.plot_output_path, config, hdr_buffer, intensity_buffer, tau_buffer,
+      temperature_buffer);
+  const bool json_ok =
+      write_shadow_metadata_json(config.metadata_output_path, config);
+
+  if (!ppm_ok || !pfm_ok || !csv_ok || !json_ok) {
+    std::fprintf(stderr,
+                 "Failed to export shadow outputs (ppm=%d pfm=%d csv=%d json=%d).\n",
+                 ppm_ok ? 1 : 0, pfm_ok ? 1 : 0, csv_ok ? 1 : 0,
+                 json_ok ? 1 : 0);
+    return 1;
+  }
+
+  std::printf("Shadow outputs written to:\n");
+  std::printf("  %s\n", config.output_path);
+  std::printf("  %s\n", config.hdr_output_path);
+  std::printf("  %s\n", config.plot_output_path);
+  std::printf("  %s\n", config.metadata_output_path);
   return 0;
 }
 
