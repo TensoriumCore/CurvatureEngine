@@ -447,6 +447,66 @@ static bool sample_metric_components(double r, double theta, double &g_tt,
 
 static inline bool compute_constant_ell_fluid_from_metric(
     double g_tt, double g_tph, double g_phph, double ell, double &W,
+    double &ut, double &uph, double &u_cov_t, double &u_cov_ph);
+
+static bool sample_constant_ell_potential_equatorial(double r, double ell,
+                                                     double &W) {
+  double g_tt = 0.0;
+  double g_tph = 0.0;
+  double g_phph = 0.0;
+  double ut = 0.0;
+  double uph = 0.0;
+  double u_cov_t = 0.0;
+  double u_cov_ph = 0.0;
+  if (!sample_metric_components(r, kPi / 2.0, g_tt, g_tph, g_phph)) {
+    return false;
+  }
+  return compute_constant_ell_fluid_from_metric(g_tt, g_tph, g_phph, ell, W,
+                                                ut, uph, u_cov_t, u_cov_ph);
+}
+
+static bool find_bound_surface_radius(double ell, double r_min, double r_max,
+                                      double &surface_radius) {
+  constexpr int kScanSteps = 512;
+  double previous_r = 0.0;
+  double previous_W = 0.0;
+  bool have_previous = false;
+
+  for (int step = 0; step <= kScanSteps; ++step) {
+    const double t = static_cast<double>(step) / static_cast<double>(kScanSteps);
+    const double r = r_min + (r_max - r_min) * t;
+    double W = 0.0;
+    if (!sample_constant_ell_potential_equatorial(r, ell, W))
+      continue;
+
+    if (have_previous && previous_W > 0.0 && W <= 0.0) {
+      double lo = previous_r;
+      double hi = r;
+      for (int iter = 0; iter < 48; ++iter) {
+        const double mid = 0.5 * (lo + hi);
+        double W_mid = 0.0;
+        if (!sample_constant_ell_potential_equatorial(mid, ell, W_mid))
+          return false;
+        if (W_mid > 0.0) {
+          lo = mid;
+        } else {
+          hi = mid;
+        }
+      }
+      surface_radius = 0.5 * (lo + hi);
+      return true;
+    }
+
+    previous_r = r;
+    previous_W = W;
+    have_previous = true;
+  }
+
+  return false;
+}
+
+static inline bool compute_constant_ell_fluid_from_metric(
+    double g_tt, double g_tph, double g_phph, double ell, double &W,
     double &ut, double &uph, double &u_cov_t, double &u_cov_ph) {
   const double denom = g_phph + ell * g_tph;
   if (std::abs(denom) < 1e-30)
@@ -485,6 +545,7 @@ static bool build_fm_torus_model(double spin,
   model.config = input;
   model.r_horizon = 1.0 + std::sqrt(std::max(0.0, 1.0 - spin * spin));
   model.risco = compute_risco(spin);
+  const bool user_defined_r_in = input.r_in > 0.0;
 
   if (!(model.config.gamma > 1.0) || !(model.config.rho_center > 0.0) ||
       !(model.config.beta_inv >= 0.0) ||
@@ -531,6 +592,32 @@ static bool build_fm_torus_model(double spin,
   (void)uph_center_orbit;
   model.ell = -u_cov_ph_center_orbit / u_cov_t_center_orbit;
 
+  double W_center_equatorial = 0.0;
+  if (!sample_constant_ell_potential_equatorial(model.config.r_center,
+                                                model.ell,
+                                                W_center_equatorial)) {
+    return false;
+  }
+  if (!(W_center_equatorial < 0.0) || !std::isfinite(W_center_equatorial))
+    return false;
+
+  double r_bound_surface = 0.0;
+  if (!find_bound_surface_radius(model.ell, model.r_horizon + 0.02,
+                                 model.config.r_center - 1.0e-3,
+                                 r_bound_surface)) {
+    return false;
+  }
+
+  const double compact_offset =
+      0.35 * (model.config.r_center - r_bound_surface);
+  if (!user_defined_r_in) {
+    model.config.r_in = r_bound_surface + compact_offset;
+  } else if (model.config.r_in <= r_bound_surface) {
+    model.config.r_in = r_bound_surface + 0.05 *
+                                              (model.config.r_center -
+                                               r_bound_surface);
+  }
+
   double g_tt_inner, g_tph_inner, g_phph_inner;
   if (!sample_metric_components(model.config.r_in, kPi / 2.0, g_tt_inner,
                                 g_tph_inner, g_phph_inner)) {
@@ -554,7 +641,8 @@ static bool build_fm_torus_model(double spin,
   (void)uph_dummy;
 
   const double delta_W = W_inner - W_center;
-  if (!(delta_W > 0.0) || !std::isfinite(delta_W))
+  if (!(W_inner < 0.0) || !(W_inner > W_center_equatorial) ||
+      !(delta_W > 0.0) || !std::isfinite(delta_W))
     return false;
 
   const double h_center = std::exp(std::min(delta_W, 60.0));
