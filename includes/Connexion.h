@@ -1,6 +1,6 @@
 #pragma once 
 
-#include "Geodesics.h"
+#include "core/Types.h"
 
 class Connexion {
 	public:
@@ -25,4 +25,3 @@ class Connexion {
 		void print_christoffel(const Christoffel3D& Gamma);
 		void print_christoffel_matrix(const Christoffel3D& gamma);
 };
-

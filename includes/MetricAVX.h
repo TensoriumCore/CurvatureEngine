@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Geodesics.h"
-#include "SimdConfig.h"
+#include "core/GeodesicIntegrator.h"
+
 #include <cmath>
 
 extern float a;

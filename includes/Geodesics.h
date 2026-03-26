@@ -1,7 +1,10 @@
 
 #pragma once
 
-#include "SimdConfig.h"
+#include "core/Constants.h"
+#include "core/GeodesicIntegrator.h"
+#include "core/Types.h"
+
 #include <array>
 #include <chrono>
 #include <cmath>
@@ -16,69 +19,14 @@
 #include <time.h>
 #include <vector>
 
-#define C 1.0
-#define G 1.0
-#define M 1.0
-#define BLOCK_SIZE 1024
-#define BUFFER_SIZE 1024
-#define SMALL 1.e-40
-#define NDIM 4
-#define DT 0.0000005
-#define max_dt 5999.0
-#define ALIGNMENT 32
-#if CURVATUREENGINE_TARGET_AVX2
-#define ARCH "AVX2"
-#elif CURVATUREENGINE_TARGET_NEON
-#define ARCH "NEON"
-#else
-#define ARCH "SCALAR"
-#endif
-#define TOLERANCE 1e-10
-#define DELTA 1e-6
-#define NDIM3 3
-#define DELTA3 1e-4
-
-using Matrix2x2 = std::array<std::array<float, 2>, 2>;
-using Matrix3x3 = std::array<std::array<float, 3>, 3>;
-using Matrix4x4 = std::array<std::array<float, 4>, 4>;
-using MatrixNDIM = std::array<std::array<float, NDIM>, NDIM>;
-
-#include <Connexion.h>
-#include <Derivatives.h>
-#include <Grid.h>
-#include <GridTensor.h>
-#include <Log.h>
-#include <Metric.h>
-#include <Tensor.h>
-#include <matrix.h>
-
-typedef struct {
-  float x, y, z;
-  float lambda;
-} GeodesicPoint;
-
-using VEC_TYPE = curvatureengine::simd::Vec4d;
-
-using ChristoffelTensor = double[NDIM][NDIM][NDIM];
-using ChristoffelEvalFn = void (*)(const double coords[NDIM],
-                                   ChristoffelTensor gamma, void *ctx);
-
-using VEC_TYPE = curvatureengine::simd::Vec4d;
-
-using ChristoffelTensorVec = VEC_TYPE[NDIM][NDIM][NDIM];
-using ChristoffelEvalFnVec = void (*)(const VEC_TYPE coords[NDIM],
-                                      ChristoffelTensorVec &gamma, void *ctx);
-
-void geodesic_AVX(VEC_TYPE x[NDIM], VEC_TYPE v[NDIM], float lambda_max,
-                  ChristoffelEvalFnVec evaluator, void *ctx,
-                  VEC_TYPE step_size);
-VEC_TYPE geodesic_raytrace_AVX(VEC_TYPE x[NDIM], VEC_TYPE v[NDIM],
-                               float lambda_max, ChristoffelEvalFnVec evaluator,
-                               void *ctx, VEC_TYPE step_size);
-void store_geodesic_point_AVX(VEC_TYPE x[NDIM], float lambda);
-void write_vtk_file(const char *filename);
-void store_geodesic_point(float x[4], float lambda);
-void store_geodesic_point_AVX(VEC_TYPE x[4], float lambda);
+#include "Connexion.h"
+#include "Derivatives.h"
+#include "Grid.h"
+#include "GridTensor.h"
+#include "Log.h"
+#include "Metric.h"
+#include "Tensor.h"
+#include "matrix.h"
 
 float calculate_impact_parameter(float p_t, float p_phi, float g_tt,
                                  float g_tphi, float g_phiphi);

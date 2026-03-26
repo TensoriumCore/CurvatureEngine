@@ -1,5 +1,10 @@
 #pragma once
-#include <Grid.h> 
+
+#include "Grid.h"
+
+#include <cmath>
+#include <vector>
+
 class Grid;
 
 
@@ -190,4 +195,3 @@ float second_partial(Grid &grid_obj, int i, int j, int k, int a, int b, Getter g
 
     return 0.0;
 }
-

@@ -1,27 +1,20 @@
 #pragma once
 
-#include <Geodesics.h>
+#include "core/Types.h"
 
-#define DIM3 3
-constexpr float DX = 0.08;
-constexpr float DY = 0.08;
-constexpr float DZ = 0.08;
-#define NX 128
-#define NY 128
-#define NZ 128
-#define GHOST 2  
-#define NX_TOTAL (NX + 2*GHOST) 
-#define NY_TOTAL (NY + 2*GHOST)
-#define NZ_TOTAL (NZ + 2*GHOST)
+#include <string>
+#include <vector>
 
-using Matrix4x4 = std::array<std::array<float, NDIM>, NDIM>;
-using Matrix3x3 = std::array<std::array<float, DIM3>, DIM3>;
-using Vector3   = std::array<float, DIM3>;
-using Vector4 = std::array<float, NDIM>;
-using Tensor3D = std::array<std::array<std::array<float, DIM3>, DIM3>, DIM3>;
-using Tensor4D  = std::array<std::array<std::array<std::array<float, DIM3>, DIM3>, DIM3>, DIM3>;
-using Christoffel3D = std::array<std::array<std::array<float, DIM3>, DIM3>, DIM3>;
-using Riemann3D = std::array<std::array<std::array<std::array<float, DIM3>, DIM3>, DIM3>, DIM3>;
+inline constexpr float DX = 0.08f;
+inline constexpr float DY = 0.08f;
+inline constexpr float DZ = 0.08f;
+inline constexpr int NX = 128;
+inline constexpr int NY = 128;
+inline constexpr int NZ = 128;
+inline constexpr int GHOST = 2;
+inline constexpr int NX_TOTAL = NX + 2 * GHOST;
+inline constexpr int NY_TOTAL = NY + 2 * GHOST;
+inline constexpr int NZ_TOTAL = NZ + 2 * GHOST;
 
 struct alignas(32) Geometry {
     Matrix3x3 gamma;

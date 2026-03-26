@@ -1,6 +1,6 @@
 #pragma once	
 
-#include "Geodesics.h"
+#include "core/Types.h"
 
 class Metric {
 	public:

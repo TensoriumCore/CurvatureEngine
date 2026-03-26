@@ -1,6 +1,6 @@
 #pragma once 
 
-#include <Geodesics.h>
+#include "Grid.h"
 
 class GridTensor {
 	public:

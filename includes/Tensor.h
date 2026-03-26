@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Geodesics.h"
+#include "core/Types.h"
 
 class Tensor {
 	public:
@@ -49,4 +49,3 @@ class Tensor {
 		void check_riemann_symmetries(const Riemann4D& Riemann, float tolerance);
 		void contract_riemann(const Riemann4D& Riemann, MatrixNDIM& Ricci, const MatrixNDIM& g_inv);
 };
-
