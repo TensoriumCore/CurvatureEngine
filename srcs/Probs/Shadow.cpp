@@ -47,7 +47,7 @@ struct ShadowRenderConfig {
   double r_cam = 75.0;
   double theta_cam = 1.5865;
   double phi_cam = 0.0;
-  double fov = 1.3;
+  double fov = 1.15;
   double lambda_max = 4000.0;
   double r_escape = 80.0;
   double exposure = 2.5;
