@@ -59,7 +59,7 @@ struct ShadowRenderConfig {
 
 struct FishboneMoncriefTorusConfig {
   double r_in = 0.0;
-  double r_center = 12.0;
+  double r_center = 13.0;
   double gamma = 4.0 / 3.0;
   double rho_center = 1.0;
   double beta_inv = 0.03;
@@ -699,6 +699,8 @@ static inline void accumulate_grrt_step(
     const FishboneMoncriefTorusModel &torus_model, double Ibar[4],
     double tau[4], double WTe[4], double Wsum[4]) {
   constexpr double kThetaeToKelvin = 5.930000000e9;
+  constexpr double kEmissionHeightFactor = 0.035;
+  constexpr double kRadialSigmaFactor = 0.32;
 
   alignas(32) double rP[4], rC[4], thP[4], thC[4];
   store(rP, x_prev[1]);
@@ -706,8 +708,10 @@ static inline void accumulate_grrt_step(
   store(thP, x_prev[2]);
   store(thC, x_curr[2]);
 
-  alignas(32) double kt[4], kph[4];
+  alignas(32) double kt[4], kr[4], kth[4], kph[4];
   store(kt, k_curr[0]);
+  store(kr, k_curr[1]);
+  store(kth, k_curr[2]);
   store(kph, k_curr[3]);
 
   alignas(32) double rM[4], thM[4];
@@ -724,13 +728,16 @@ static inline void accumulate_grrt_step(
   VEC_TYPE gS[NDIM][NDIM], ginvS[NDIM][NDIM];
   MetricSIMD::calculate_metric_avx(X_mid, gS, ginvS);
 
-  alignas(32) double gtt[4], gtph[4], gphph[4];
+  alignas(32) double gtt[4], grr[4], gthth[4], gtph[4], gphph[4];
   store(gtt, gS[0][0]);
+  store(grr, gS[1][1]);
+  store(gthth, gS[2][2]);
   store(gtph, gS[0][3]);
   store(gphph, gS[3][3]);
 
   for (int i = 0; i < 4; ++i) {
     const double r = rM[i];
+    const double theta = thM[i];
     if (r <= torus_model.r_horizon + 1e-3)
       continue;
 
@@ -758,6 +765,51 @@ static inline void accumulate_grrt_step(
       continue;
 
     const double redshift = nu_obs[i] / nu_em;
+    const double cylindrical_r = r * std::sin(theta);
+    const double z = r * std::cos(theta);
+    const double emission_height =
+        kEmissionHeightFactor * torus_model.config.r_center;
+    const double vertical_taper =
+        std::exp(-0.5 * (z / std::max(emission_height, 1.0e-6)) *
+                 (z / std::max(emission_height, 1.0e-6)));
+    if (vertical_taper < 1.0e-5)
+      continue;
+
+    const double radial_sigma =
+        kRadialSigmaFactor * torus_model.config.r_center;
+    const double radial_weight =
+        0.35 +
+        0.65 * std::exp(-0.5 * std::pow(
+                                   (cylindrical_r - torus_model.config.r_center) /
+                                       std::max(radial_sigma, 1.0e-6),
+                                   2.0));
+
+    double g_cov[4][4] = {
+        {gtt[i], 0.0, 0.0, gtph[i]},
+        {0.0, grr[i], 0.0, 0.0},
+        {0.0, 0.0, gthth[i], 0.0},
+        {gtph[i], 0.0, 0.0, gphph[i]},
+    };
+    double u_vec[4] = {ut, 0.0, 0.0, uph};
+    double photon_vec[4] = {kt[i], kr[i], kth[i], kph[i]};
+    double toroidal_b[4] = {0.0, 0.0, 0.0, 1.0};
+    project_orthogonal_to_u(g_cov, u_vec, toroidal_b);
+    normalize_spacelike(g_cov, toroidal_b);
+
+    double photon_dir[4];
+    for (int mu = 0; mu < 4; ++mu)
+      photon_dir[mu] = photon_vec[mu] / nu_em - u_vec[mu];
+    project_orthogonal_to_u(g_cov, u_vec, photon_dir);
+    normalize_spacelike(g_cov, photon_dir);
+
+    const double cos_pitch = std::clamp(dot_g(g_cov, photon_dir, toroidal_b),
+                                        -1.0, 1.0);
+    const double sin_pitch =
+        std::sqrt(std::max(0.0, 1.0 - cos_pitch * cos_pitch));
+    const double synchrotron_anisotropy = 0.2 + 0.8 * sin_pitch;
+    const double doppler_boost =
+        std::clamp(std::pow(redshift, 0.85), 0.35, 3.0);
+
     const double ne = torus_model.config.electron_density_scale * rho;
     const double thetae = std::max(
         1.0e-4, torus_model.config.thetae_scale * p / safe_pos(rho));
@@ -769,8 +821,13 @@ static inline void accumulate_grrt_step(
     double jnu = 0.0;
     double anu = 0.0;
     emiss_abs_synch_approx(ne, thetae, B, nu_em, jnu, anu);
-    jnu *= torus_model.config.emissivity_scale;
-    anu *= torus_model.config.opacity_scale;
+    const double emissivity_modifier =
+        vertical_taper * radial_weight * synchrotron_anisotropy *
+        doppler_boost;
+    const double opacity_modifier =
+        vertical_taper * radial_weight * std::sqrt(synchrotron_anisotropy);
+    jnu *= torus_model.config.emissivity_scale * emissivity_modifier;
+    anu *= torus_model.config.opacity_scale * opacity_modifier;
 
     if (!(jnu > 0.0) && !(anu > 0.0))
       continue;
