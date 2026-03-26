@@ -1,119 +1,22 @@
 #pragma once
 
+#include "bssn/GridConfig.h"
+#include "bssn/GridData.h"
 #include "core/Types.h"
 
-#include <string>
 #include <vector>
-
-inline constexpr float DX = 0.08f;
-inline constexpr float DY = 0.08f;
-inline constexpr float DZ = 0.08f;
-inline constexpr int NX = 128;
-inline constexpr int NY = 128;
-inline constexpr int NZ = 128;
-inline constexpr int GHOST = 2;
-inline constexpr int NX_TOTAL = NX + 2 * GHOST;
-inline constexpr int NY_TOTAL = NY + 2 * GHOST;
-inline constexpr int NZ_TOTAL = NZ + 2 * GHOST;
-
-struct alignas(32) Geometry {
-    Matrix3x3 gamma;
-    Matrix3x3 gamma_inv;
-    Matrix3x3 Ricci;
-    Matrix3x3 gamma0;
-    float tilde_gamma[3][3];
-    float tilde_gamma0[3][3];
-    float tildgamma_inv[3][3];
-    float dt_tilde_gamma[3][3];
-    float dt_tildeGamma[3];
-};
-
-struct alignas(32) Connection {
-	Tensor3D Gamma3;
-	float tildeGamma[3];
-	float Christoffel[3][3][3];
-};
-
-struct alignas(32) ExtrinsicCurvature {
-    Matrix3x3 K;
-    Matrix3x3 K0;
-    float K_trace;
-    float dt_K_trace;
-    float H;
-    float dKt[3][3];
-};
-
-struct alignas(32) AtildeVars {
-    float Atilde[3][3];
-    float Atilde0[3][3];
-    float dt_Atilde[3][3];
-    float AtildeStage[4][3][3];
-};
-
-struct alignas(32) Gauge {
-    float alpha;
-    float alpha0;
-    float alphaStage[4];
-    Vector3 dalpha_dx;
-
-    float beta[3];
-    float beta0[3];
-    float betaStage[4][3];
-    float Bstage[4][3];
-	float dt_beta[3];
-	float dt_alpha;
-};
-
-struct Matter {
-    float rho;
-    float momentum[3];
-    float hamiltonian;
-    float p;
-    float vx, vy, vz;
-    float T[4][4];
-};
-
 
 class Grid {
     public:
+
+		using Cell2D = BSSNCell;
+		using GridStorage = BSSNGridStorage;
 
 		std::vector<float> dgammaX[3][3];
 		std::vector<float> dgammaY[3][3];
 		std::vector<float> dgammaZ[3][3];
 		float time = 0.0;
-		struct alignas(32) Cell2D {
-			Geometry geom;
-			Connection conn;
-			ExtrinsicCurvature curv;
-			AtildeVars atilde;
-			Gauge gauge;
-			Matter matter;
-			float t;
-			float ADMmass;
-			float chi;
-			float dt_chi;
-			float gammaStage[4][3][3];
-			float KStage[4][3][3];
-			float dgt[3][3];
-		};
-
-		struct alignas(32) GridStorage {
-			Cell2D* cells;
-
-			float* alpha;
-			float* chi;
-			float* Atilde[3][3];
-
-			int nx, ny, nz;
-
-			inline int idx(int i, int j, int k) const {
-				return i * ny * nz + j * nz + k;
-			}
-		};
-
-		void appendConstraintL2ToCSV(const std::string& filename, float time) const;
 		void inject_BowenYork_Atilde(Grid &grid_obj, const Vector3 &P, const Vector3 &Coor);
-		void logger_evolve(Grid &grid_obj, float dt, int nstep);
 		float compute_ricci_scalar(Grid &grid, int i, int j, int k);
 		void initialize_grid();
 		void evolve(Grid &grid_obj, float dtinitital, int nSteps);
@@ -141,9 +44,11 @@ class Grid {
 		Cell2D& getCell(int i, int j, int k) {
 			return globalGrid[i][j][k];
 		}
-		void export_Atildedt_slide(Grid &grid_obj, float time);
+		const Cell2D& getCell(int i, int j, int k) const {
+			return globalGrid[i][j][k];
+		}
 	private:
-		std::vector<std::vector<std::vector<Grid::Cell2D>>> globalGrid;
+		BSSNCellGrid globalGrid;
 
 };
 
@@ -153,12 +58,3 @@ float partialYY_alpha(Grid &grid_obj, int i, int j, int k);
 float partialZZ_alpha(Grid &grid_obj, int i, int j, int k);
 float second_partial_alpha(Grid &grid_obj, int i, int j, int k, int a, int b);
 bool invert_3x3(const float m[3][3], float inv[3][3]);
-void apply_boundary_conditions(Grid &grid_obj);
-void export_K_3D(Grid &grid_obj);
-void export_alpha_slice(Grid &grid_obj, int j);
-void export_gauge_slice(Grid &grid_obj, int j);
-void export_K_slice(Grid &grid_obj, int j);
-void export_gamma_slice(Grid &grid_obj, int j, float time);
-void export_tilde_gamma_3D(Grid &grid_obj);
-void export_gauge_slice_anim(Grid &grid_obj, int j, float time);
-void export_gauge_slice_xy(Grid &grid, int k, float time);

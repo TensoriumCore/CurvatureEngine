@@ -1,4 +1,8 @@
-#include <Geodesics.h>
+#include "Grid.h"
+#include "GridTensor.h"
+#include "Log.h"
+
+#include <vector>
 
 std::vector<std::vector<std::vector<float>>> hamiltonianGrid;
 void Grid::initialize_grid() {

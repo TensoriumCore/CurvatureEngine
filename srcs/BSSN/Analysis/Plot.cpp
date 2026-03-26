@@ -1,5 +1,13 @@
+#include "Grid.h"
+#include "GridTensor.h"
+#include "bssn/GridOutput.h"
 
-#include <Geodesics.h>
+#include <cmath>
+#include <cstdio>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
 
 void export_gamma_slice(Grid &grid_obj, int j, float time) {
     std::ostringstream filename;
@@ -38,7 +46,8 @@ void export_gamma_slice(Grid &grid_obj, int j, float time) {
     std::cout << "[Export] Gamma slice saved to: " << filename.str() << std::endl;
 }
 
-void Grid::appendConstraintL2ToCSV(const std::string& filename, float time) const {
+void appendConstraintL2ToCSV(const Grid &grid_obj, const std::string &filename,
+                             float time) {
     float sum_H = 0.0;
     float sum_Mx = 0.0, sum_My = 0.0, sum_Mz = 0.0;
     int N = 0;
@@ -46,7 +55,7 @@ void Grid::appendConstraintL2ToCSV(const std::string& filename, float time) cons
     for (int i = 1; i < NX - 1; ++i) {
         for (int j = 1; j < NY - 1; ++j) {
             for (int k = 1; k < NZ - 1; ++k) {
-                const Cell2D &cell = globalGrid[i][j][k];
+                const Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
                 sum_H  += cell.matter.hamiltonian * cell.matter.hamiltonian;
                 sum_Mx += cell.matter.momentum[0] * cell.matter.momentum[0];
                 sum_My += cell.matter.momentum[1] * cell.matter.momentum[1];
@@ -80,7 +89,7 @@ void Grid::appendConstraintL2ToCSV(const std::string& filename, float time) cons
 
 
 
-void Grid::export_Atildedt_slide(Grid &grid_obj, float time) {
+void export_Atildedt_slide(Grid &grid_obj, float time) {
 	std::ofstream file;
 	char filename[256];
 	sprintf(filename, "Output/Atildedt_slice_t%.3f.dat", time);
@@ -92,7 +101,7 @@ void Grid::export_Atildedt_slide(Grid &grid_obj, float time) {
 		for (int j = 0; j < NY; ++j) {
 			float x = -L + i * DX;
 			float y = -L + j * DY;
-			float Atildedt = globalGrid[i][j][z_mid].atilde.dt_Atilde[0][0];
+			float Atildedt = grid_obj.getCell(i, j, z_mid).atilde.dt_Atilde[0][0];
 			file << x << " " << y << " " << Atildedt << "\n";
 		}
 		file << "\n";
@@ -393,5 +402,3 @@ void GridTensor::export_christoffel_slice(Grid &grid_obj, int j) {
     file.close();
     std::cout << "Christoffel slice saved to christoffel_slice.csv\n";
 }
-
-

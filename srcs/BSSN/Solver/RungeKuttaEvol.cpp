@@ -1,4 +1,7 @@
-#include <Geodesics.h>
+#include "Grid.h"
+#include "bssn/GridBoundary.h"
+
+#include <cmath>
 
 
 void apply_asymptotic_boundary_conditions(Grid &grid_obj, float R_max) {

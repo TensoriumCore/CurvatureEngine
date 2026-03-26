@@ -1,8 +1,13 @@
-#include <Geodesics.h>
+#include "Grid.h"
+#include "GridTensor.h"
+#include "bssn/GridBoundary.h"
+#include "bssn/GridOutput.h"
 
-void Grid::logger_evolve(Grid &grid_obj, float dt, int nstep)
+#include <cstdio>
+
+void logger_evolve(const Grid &grid_obj, float dt, int nstep)
 {    
-	Cell2D &cell = grid_obj.getCell(0, 0, 0);
+	const Grid::Cell2D &cell = grid_obj.getCell(0, 0, 0);
 	printf("=============================================\n");
 	printf("Time step: %f, nstep: %d\n", dt, nstep);
 	printf("=============================================\n");
@@ -115,17 +120,17 @@ void Grid::evolve(Grid &grid_obj, float dtInitial, int nSteps) {
 
 		}
 
-		#pragma omp single nowait
-		{
-			logger_evolve(grid_obj, dt, step);
-			float current_time = step * dt;
-			// export_gauge_slice_anim(grid_obj, NY/2, current_time);
-			export_gauge_slice_xy(*this, NZ/2, time);
-			export_gamma_slice(grid_obj, NY / 2, dt);
-			grid_obj.appendConstraintL2ToCSV("constraints_evolution.csv", current_time);
-			if (step == nSteps - 1) {
-				printf("Exporting slices\n");
-				export_K_slice(grid_obj, NY / 2);
+			#pragma omp single nowait
+			{
+				logger_evolve(grid_obj, dt, step);
+				float current_time = step * dt;
+				// export_gauge_slice_anim(grid_obj, NY/2, current_time);
+				export_gauge_slice_xy(*this, NZ/2, time);
+				export_gamma_slice(grid_obj, NY / 2, dt);
+				appendConstraintL2ToCSV(grid_obj, "constraints_evolution.csv", current_time);
+				if (step == nSteps - 1) {
+					printf("Exporting slices\n");
+					export_K_slice(grid_obj, NY / 2);
 				export_gauge_slice(grid_obj, NY / 2);
 				gridTensor.export_christoffel_slice(grid_obj, NX / 2);
 				export_K_3D(grid_obj);

@@ -1,5 +1,7 @@
-#include <Geodesics.h>
+#include "Grid.h"
+
 #include <algorithm>
+#include <cmath>
 
 /**
  * Compute the maximum speed in the grid
