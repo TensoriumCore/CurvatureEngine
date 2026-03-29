@@ -14,6 +14,7 @@
 #include <iomanip>
 #include <limits>
 #include <omp.h>
+#include <string>
 #include <vector>
 
 using namespace curvatureengine::simd;
@@ -44,9 +45,12 @@ struct ShadowRenderConfig {
   int width = 1920;
   int height = 1080;
   int samples_per_pixel = 4;
+  int frame_count = 1;
   double r_cam = 75.0;
   double theta_cam = 1.5865;
   double phi_cam = 0.0;
+  double observer_time = 0.0;
+  double frame_dt = 8.0;
   double fov = 1.15;
   double lambda_max = 4000.0;
   double r_escape = 80.0;
@@ -78,6 +82,13 @@ struct FishboneMoncriefTorusModel {
   double Kpoly = 0.0;
   double r_horizon = 0.0;
   double risco = 0.0;
+};
+
+struct ShadowFrameOutputs {
+  std::string ppm;
+  std::string pfm;
+  std::string csv;
+  std::string json;
 };
 
 struct SampleOffset {
@@ -131,11 +142,17 @@ static ShadowRenderConfig load_shadow_render_config() {
   config.samples_per_pixel =
       std::min(4, read_env_int("CURVATUREENGINE_SHADOW_SPP",
                                config.samples_per_pixel));
+  config.frame_count =
+      read_env_int("CURVATUREENGINE_SHADOW_FRAMES", config.frame_count);
   config.r_cam = read_env_double("CURVATUREENGINE_SHADOW_R_CAM", config.r_cam);
   config.theta_cam =
       read_env_double("CURVATUREENGINE_SHADOW_THETA_CAM", config.theta_cam);
   config.phi_cam =
       read_env_double("CURVATUREENGINE_SHADOW_PHI_CAM", config.phi_cam);
+  config.observer_time =
+      read_env_double("CURVATUREENGINE_SHADOW_TIME", config.observer_time);
+  config.frame_dt =
+      read_env_double("CURVATUREENGINE_SHADOW_FRAME_DT", config.frame_dt);
   config.fov = read_env_double("CURVATUREENGINE_SHADOW_FOV", config.fov);
   config.lambda_max =
       read_env_double("CURVATUREENGINE_SHADOW_LAMBDA_MAX", config.lambda_max);
@@ -337,6 +354,10 @@ static inline double clamp01(double x) {
   return x;
 }
 
+static inline double wrap_angle(double x) {
+  return std::atan2(std::sin(x), std::cos(x));
+}
+
 static inline void tone_map_rgb(double Ir, double Ig, double Ib, double &out_r,
                                 double &out_g, double &out_b) {
   auto TM = [](double x) {
@@ -407,6 +428,50 @@ static inline void emiss_abs_synch_approx(double ne, double Thetae, double B,
 
 static inline double compute_prograde_keplerian_omega(double r, double a_d) {
   return 1.0 / (std::pow(r, 1.5) + a_d);
+}
+
+static double compute_disk_dynamics_factor(
+    double time_coord, double r, double theta, double phi,
+    const FishboneMoncriefTorusModel &torus_model) {
+  const double cylindrical_r = r * std::sin(theta);
+  const double z = r * std::cos(theta);
+  const double r_center = torus_model.config.r_center;
+  const double hotspot_r = 0.82 * r_center;
+  const double hotspot_sigma_r = 0.10 * r_center;
+  const double hotspot_sigma_z = 0.020 * r_center;
+  const double hotspot_phase_sigma = 0.35;
+  const double hotspot_omega =
+      compute_prograde_keplerian_omega(hotspot_r, static_cast<double>(a));
+  const double hotspot_phase = wrap_angle(phi - hotspot_omega * time_coord);
+  const double hotspot =
+      std::exp(-0.5 * std::pow((cylindrical_r - hotspot_r) /
+                                   std::max(hotspot_sigma_r, 1.0e-6),
+                               2.0) -
+               0.5 * std::pow(z / std::max(hotspot_sigma_z, 1.0e-6), 2.0) -
+               0.5 * std::pow(hotspot_phase / hotspot_phase_sigma, 2.0));
+
+  const double pattern_omega = 0.55 * hotspot_omega;
+  const double spiral_phase =
+      2.0 * (phi - pattern_omega * time_coord) -
+      5.0 * std::log(std::max(cylindrical_r, 1.0e-6) /
+                     std::max(r_center, 1.0e-6));
+  const double spiral =
+      0.5 * (1.0 + std::cos(spiral_phase)) *
+      std::exp(-0.5 * std::pow((cylindrical_r - r_center) /
+                                   std::max(0.45 * r_center, 1.0e-6),
+                               2.0));
+
+  const double local_omega = compute_prograde_keplerian_omega(
+      std::max(cylindrical_r, torus_model.r_horizon + 0.5),
+      static_cast<double>(a));
+  const double turbulence =
+      0.5 * (std::sin(3.0 * phi - 1.15 * local_omega * time_coord +
+                      0.7 * std::log(std::max(cylindrical_r, 1.0e-6))) +
+             std::cos(5.0 * phi - 0.75 * hotspot_omega * time_coord));
+
+  const double factor =
+      1.0 + 1.5 * hotspot + 0.45 * spiral + 0.12 * turbulence;
+  return std::clamp(factor, 0.25, 3.25);
 }
 
 static inline bool compute_fluid_state_from_omega(double g_tt, double g_tph,
@@ -702,11 +767,15 @@ static inline void accumulate_grrt_step(
   constexpr double kEmissionHeightFactor = 0.035;
   constexpr double kRadialSigmaFactor = 0.32;
 
-  alignas(32) double rP[4], rC[4], thP[4], thC[4];
+  alignas(32) double tP[4], tC[4], rP[4], rC[4], thP[4], thC[4], phP[4], phC[4];
+  store(tP, x_prev[0]);
+  store(tC, x_curr[0]);
   store(rP, x_prev[1]);
   store(rC, x_curr[1]);
   store(thP, x_prev[2]);
   store(thC, x_curr[2]);
+  store(phP, x_prev[3]);
+  store(phC, x_curr[3]);
 
   alignas(32) double kt[4], kr[4], kth[4], kph[4];
   store(kt, k_curr[0]);
@@ -714,10 +783,12 @@ static inline void accumulate_grrt_step(
   store(kth, k_curr[2]);
   store(kph, k_curr[3]);
 
-  alignas(32) double rM[4], thM[4];
+  alignas(32) double tM[4], rM[4], thM[4], phM[4];
   for (int i = 0; i < 4; ++i) {
+    tM[i] = 0.5 * (tP[i] + tC[i]);
     rM[i] = 0.5 * (rP[i] + rC[i]);
     thM[i] = 0.5 * (thP[i] + thC[i]);
+    phM[i] = 0.5 * (phP[i] + phC[i]);
   }
 
   alignas(32) double Xt[4] = {0}, Xph[4] = {0};
@@ -738,6 +809,8 @@ static inline void accumulate_grrt_step(
   for (int i = 0; i < 4; ++i) {
     const double r = rM[i];
     const double theta = thM[i];
+    const double phi = phM[i];
+    const double time_coord = tM[i];
     if (r <= torus_model.r_horizon + 1e-3)
       continue;
 
@@ -783,6 +856,8 @@ static inline void accumulate_grrt_step(
                                    (cylindrical_r - torus_model.config.r_center) /
                                        std::max(radial_sigma, 1.0e-6),
                                    2.0));
+    const double dynamics_factor =
+        compute_disk_dynamics_factor(time_coord, r, theta, phi, torus_model);
 
     double g_cov[4][4] = {
         {gtt[i], 0.0, 0.0, gtph[i]},
@@ -810,11 +885,16 @@ static inline void accumulate_grrt_step(
     const double doppler_boost =
         std::clamp(std::pow(redshift, 0.85), 0.35, 3.0);
 
-    const double ne = torus_model.config.electron_density_scale * rho;
+    const double ne =
+        torus_model.config.electron_density_scale * rho * dynamics_factor;
     const double thetae = std::max(
-        1.0e-4, torus_model.config.thetae_scale * p / safe_pos(rho));
-    const double B = torus_model.config.magnetic_scale *
-                     std::sqrt(std::max(0.0, torus_model.config.beta_inv * p));
+        1.0e-4,
+        torus_model.config.thetae_scale * p / safe_pos(rho) *
+            (0.9 + 0.1 * dynamics_factor));
+    const double B =
+        torus_model.config.magnetic_scale *
+        std::sqrt(std::max(0.0, torus_model.config.beta_inv * p)) *
+        std::sqrt(dynamics_factor);
     if (!(ne > 0.0) || !(B > 0.0))
       continue;
 
@@ -1016,6 +1096,57 @@ bool ensure_parent_directory(const char *filename) {
   return !ec;
 }
 
+std::string format_frame_output_path(const char *filename, int frame_index,
+                                     int frame_count) {
+  if (!filename)
+    return "";
+  if (frame_count <= 1)
+    return filename;
+
+  const std::filesystem::path path(filename);
+  const std::string stem = path.stem().string();
+  const std::string extension = path.extension().string();
+
+  char suffix[16];
+  std::snprintf(suffix, sizeof(suffix), "_%04d", frame_index);
+
+  const std::filesystem::path numbered =
+      path.parent_path() / (stem + suffix + extension);
+  return numbered.string();
+}
+
+ShadowFrameOutputs build_frame_outputs(const ShadowRenderConfig &config,
+                                       int frame_index) {
+  ShadowFrameOutputs outputs;
+  outputs.ppm =
+      format_frame_output_path(config.output_path, frame_index, config.frame_count);
+  outputs.pfm = format_frame_output_path(config.hdr_output_path, frame_index,
+                                         config.frame_count);
+  outputs.csv = format_frame_output_path(config.plot_output_path, frame_index,
+                                         config.frame_count);
+  outputs.json = format_frame_output_path(config.metadata_output_path,
+                                          frame_index, config.frame_count);
+  return outputs;
+}
+
+std::string build_sequence_pattern(const char *filename) {
+  if (!filename)
+    return "";
+
+  const std::filesystem::path path(filename);
+  const std::string stem = path.stem().string();
+  const std::string extension = path.extension().string();
+  return (path.parent_path() / (stem + "_%04d" + extension)).string();
+}
+
+std::string build_sequence_video_output(const char *filename) {
+  if (!filename)
+    return "Output/accretion_disk.mp4";
+
+  const std::filesystem::path path(filename);
+  return (path.parent_path() / (path.stem().string() + ".mp4")).string();
+}
+
 bool write_ppm_image(const char *filename, int width, int height,
                      const std::vector<uint8_t> &rgb_buffer) {
   if (!ensure_parent_directory(filename))
@@ -1095,7 +1226,8 @@ bool write_shadow_plot_data_csv(const char *filename,
 
 bool write_shadow_metadata_json(const char *filename,
                                 const ShadowRenderConfig &config,
-                                const FishboneMoncriefTorusModel &torus_model) {
+                                const FishboneMoncriefTorusModel &torus_model,
+                                int frame_index) {
   if (!ensure_parent_directory(filename))
     return false;
 
@@ -1109,6 +1241,10 @@ bool write_shadow_metadata_json(const char *filename,
   file << "  \"width\": " << config.width << ",\n";
   file << "  \"height\": " << config.height << ",\n";
   file << "  \"samples_per_pixel\": " << config.samples_per_pixel << ",\n";
+  file << "  \"frame_index\": " << frame_index << ",\n";
+  file << "  \"frame_count\": " << config.frame_count << ",\n";
+  file << "  \"observer_time\": " << config.observer_time << ",\n";
+  file << "  \"frame_dt\": " << config.frame_dt << ",\n";
   file << "  \"spin\": " << static_cast<double>(a) << ",\n";
   file << "  \"r_cam\": " << config.r_cam << ",\n";
   file << "  \"theta_cam\": " << config.theta_cam << ",\n";
@@ -1150,8 +1286,11 @@ bool write_shadow_metadata_json(const char *filename,
 bool is_valid_render_config(const ShadowRenderConfig &config) {
   return config.width > 0 && config.height > 0 && config.r_cam > 0.0 &&
          config.lambda_max > 0.0 && config.r_escape > 0.0 &&
-         config.samples_per_pixel > 0 && config.output_path != nullptr &&
-         config.hdr_output_path != nullptr && config.plot_output_path != nullptr &&
+         config.samples_per_pixel > 0 && config.frame_count > 0 &&
+         config.frame_dt >= 0.0 && std::isfinite(config.observer_time) &&
+         std::isfinite(config.frame_dt) && config.output_path != nullptr &&
+         config.hdr_output_path != nullptr &&
+         config.plot_output_path != nullptr &&
          config.metadata_output_path != nullptr;
 }
 
@@ -1198,8 +1337,9 @@ PixelResult render_packet(int y, int packet_index,
     sx4[lane] = sx * aspect;
   }
 
-  VEC_TYPE x_cam[NDIM] = {broadcast(0.0), broadcast(config.r_cam),
-                          broadcast(config.theta_cam), broadcast(config.phi_cam)};
+  VEC_TYPE x_cam[NDIM] = {broadcast(config.observer_time),
+                          broadcast(config.r_cam), broadcast(config.theta_cam),
+                          broadcast(config.phi_cam)};
   VEC_TYPE g_simd[NDIM][NDIM], ginv_simd[NDIM][NDIM];
   MetricSIMD::calculate_metric_avx(x_cam, g_simd, ginv_simd);
 
@@ -1241,28 +1381,18 @@ PixelResult render_packet(int y, int packet_index,
                                     config.exposure);
 }
 
-int render_shadow_image() {
-  const ShadowRenderConfig config = load_shadow_render_config();
-  const FishboneMoncriefTorusConfig torus_config = load_fm_torus_config();
-  if (std::abs(static_cast<double>(a)) > 1.0) {
-    std::fprintf(stderr, "Shadow mode requires |spin| <= 1.\n");
-    return 1;
-  }
-  if (!is_valid_render_config(config)) {
-    std::fprintf(stderr, "Invalid shadow render configuration.\n");
-    return 1;
-  }
-  if (!is_valid_fm_torus_config(torus_config)) {
-    std::fprintf(stderr, "Invalid Fishbone-Moncrief torus configuration.\n");
-    return 1;
-  }
-
-  FishboneMoncriefTorusModel torus_model;
-  if (!build_fm_torus_model(static_cast<double>(a), torus_config,
-                            torus_model)) {
-    std::fprintf(stderr, "Failed to derive Fishbone-Moncrief torus model.\n");
-    return 1;
-  }
+int render_shadow_frame(const ShadowRenderConfig &base_config,
+                        const FishboneMoncriefTorusModel &torus_model,
+                        int frame_index) {
+  ShadowRenderConfig config = base_config;
+  ShadowFrameOutputs outputs = build_frame_outputs(base_config, frame_index);
+  config.observer_time =
+      base_config.observer_time +
+      static_cast<double>(frame_index) * base_config.frame_dt;
+  config.output_path = outputs.ppm.c_str();
+  config.hdr_output_path = outputs.pfm.c_str();
+  config.plot_output_path = outputs.csv.c_str();
+  config.metadata_output_path = outputs.json.c_str();
 
   std::vector<uint8_t> image_buffer(config.width * config.height * 3);
   std::vector<double> hdr_buffer(static_cast<std::size_t>(config.width) *
@@ -1345,7 +1475,7 @@ int render_shadow_image() {
       config.plot_output_path, config, hdr_buffer, intensity_buffer, tau_buffer,
       temperature_buffer);
   const bool json_ok = write_shadow_metadata_json(
-      config.metadata_output_path, config, torus_model);
+      config.metadata_output_path, config, torus_model, frame_index);
 
   if (!ppm_ok || !pfm_ok || !csv_ok || !json_ok) {
     std::fprintf(stderr,
@@ -1355,11 +1485,55 @@ int render_shadow_image() {
     return 1;
   }
 
-  std::printf("Shadow outputs written to:\n");
+  if (base_config.frame_count > 1) {
+    std::printf("Shadow frame %d/%d written at observer_time=%.6f:\n",
+                frame_index + 1, base_config.frame_count, config.observer_time);
+  } else {
+    std::printf("Shadow outputs written to:\n");
+  }
   std::printf("  %s\n", config.output_path);
   std::printf("  %s\n", config.hdr_output_path);
   std::printf("  %s\n", config.plot_output_path);
   std::printf("  %s\n", config.metadata_output_path);
+  return 0;
+}
+
+int render_shadow_image() {
+  const ShadowRenderConfig config = load_shadow_render_config();
+  const FishboneMoncriefTorusConfig torus_config = load_fm_torus_config();
+  if (std::abs(static_cast<double>(a)) > 1.0) {
+    std::fprintf(stderr, "Shadow mode requires |spin| <= 1.\n");
+    return 1;
+  }
+  if (!is_valid_render_config(config)) {
+    std::fprintf(stderr, "Invalid shadow render configuration.\n");
+    return 1;
+  }
+  if (!is_valid_fm_torus_config(torus_config)) {
+    std::fprintf(stderr, "Invalid Fishbone-Moncrief torus configuration.\n");
+    return 1;
+  }
+
+  FishboneMoncriefTorusModel torus_model;
+  if (!build_fm_torus_model(static_cast<double>(a), torus_config,
+                            torus_model)) {
+    std::fprintf(stderr, "Failed to derive Fishbone-Moncrief torus model.\n");
+    return 1;
+  }
+
+  for (int frame_index = 0; frame_index < config.frame_count; ++frame_index) {
+    if (render_shadow_frame(config, torus_model, frame_index) != 0)
+      return 1;
+  }
+
+  if (config.frame_count > 1) {
+    const std::string input_pattern = build_sequence_pattern(config.output_path);
+    const std::string video_output =
+        build_sequence_video_output(config.output_path);
+    std::printf("Sequence ready. Example ffmpeg command:\n");
+    std::printf("  ffmpeg -framerate 24 -i %s -pix_fmt yuv420p %s\n",
+                input_pattern.c_str(), video_output.c_str());
+  }
   return 0;
 }
 
